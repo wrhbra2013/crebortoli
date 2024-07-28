@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<html lang=en>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
+    <link rel="stylesheet" href='/static/css/style.css'>
+
+</head>
+
+<body>
+    <div class="header">
+        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
+        <h1>Estetic  Cre  Bortoli  Depil  Site</h1>
+        
+    </div>
+    <nav>       
+        <ul class="menu">
+            <li><a href="{{url_for('paginas.agenda')}}">Agenda</a></li>
+            <li><a href="{{url_for('sig.login')}}">Intranet</a></li>     
+                     
+        </ul>       
+    </nav>
+
+  
+
+       <div class="post">
+        <h3>Este site é um espaço dedicado a Beleza e Bem Estar. </h3>
+       </div>
+
+        <div class="post">
+            {%for post in post%}
+            <p>Cre Bortoli {{post['last_update']}}</p>
+            
+            <img class="imagem" src="{{url_for('paginas.display',filename=post['imagem'])}}"
+                    onerror="this.style.display = 'none';">
+                
+            <p>{{post['post']}}</p>            
+                       
+            {%endfor%}
+               <h3>Sua vez:</h3>
+              
+               <form action="" method="POST">
+               <div class="form">
+                <input type="text" id="coment" name="coment" />                
+                <button type="submit" onclick="(alert('Opinião publicada.'))">Enviar</button>
+                </div>
+                         
+    
+               
+                </form>
+                {%for post in post%}
+                <p style="text-align: right;">{{post['last_update']}}</p>
+                <p style="text-align: center;">{{post['comentario']}}</p>
+                {%endfor%}
+            
+        </div>
+
+        <!-- <div class="form">
+            <form action="" method="POST">
+            <input type="radio" id="enquete" name="enquete" value="Saúde para a pele" />
+            <label for="saude">Saude para a pele.</label>
+     
+        
+        
+            <input type="radio" id="enquete" name="equete" value="Sentir-se bonita, para uma maior autoestima" />
+            <label for="beleza">Sentir-se bonita para uma maior autoestima.</label>
+        
+        <hr>
+       
+            <button type="submit" onclick="alert('Obrigado por opinar.')">Enviar</button>
+         </form>
+    
+    </div> -->
+    
+    <footer class="footer">
+        
+            <a href="https://www.instagram.com/crebortoli/?hl=pt">instagram</a>
+            <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Cre%20Bortoli">Whatsapp</a>
+        
+    </footer>
+    <script type="text/javascript" src="/static/js/acessibilidade.js"></script>
+</body>
+
+</html>

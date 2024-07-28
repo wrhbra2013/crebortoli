@@ -1,0 +1,100 @@
+<!DOCTYPE HTML>
+<html>
+<html lang=en>
+    <head>
+        <link rel="stylesheet" href="/static/css/style.css">        
+    </head>
+<body>
+    <div>
+        <h1>
+            Area Exclusiva da Administradora.
+        </h1>
+    </div>
+    <div class="header">
+        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
+        <h1>Estetic Cre Bortoli Depil Site</h1>
+    </div>
+
+    
+    <div class="topnav">
+        <a href="{{url_for('paginas.agenda')}}">Agenda</a>
+        <a href="{{url_for('paginas.home')}}">Home</a>        
+    </div>
+    
+    
+    {% for message in get_flashed_messages() %}
+     <h2>{{ message }}</h2>
+     {% endfor %}
+
+     <div class="post"> 
+        <h1>Publicações</h1>       
+       <form action="" method="POST" enctype="multipart/form-data">
+            <div class="form">
+                <label>Imagem</label>
+                <input type="file" id="imagem" name="imagem" />
+            </div>
+
+            {% if filename %}
+            <div class="form">
+                <img src="{{url_for('paginas/display',filename=filename)}}" value="{{post['imagem']}}">
+            </div>
+            {%endif%}
+            <div class="form">
+                <label>Tema</label>
+                <input type="text" id="tema" name="tema" value="{{post['tema']}}"/>
+            </div>
+
+            <div class="form">
+            <label>Postagem</label>
+            <textarea id="post" name="post" required>{{post['post']}}</textarea>
+        </div>
+        <hr>
+        <div class="form">
+            <button type="submit" onclick="confirm('Deseja publicar?')">Publicar</button>
+        </div>        
+       </form>
+    </div>
+          
+     <div class="post">
+        <h1>Agendamentos</h1>     
+       
+        <table border:1px solid>
+            <tr>
+                <th> id </th>
+                <th> Nome </th>
+                <th> Email </th>
+                <th> Telefone </th>
+                <th> Melhor dia </th>
+                <th> Melhor Horario </th>
+                <th> Atendimento </th>
+                <th> Acesso</th>
+            </tr>
+            {%for post in post%}
+            <tr>              
+                <td> {{post[0]}}</td>
+                <td> {{post[1]}}</td>
+                <td> {{post[2]}}</td>
+                <td> {{post[3]}}</td>
+                <td> {{post[4]}}</td>
+                <td> {{post[5]}}</td>
+                <td> {{post[6]}}</td>
+                <td> {{post[7]}}</td>                
+            </tr>  
+            {%endfor%}      
+               
+               
+
+        </table>
+              
+       
+        
+    </div>
+    <footer class="footer">
+        <div class="topnav">
+        <a href="https://www.instagram.com/crebortoli/?hl=pt">instagram</a>
+        <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Cre%20Bortoli">Whatsapp</a>
+        </div>
+        </footer>
+                 
+    </body>
+</html>

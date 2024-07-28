@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href='/static/css/style.css'>
+    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
+    <title>Login</title>
+</head>
+<body>
+    <div class="header">
+        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
+        <h1>Estetic  Cre  Bortoli  Depil  Site</h1>
+        
+    </div>
+    <h1>SISTEMA INTEGRADO DE GESTÃO.SIG.v_0.1</h1>
+    <h1>login</h1>
+     <!-- Mensagem-->
+     {% for message in get_flashed_messages() %}
+     <h3 class="span">{{ message }}</h3>
+     {% endfor %}
+    
+    
+    <div class="qrcode">   
+      
+        <img class="imagem" src="/static/auth/password.png"
+                onerror="this.style.display = 'none';">
+
+        <!-- Usando FlaskForms -->
+        <form action="" method="POST">
+        {{form.senha.label}}
+        {{form.senha}}
+        {{form.enviar()}}        
+        </form>
+
+        <!-- Usando tags html comuns -->
+        <!-- <form action="" method="POST">
+        <label>Senha:</label>
+        <input type="password" id="valor" name="valor" required/>
+        <button type="submit" >OK</button>
+        </form> -->
+
+    </div>
+</body>
+</html>

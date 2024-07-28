@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href='/static/css/style.css'>
+    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
+    <title>Custos Fixos- Depreciação</title>
+</head>
+<body>
+    <div class="header">
+        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
+        <h1> Espaço Cre  Bortoli </h1>
+        
+    </div>
+    <nav>       
+        <ul class="menu">
+        <li><a href="{{url_for('paginas.home')}}">Redes Sociais</a></li> 
+        <!-- Submenu -->
+        <li><a href="#" >Clientes</a> 
+        <ul>           
+        <li><a href="{{url_for('sig.postclientes')}}">Cadastro de Clientes</a></li>
+        <li><a href="{{url_for('sig.getclientes')}}">Busca de Clientes</a></li>
+        <li><a href="{{url_for('sig.anaminese')}}">Ficha de Anaminese</a></li>
+        </ul>
+        </li>
+        <!-- Fim submenu -->
+        <!-- Submenu -->
+        <li><a href="#" >Vendas</a> 
+        <ul> 
+        <li><a href="{{url_for('sig.vendas_servicos')}}">Serviços</a></li>
+        <li><a href="{{url_for('sig.vendas_produtos')}}">Produtos</a></li>
+        </ul>
+        </li>
+        <!-- Fim submenu -->
+        <li><a href="{{url_for('sig.compras')}}">Compras</a></li>
+        <li><a href="{{url_for('sig.estoque')}}">Estoque</a></li>
+        <li><a href="{{url_for('sig.pessoal')}}">Pessoal</a></li>
+        <li><a href="#">Financeiro</a>
+        <ul>              
+            <li><a href="{{url_for('sig.depreciacao')}}">Gestão de Depreciacao</a></li>
+            <li><a href="{{url_for('sig.insumos')}}">Gestão de Materiais</a></li>
+            <li><a href="{{url_for('sig.impostos')}}">Gestão de Impostos</a></li>
+            <li><a href="{{url_for('sig.margemlucro')}}">Gestão de Margem de Lucro</a></li>
+            <li><a href="{{url_for('sig.markup')}}">Gestão Markup</a></li>
+            <li><a href="{{url_for('sig.relatorioMEI')}}">Gestão MEI</a></li>
+            <li><a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank">Gestão MEI - Acesso DASN-SIMEI</a></li>
+           
+           
+        </ul>
+        </li>
+        
+        <li><a href="#">Fiscal</a> 
+            <ul>
+                <li><a href="{{url_for('sig.nota')}}">Emiissão de Notas</a></li>  
+                <li><a href="https://www.nfse.gov.br/EmissorNacional/Login?ReturnUrl=%2fEmissorNacional" target="_blank">NFS-e - Contribuinte</a></li>       
+            </ul>
+        </li>                                  
+        </ul>       
+    </nav>
+<h1>Custo Fixo -  Depreciação de Bens.</h1>
+    <div class="container">
+    <form action="" method="POST" target="div2">
+        <div class="form">
+            {{form16.obj.label}}
+            {{form16.obj}}
+            {{form16.preco_custo.label}}
+            {{form16.preco_custo}}
+            {{form16.vida_util.label}}
+            {{form16.vida_util}}
+            {{form16.enviar}}   
+        </div>
+    </form>
+
+    <div class="table">
+        <table>                  
+            <!-- coluna   -->
+            <thead>
+                <!-- Uma passada de for in range reformata a saida de sql. -->
+                {%for n in range(0,1):%} 
+                <tr>                   
+                    {% for i in get[1]:%}                          
+                        <th>{{ i[n] }}</th>                                          
+                        {%endfor%}  
+                </tr>                 
+                {%endfor%} 
+               
+            </thead>          
+            <!-- linha -->          
+            <tbody>                 
+                {% for v in get[0]:%} 
+                  <tr>  
+                    {%for c in range(0,8)%}                    
+                     <td>{{v[c]}}</td>                     
+                     {%endfor%}    
+                    </tr>
+                    {%endfor%}            
+              </tbody>              
+        </table>
+    </div> 
+    </div>
+</body>
+</html>

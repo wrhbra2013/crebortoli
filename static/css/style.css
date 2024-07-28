@@ -1,0 +1,221 @@
+ * {
+    box-sizing: border-box;
+    margin: 0px ; padding: 0px;
+    
+  } 
+  
+  body {    
+    background-image: url(/static/css/image/pink.jpeg);    
+    background-size: 100%;  
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+
+      
+   
+  }
+  /* html,
+  body,
+  * {
+      margin: 0px!important;
+      font-size: 14px!important;
+      line-height: 18px!important;
+      align-self: center;
+  } */
+
+/* Novo Menu */
+.menu{
+list-style-type: none;;
+border:1px solid #c0c0c0;
+float:center;
+width: 100%;
+display: flex;
+flex-direction: row;
+justify-content: center;
+
+}
+
+.menu li{
+  position:relative;
+  float:center;
+  border-right:1px solid #c0c0c0;
+  
+  }
+.menu li a{
+color:#333; 
+text-decoration:none; 
+padding:5px 10px; 
+display:block;
+
+}
+
+.menu li a:hover{
+background:#333;
+color:#fff;
+-moz-box-shadow:0 3px 10px 0 #CCC;
+-webkit-box-shadow:0 3px 10px 0 #ccc;
+text-shadow:0px 0px 5px #fff;
+}
+
+.menu li  ul{
+  position:absolute;
+  top:25px;
+  left:0;
+  background-color:#fff;
+  display:none;
+  }
+
+  .menu li:hover ul, .menu li.over ul{
+    display:block;
+  }
+
+  .menu li ul li{
+    border:1px solid #c0c0c0;
+    display:block;
+    width:150px;
+    }
+
+ /* Cabeçalho    */
+ @font-face {
+  font-family: personalizado;
+  src: url(/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf);
+ }
+
+.header {
+    background-color: black;
+    color: rgb(236, 17, 17);
+    text-align: center;
+    padding: 20px;
+    font-family: personalizado;
+    display: flex;
+    flex-direction: column;
+}  
+h1{
+  color: red;
+  text-align: center;
+  position: inherit;
+  top: 10%; right: 20%; left: 30%;
+}
+
+
+   /* Rodapé */
+  .footer{
+    background-color: rgb(99, 95, 95);
+    color: rgb(236, 17, 17);
+    text-align: center;
+    padding: 20px;
+    font-family: personalizado;
+       
+     
+  }
+
+.footer a:hover{
+  color:#fff;
+  border:1px solid #c0c0c0;
+  width:150px;
+  
+ }
+/* Elementos flash */
+.span{
+  background: rgb(54, 25, 25); 
+  background: rgba(54, 25, 25, .5);  
+  text-align: center;
+  color: yellow;
+  display: flex;
+  flex-direction: column;
+  -webkit-animation: 5s ease 0s normal forwards 1 fadein;
+  animation: 5s ease 0s normal forwards 1 fadein;
+}
+
+.post{
+  margin: 20px auto;
+  text-align: center;
+  width: 500px;
+  border: 1px solid black;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.container {   
+   display: flex; 
+  flex-direction: row;    
+ 
+}
+
+.form {
+  cursor: pointer;
+  width: 50%;
+  height: auto;  
+  margin: 0% auto;
+  border: 1px solid black;
+  text-align: left;
+  display:flex;
+  flex-direction: column;
+  
+  
+  
+ }
+ .form label:hover{
+ 
+  font-size: larger;
+  
+ }
+ .form input:hover{  
+  display:block;
+  &&{
+    font-size: larger;
+    color: red;  
+  }
+ }
+  
+
+/* padrão de tabelas */
+.table{ 
+  cursor: pointer;
+  width: 60%!important;
+  height: auto;
+  border: 1px solid black;
+  word-wrap: break-word;
+  overflow-x: scroll;
+  text-align: center;
+  display:flex;
+  flex-direction: column;
+    
+}
+/* .table :hover{
+ display: block;
+ &&{   
+    font-size: large;
+  }
+} */
+
+.table th {    
+  border: 1px solid rosybrown;
+  background-color: yellow;
+  text-align: center; 
+  
+  
+}
+
+.table td{   
+  border: 1px solid yellow;
+  text-align: center;  
+  
+}
+
+.qrcode{
+  width: 200px;
+  height: 200px;
+  margin: 20px auto;
+  padding: 15px;
+ 
+ 
+}
+
+.grafico{
+  border: 1px solid black;
+  border-radius: 10%;
+  display:block
+}
+

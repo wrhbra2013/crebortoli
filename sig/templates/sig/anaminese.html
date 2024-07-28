@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href='/static/css/style.css'>
+    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
+    <title>Ficha de Anaminese</title>
+</head>
+
+<body>
+    <div class="header">
+        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
+        <h1> Espaço Cre  Bortoli </h1>
+        
+    </div>
+    <nav>       
+        <ul class="menu">
+        <li><a href="{{url_for('paginas.home')}}">Redes Sociais</a></li> 
+        <!-- Submenu -->
+        <li><a href="#" >Clientes</a> 
+        <ul>           
+        <li><a href="{{url_for('sig.postclientes')}}">Cadastro de Clientes</a></li>
+        <li><a href="{{url_for('sig.getclientes')}}">Busca de Clientes</a></li>
+        <li><a href="{{url_for('sig.anaminese')}}">Ficha de Anaminese</a></li>
+        </ul>
+        </li>
+        <!-- Fim submenu -->
+        <!-- Submenu -->
+        <li><a href="#" >Vendas</a> 
+        <ul> 
+        <li><a href="{{url_for('sig.vendas_servicos')}}">Serviços</a></li>
+        <li><a href="{{url_for('sig.vendas_produtos')}}">Produtos</a></li>
+        </ul>
+        </li>
+        <!-- Fim submenu -->
+        <li><a href="{{url_for('sig.compras')}}">Compras</a></li>
+        <li><a href="{{url_for('sig.estoque')}}">Estoque</a></li>
+        <li><a href="{{url_for('sig.pessoal')}}">Pessoal</a></li>
+        <li><a href="#">Financeiro</a>
+        <ul>              
+            <li><a href="{{url_for('sig.depreciacao')}}">Gestão de Depreciacao</a></li>
+            <li><a href="{{url_for('sig.insumos')}}">Gestão de Materiais</a></li>
+            <li><a href="{{url_for('sig.impostos')}}">Gestão de Impostos</a></li>
+            <li><a href="{{url_for('sig.margemlucro')}}">Gestão de Margem de Lucro</a></li>
+            <li><a href="{{url_for('sig.markup')}}">Gestão Markup</a></li>
+            <li><a href="{{url_for('sig.relatorioMEI')}}">Gestão MEI</a></li>
+            <li><a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank">Gestão MEI - Acesso DASN-SIMEI</a></li>
+           
+           
+        </ul>
+        </li>
+        
+        <li><a href="#">Fiscal</a> 
+            <ul>
+                <li><a href="{{url_for('sig.nota')}}">Emiissão de Notas</a></li>  
+                <li><a href="https://www.nfse.gov.br/EmissorNacional/Login?ReturnUrl=%2fEmissorNacional" target="_blank">NFS-e - Contribuinte</a></li>       
+            </ul>
+        </li>                                  
+        </ul>       
+    </nav>
+    <h1>Ficha de Anaminese.</h1>
+    <form action="" method="POST">
+        <div class="form">
+            <!-- Formulário -->
+            <fieldset class="form">
+                <legend>Dados Pessoais</legend>
+                {{form4.nome.label}}
+                {{form4.nome}}
+                {{form4.nascimento.label}}
+                {{form4.nascimento}}
+                {{form4.profissao.label}}
+                {{form4.profissao}}
+                {{form4.endereco.label}}
+                {{form4.endereco}}
+                {{form4.telefone.label}}
+                {{form4.telefone}}
+                {{form4.indicacao.label}}
+                {{form4.indicacao}}
+                {{form4.queixa_principal.label}}
+                {{form4.queixa_principal}}
+            </fieldset>
+            <br>
+
+            <fieldset class="form">
+                <legend>Estado Clinico</legend>
+                {{form4.alergia_medicamentos.label}}
+                {{form4.alergia_medicamentos}}
+                {{form4.alergia_medicamentos_quais}}
+                {{form4.alergia_aspirina.label}}
+                {{form4.alergia_aspirina}}
+                {{form4.alergia_aspirina_quais}}
+                {{form4.tratamentos_medicos.label}}
+                {{form4.tratamentos_medicos}}
+                {{form4.tratamentos_medicos_quais}}
+                {{form4.cirurgias.label}}
+                {{form4.cirurgias}}
+                {{form4.cirurgias_quais}}
+                {{form4.medicamentos.label}}
+                {{form4.medicamentos}}
+                {{form4.medicamentos_quais}}
+                {{form4.proteses.label}}
+                {{form4.proteses}}
+                {{form4.proteses_quais}}
+                {{form4.gene.label}}
+                {{form4.gene}}
+                {{form4.gene_quais}}
+                {{form4.diabetes.label}}
+                {{form4.diabetes}}
+                {{form4.pressao.label}}
+                {{form4.pressao}}
+                {{form4.pressao_quais}}
+                {{form4.doenca_renal.label}}
+                {{form4.doenca_renal}}
+                {{form4.epilepsia.label}}
+                {{form4.epilepsia}}
+                {{form4.epilepsia_quais}}
+                {{form4.menstruacao.label}}
+                {{form4.menstruacao}}
+                {{form4.menstruacao_quais}}
+                {{form4.gestante.label}}
+                {{form4.gestante}}
+                {{form4.gestante_quais}}
+                {{form4.tratamento_estetico.label}}
+                {{form4.tratamento_estetico}}
+                {{form4.tratamento_estetico_quais}}
+                {{form4.cosmeticos.label}}
+                {{form4.cosmeticos}}
+                {{form4.cosmeticos_quais}}
+                {{form4.filtro_solar.label}}
+                {{form4.filtro_solar}}
+                {{form4.filtro_solar_quais}}
+                {{form4.bronzeamento.label}}
+                {{form4.bronzeamento}}
+                {{form4.bronzeamento_quais}}
+                {{form4.obs.label}}
+                {{form4.obs}}
+            </fieldset>
+            <fieldset class="form">
+                <legend> TERMO DE RESPONSABILIDADE:
+                </legend>
+                <h3>"As declarações citadas são expressões da verdade isentando à esteticista a responsabilidade por
+                    informações omitidas ou inexatas."</h3>
+                <br><br>
+                {{form4.assinatura.label}}
+                {{form4.assinatura}}
+                {{form4.documento.label}}
+                {{form4.documento}}
+                {{form4.data.label}}
+                {{form4.data}}
+            </fieldset>
+            <div class="form">
+                {{form4.enviar.label}}
+                {{form4.enviar}}
+            </div>
+        </div>
+
+
+    </form>
+
+ 
+</body>
+
+</html>

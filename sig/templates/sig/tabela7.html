@@ -1,0 +1,58 @@
+ <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">   
+      <link rel="stylesheet" href='/static/css/style.css'>
+      <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
+    <title>tabela</title>
+</head>
+<body>
+    <div class="table">
+        <table >
+    
+    
+            <!-- coluna   -->
+            <thead>
+                <!-- Uma passada de for in range reformata a saida de sql. -->
+                {%for n in range(0,1):%}
+                <tr>
+                    {% for i in get[1]:%}
+                    <th>{{ i[n] }}</th>
+                    {%endfor%}
+                </tr>
+                {%endfor%}
+    
+            </thead>
+    
+            <!-- linha -->
+    
+            <tbody>
+    
+                {% for v in get[0]:%}
+    
+                <tr>
+                    {%for c in range(0,9)%}
+    
+    
+                    <td>{{v[c]}}</td>
+    
+    
+                    {%endfor%}
+    
+    
+                </tr>
+                {%endfor%}
+    
+    
+    
+    
+            </tbody>
+    
+    
+        </table>
+    
+    </div>
+    </body>
+    
+    </html>
