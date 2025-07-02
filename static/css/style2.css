@@ -1,0 +1,502 @@
+/* ==========================================================================
+   1. ESTILOS GLOBAIS E VARIÁVEIS DE COR
+   ========================================================================== */
+
+/* Usar variáveis torna a customização de cores muito mais fácil */
+:root {
+    --cor-principal: #8a4baf; /* Um tom de roxo elegante */
+    --cor-texto: #333;
+    --cor-texto-claro: #f8f9fa;
+    --cor-fundo: #fdfcff;
+    --cor-borda: #e0e0e0;
+    --sombra-suave: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --fonte-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Reset básico e configuração da fonte */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    font-size: 16px;
+}
+
+body {
+    font-family: var(--fonte-principal);
+    line-height: 1.6;
+    background-color: var(--cor-fundo);
+    color: var(--cor-texto);
+}
+
+a {
+    color: var(--cor-principal);
+    text-decoration: none;
+    transition: color 0.2s ease-in-out;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+h1, h2, h3 {
+    line-height: 1.2;
+    margin-bottom: 1rem;
+    color: #4a148c; /* Um roxo mais escuro para títulos */
+}
+
+/* ==========================================================================
+   2. LAYOUT PRINCIPAL E CONTAINER
+   ========================================================================== */
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1rem 2rem;
+}
+
+.main-content {
+    padding: 2rem 0;
+}
+
+/* ==========================================================================
+   3. CABEÇALHO (JÁ INCLUI O MENU SANDUÍCHE)
+   ========================================================================== */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 2rem;
+    background-color: #fff;
+    border-bottom: 1px solid var(--cor-borda);
+    box-shadow: var(--sombra-suave);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+
+
+/* ==========================================================================
+   4. SEÇÕES DA PÁGINA HOME
+   ========================================================================== */
+
+.intro-section {
+    text-align: center;
+    padding: 2rem 0;
+    border-bottom: 1px solid var(--cor-borda);
+    margin-bottom: 2rem;
+}
+
+.intro-section h2 {
+    font-size: 2.5rem;
+}
+
+.intro-section p {
+    font-size: 1.1rem;
+    color: #555;
+}
+
+.section-title {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Mensagens Flash (feedback para o usuário) */
+.flash-messages {
+    margin-bottom: 1.5rem;
+}
+.alert {
+    padding: 1rem;
+    border-radius: 5px;
+    color: #fff;
+    margin-bottom: 1rem;
+}
+.alert-success { background-color: #28a745; }
+.alert-danger { background-color: #dc3545; }
+.alert-warning { background-color: #ffc107; color: #333; }
+.alert-info { background-color: #17a2b8; }
+
+
+/* ==========================================================================
+   5. CARTÕES DE POSTAGEM (A GRANDE MELHORIA VISUAL)
+   ========================================================================== */
+
+.post-list {
+    display: grid;
+    gap: 2rem; /* Espaçamento entre os cartões */
+}
+
+.post-card {
+    background-color: #fff;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    box-shadow: var(--sombra-suave);
+    overflow: hidden; /* Garante que a imagem não vaze das bordas arredondadas */
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.post-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+}
+
+.post-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.5rem;
+    background-color: #f7f2fa; /* Fundo levemente roxo */
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.post-image {
+    width: 100%;
+    height: auto;
+    max-height: 400px;
+    object-fit: cover; /* Garante que a imagem cubra a área sem distorcer */
+}
+
+.post-body {
+    padding: 1.5rem;
+}
+
+.post-comment {
+    background-color: #f8f9fa;
+    padding: 1.5rem;
+    border-top: 1px solid var(--cor-borda);
+}
+
+.comment-text {
+    font-style: italic;
+    color: #555;
+    border-left: 4px solid var(--cor-principal);
+    padding-left: 1rem;
+    margin: 0;
+}
+
+.comment-meta {
+    font-size: 0.85rem;
+    color: #777;
+    margin-top: 1rem;
+    text-align: right;
+}
+
+.no-posts {
+    text-align: center;
+    padding: 2rem;
+    color: #777;
+}
+
+/* ==========================================================================
+   6. FORMULÁRIO DE COMENTÁRIOS
+   ========================================================================== */
+
+.comment-form-section {
+    margin-top: 3rem;
+    padding: 2rem;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: var(--sombra-suave);
+}
+
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.form-group textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid var(--cor-borda);
+    border-radius: 5px;
+    font-family: var(--fonte-principal);
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--cor-principal);
+    box-shadow: 0 0 0 3px rgba(138, 75, 175, 0.2);
+}
+
+.btn-submit {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    background-color: var(--cor-principal);
+    color: var(--cor-texto-claro);
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.btn-submit:hover {
+    background-color: #6a1b9a; /* Um roxo mais escuro no hover */
+    transform: scale(1.05);
+    text-decoration: none;
+}
+
+/* ==========================================================================
+   7. RODAPÉ
+   ========================================================================== */
+
+.footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+    gap: 1rem;
+    padding: 2rem;
+    margin-top: 2rem;
+    background-color: #333;
+    color: var(--cor-texto-claro);
+}
+
+.footer-social a {
+    margin-left: 1rem;
+}
+
+.footer-social img {
+    width: 24px;
+    height: 24px;
+    transition: transform 0.2s;
+}
+
+.footer-social img:hover {
+    transform: scale(1.2);
+}
+
+/* ==========================================================================
+   8. RESPONSIVIDADE (PARA CELULARES)
+   ========================================================================== */
+
+@media (max-width: 768px) {
+    html {
+        font-size: 15px;
+    }
+
+    .container {
+        padding: 1rem;
+    }
+
+    .header {
+        padding: 1rem;
+    }
+
+    /* Mostra o botão sanduíche e ajusta o menu */
+    .sandwich-button {
+        display: block;
+    }
+
+    .main-nav {
+        /* ... seus estilos de menu mobile aqui ... */
+        position: fixed;
+        top: 0;
+        left: -100%; /* Esconde o menu fora da tela */
+        width: 70%; /* Largura do menu lateral */
+        height: 100%;
+        background-color: #4a148c; /* Cor de fundo do menu mobile */
+        padding-top: 60px;
+        transition: left 0.3s ease-in-out;
+        z-index: 1000;
+    }
+
+    .main-nav.is-active {
+        left: 0; /* Mostra o menu */
+    }
+
+    .main-nav ul {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0 1rem;
+    }
+
+    .main-nav ul li {
+        width: 100%;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .main-nav ul li:last-child {
+        border-bottom: none;
+    }
+
+    .main-nav ul a {
+        color: var(--cor-texto-claro);
+        padding: 0.8rem 0.5rem;
+        display: block;
+    }
+
+    .main-nav ul a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        text-decoration: none;
+    }
+
+    .main-nav ul {
+        display: none; /* Esconde o menu desktop */
+    }
+
+    .intro-section h2 {
+        font-size: 2rem;
+    }
+
+    .footer {
+        flex-direction: column; /* Empilha os itens do rodapé */
+        text-align: center;
+    }
+}
+
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  border: 1px solid var(--cor-borda);
+  padding: 0.75rem;
+  text-align: left;
+  word-break: break-word;
+}
+
+.table th {
+  background-color: #f2f2f2;
+  color: var(--cor-texto);
+  font-weight: bold;
+}
+
+/* --- Dashboard --- */
+.dashboard-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.dashboard-header h2 {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 900px;
+}
+
+.dashboard-card {
+  background-color: var(--cor-fundo-claro);
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--cor-primaria);
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.card-link {
+  color: var(--cor-primaria);
+  text-decoration: none;
+  font-weight: bold;
+  align-self: flex-start;
+  transition: transform 0.2s ease;
+}
+
+.card-link:hover {
+  text-decoration: underline;
+  transform: translateX(4px);
+}
+
+/* --- Utilitários --- */
+.search-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.search-form .form-group {
+  flex-grow: 1;
+  margin-bottom: 0;
+}
+
+.actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-action {
+  display: inline-block;
+  padding: 6px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.btn-action img {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.btn-delete:hover {
+  background-color: #ffdddd;
+}
+
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  width: 100%;
+  max-width: 800px;
+}
+
+.qrcode {
+  width: 200px;
+  height: 200px;
+  margin: 20px auto;
+  padding: 15px;
+  background-color: var(--cor-fundo-claro);
+  border: 1px solid var(--cor-borda);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.grafico {
+  border: 1px solid var(--cor-fundo-escuro);
+  border-radius: 10px;
+  display: block;
+  margin: 1rem auto;
+  max-width: 100%;
+  height: auto;
+}

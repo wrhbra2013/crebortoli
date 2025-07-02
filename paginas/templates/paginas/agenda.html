@@ -1,25 +1,5 @@
-<!DOCTYPE html>
-<html>
-<html lang=en>
-
-<head>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
-</head>
-
-<body>
-    <div class="header">
-        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
-        <h1>Estetic Cre Bortoli Depil Site</h1>
-    </div>
-    <!-- Novo menu -->
-    <nav>       
-        <ul class="menu">
-            <li><a href="{{url_for('paginas.home')}}">Home</a></li>
-            <li><a href="{{url_for('paginas.admin')}}">Intranet</a></li>     
-                     
-        </ul>       
-    </nav>
+ {% include 'paginas/_home_header.html' %}
+ 
    
     <div class="container">
         <h1> Agenda de Horários</h1>
@@ -69,16 +49,4 @@
         
     </div>
    
-
-    <footer class="footer">
-        
-            <a href="https://www.instagram.com/crebortoli/?hl=pt">instagram</a> 
-            <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Cre%20Bortoli">Whatsapp</a>
-        
-        </footer>
-    
-        <script type="text/javascript" src="/static/js/acessibilidade.js"></script>
-
-</body>
-
-</html>
+ {% include 'sig/_footer.html' %}

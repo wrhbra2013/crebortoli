@@ -1,0 +1,38 @@
+  <!DOCTYPE html>
+  <html lang="pt-BR">
+  
+  <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>Espaço Cre Bortoli</title>
+      <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.ico') }}" />
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  </head>
+  
+  <body>
+    <!-- /paginas/templates/paginas/_home_header.html (Está correto!) -->
+    <header class="header">
+        <h1>Espaço Cre Bortoli</h1>
+    
+        <!-- Este botão será controlado pelo JavaScript -->
+        <button class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
+            <span class="sandwich-icon"></span>
+        </button>
+    
+        <!-- Este menu será controlado pelo JavaScript e CSS -->
+        <nav class="main-nav">
+            <ul class="menu">
+                <li><a href="{{ url_for('paginas.home') }}">Home</a></li>
+                <li><a href="{{ url_for('paginas.agenda') }}">Agenda</a></li>
+                <li><a href="{{ url_for('sig.login') }}">Intranet</a></li>
+            </ul>
+        </nav>
+        
+    </header>
+    
+ 
+      <!-- O conteúdo da home.html será inserido aqui pelo 'include' -->
+      
+      
+
+ 

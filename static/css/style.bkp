@@ -589,43 +589,6 @@ body {
 
 .sandwich-icon {
     /* ... estilos para as 3 barrinhas do ícone ... */
-    width: 24px;
-    height: 2px;
-    background-color: var(--cor-primaria);
-    transition: background-color 0.3s ease;
-}
-
-.sandwich-icon::before,
-.sandwich-icon::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background-color: var(--cor-primaria);
-    transition: transform 0.3s ease;
-    left: 0;
-}
-
-.sandwich-icon::before {
-    top: -8px;
-}
-
-.sandwich-icon::after {
-    bottom: -8px;
-}
-
-/* Animação do ícone para 'X' */
-.sandwich-button.is-active .sandwich-icon {
-    background-color: transparent;
-}
-
-.sandwich-button.is-active .sandwich-icon::before {
-    transform: translateY(8px) rotate(45deg);
-}
-
-.sandwich-button.is-active .sandwich-icon::after {
-    transform: translateY(-8px) rotate(-45deg);
-    
 }
 
 
@@ -639,7 +602,7 @@ body {
 
     /* Esconde o menu de navegação */
     .main-nav {
-        position: absolute; /* Posição fixa para cobrir a tela */
+        position: fixed; /* Posição fixa para cobrir a tela */
         top: 0;
         left: 0;
         width: 80%; /* Ocupa 80% da largura da tela */

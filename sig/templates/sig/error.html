@@ -1,18 +1,16 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href='/static/css/style.css'>
-    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
-    <title></title>
-</head>
-<body>
-    <div class="form">
-        <h1>SIG V.0.1</h1>
-        <h1> Resultado não encontrado ou inexistente.</h1>
-       <h2>{{e}}</h2>
-    </div>
-   
-</body>
-</html>
+ {% include 'sig/_header.html' %}
+ 
+ <main class="container">
+     <div class="error-page">
+         <h1>Oops! Algo deu errado.</h1>
+         <p>Resultado não encontrado ou inexistente.</p>
+         {# A mensagem de erro 'e' só deve ser exibida em modo de desenvolvimento #}
+         {% if e %}
+             <p class="error-details"><strong>Detalhe técnico:</strong> {{ e }}</p>
+         {% endif %}
+         <a href="{{ url_for('paginas.home') }}" class="btn-submit">Voltar para a Home</a>
+     </div>
+ </main>
+ 
+ {% include 'sig/_footer.html' %}
+ 

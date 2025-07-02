@@ -1,257 +1,284 @@
 import sqlite3 as sql
-#Gerando conexão e o arquivo de banco de dados.
-connection  = sql.connect("livro_caixa.db", check_same_thread=False)
 
-#Ativando a conexão
-cur = connection.cursor()
+# Database file name
+DB_FILE = "livro_caixa.db"
 
-#Criar tabelas
+def create_tables():
+    """Creates database tables if they don't exist."""
+    with sql.connect(DB_FILE, check_same_thread=False) as connection:
+        cur = connection.cursor()
 
-cur.execute('''
-CREATE TABLE IF NOT EXISTS post(
-    id integer PRIMARY KEY AUTOINCREMENT,
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP),
-    imagem text,
-    tema text,
-    post text(10000),
-    comentario text(10000)
-);''')
-cur.execute('''
-CREATE TABLE IF NOT EXISTS enquete(
-    id integer PRIMARY KEY AUTOINCREMENT,
-    resposta text,
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)  
+        # Helper function for executing SQL
+        def execute_sql(sql_statement):
+            cur.execute(sql_statement)
 
-);''')
+        # Table creation statements with improved formatting and comments
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS post (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP),
+                imagem TEXT,
+                tema TEXT,
+                post TEXT(10000),
+                comentario TEXT(10000)
+            );
+        """)
 
-cur.execute('''
-CREATE TABLE IF NOT EXISTS clientes(
-    id integer PRIMARY KEY AUTOINCREMENT,
-    nome text,
-    cpf text,
-    email text(60),
-    telefone text(20),
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)   
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS enquete (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                resposta TEXT,
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)  
+            );
+        """)
 
-cur.execute('''CREATE TABLE IF NOT EXISTS anaminese(
-    id integer PRIMARY KEY AUTOINCREMENT,
-    nome text,
-    nascimento date,
-    profissao text,
-    endereco text,
-    telefone integer,
-    indicacao text,
-    queixa_principal text,
-    alergia_medicamentos text,
-    alergia_aspirina text,
-    tratamentos_medicos text,
-    cirurgia text,
-    uso_medicamentos text,
-    proteses text,
-    doencas_familiares text,
-    diabetes text,
-    pressao text,
-    doenca_renal text,
-    epilepsia text,
-    menstruacao text,
-    gestacao text,
-    tratamento_estetico text,
-    uso_cosmeticos text,
-    filtro_solar text,
-    bronzeamento text,
-    observacoes text,
-    assinatura text,
-    cpf integer,
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)
-); ''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS clientes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT,
+                cpf TEXT,
+                email TEXT(60),
+                telefone TEXT(20),
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)   
+            );
+        """)
 
- 
-cur.execute('''CREATE TABLE  IF NOT EXISTS agenda(   
-    Cliente text,
-    Dia DATE,
-    Hora TIME,
-    Atendimento text(50),
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP) PRIMARY KEY   
-    );''')
-cur.execute('''
-CREATE TABLE IF NOT EXISTS compras (
-    id integer PRIMARY KEY AUTOINCREMENT,
-    Produto text,
-    Marca text,
-    Quantidade int,
-    Unidade text,
-    Validade DATE,
-    Preco_Unitario real,
-    Custo_Estoque real generated always as (Preco_Unitario * Quantidade) stored,
-    Total_Compras real,
-    Media_Compras real, 
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)  
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS anaminese (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT,
+                nascimento DATE,
+                profissao TEXT,
+                endereco TEXT,
+                telefone INTEGER,
+                indicacao TEXT,
+                queixa_principal TEXT,
+                alergia_medicamentos TEXT,
+                alergia_aspirina TEXT,
+                tratamentos_medicos TEXT,
+                cirurgia TEXT,
+                uso_medicamentos TEXT,
+                proteses TEXT,
+                doencas_familiares TEXT,
+                diabetes TEXT,
+                pressao TEXT,
+                doenca_renal TEXT,
+                epilepsia TEXT,
+                menstruacao TEXT,
+                gestacao TEXT,
+                tratamento_estetico TEXT,
+                uso_cosmeticos TEXT,
+                filtro_solar TEXT,
+                bronzeamento TEXT,
+                observacoes TEXT,
+                assinatura TEXT,
+                cpf INTEGER,
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            ); 
+        """)
 
-cur.execute('''
-CREATE TABLE IF NOT EXISTS vendas_produtos (
-    id integer PRIMARY KEY AUTOINCREMENT,
-    Cliente text,
-    Produto text,
-    Marca text,
-    Validade date, 
-    Quantidade integer,    
-    Preco_aVista real,
-    Valor_Total real generated always as (preco_aVista * Quantidade) stored,
-    Desconto integer,  
-    Preco_Final real generated always as (Valor_Total - ((Valor_Total * Desconto) / 100) )stored,  
-    Qtde_Parcelas integer,
-    Preco_Parcelado real generated always as (Preco_Final / Qtde_Parcelas) stored, 
-    Total_Vendas_Produtos real,
-    Media_Vendas_Produtos real, 
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP) 
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS agenda (   
+                Cliente TEXT,
+                Dia DATE,
+                Hora TIME,
+                Atendimento TEXT(50),
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP),
+                PRIMARY KEY (Ultima_Atualizacao)  -- Assuming this is intended as the primary key
+            );
+        """)
 
-cur.execute('''
-CREATE TABLE IF NOT EXISTS vendas_servicos (
-    id integer PRIMARY KEY AUTOINCREMENT,
-    Cliente text,
-    Servico text,
-    Tempo_Minutos int,
-    Desconto int,
-    Preco real,
-    Preco_Final real generated always as (preco - (preco * desconto / 100)) stored,   
-    Observacoes text,
-    Total_Vendas_Servicos real,
-    Media_Vendas_Servicos real, 
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP) 
-); 
-''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS compras (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Produto TEXT,
+                Marca TEXT,
+                Quantidade INTEGER,
+                Unidade TEXT,
+                Validade DATE,
+                Preco_Unitario REAL,
+                Custo_Estoque REAL GENERATED ALWAYS AS (Preco_Unitario * Quantidade) STORED,
+                Total_Compras REAL,
+                Media_Compras REAL, 
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)  
+            );
+        """)
 
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS vendas_produtos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Cliente TEXT,
+                Produto TEXT,
+                Marca TEXT,
+                Validade DATE, 
+                Quantidade INTEGER,    
+                Preco_aVista REAL,
+                Valor_Total REAL GENERATED ALWAYS AS (preco_aVista * Quantidade) STORED,
+                Desconto INTEGER,  
+                Preco_Final REAL GENERATED ALWAYS AS (Valor_Total - ((Valor_Total * Desconto) / 100) )STORED,  
+                Qtde_Parcelas INTEGER,
+                Preco_Parcelado REAL GENERATED ALWAYS AS (Preco_Final / Qtde_Parcelas) STORED, 
+                Total_Vendas_Produtos REAL,
+                Media_Vendas_Produtos REAL, 
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP) 
+            );
+        """)
 
-cur.execute('''CREATE TABLE IF NOT EXISTS colaboradores (
-    id integer PRIMARY KEY AUTOINCREMENT,
-    Nome text,   
-    Endereco text,
-    Cidade text,
-    Email text ,
-    Telefone integer,    
-    Funcao text,
-    Regime_Empregaticio text,
-    Salario real,
-    INSS real generated always as( salario * 0.08) stored,
-    Total_INSS real,
-    FGTS real generated always as (salario * 0.075) stored,
-    Total_FGTS real,
-    Total_Contribucoes real generated always as (Total_INSS + Total_FGTS) stored,        
-    Media_Contribuicoes real,
-    observacoes text,
-    Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)
-     
-             
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS vendas_servicos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Cliente TEXT,
+                Servico TEXT,
+                Tempo_Minutos INTEGER,
+                Desconto INTEGER,
+                Preco REAL,
+                Preco_Final REAL GENERATED ALWAYS AS (preco - (preco * desconto / 100)) STORED,   
+                Observacoes TEXT,
+                Total_Vendas_Servicos REAL,
+                Media_Vendas_Servicos REAL, 
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP) 
+            ); 
+        """)
 
-cur.execute(''' CREATE TABLE IF NOT EXISTS relatorioMEI (
-            id integer PRIMARY KEY AUTOINCREMENT,
-            Apuracao DATETIME,
-            CNPJ integer,
-            Razao_Social text,
-            Produto_Dispensa_NF real,
-            Produto_Emissao_NF real,
-            Total_Receita_Produtos real generated alaways as (Produto_Dispensa_NF + Produto_Emissao_NF) stored,
-            Servico_Dispensa_NF real,
-            Servico_Emissao_NF real,
-            Total_Receita_Servicos real generated always as (Servico_Dispensa_NF + Servico_Emissao_NF) stored,
-            Total_Geral_Receitas real generated always as (Total_Receita_Produtos + Total_Receita_Servicos) stored,
-            Local text,
-            Data DATETIME DEFAULT (CURRENT_TIMESTAMP),
-            Assinatura text
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS colaboradores (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Nome TEXT,   
+                Endereco TEXT,
+                Cidade TEXT,
+                Email TEXT,
+                Telefone INTEGER,    
+                Funcao TEXT,
+                Regime_Empregaticio TEXT,
+                Salario REAL,
+                INSS REAL GENERATED ALWAYS AS (salario * 0.08) STORED,
+                Total_INSS REAL,
+                FGTS REAL GENERATED ALWAYS AS (salario * 0.075) STORED,
+                Total_FGTS REAL,
+                Total_Contribuicoes REAL GENERATED ALWAYS AS (Total_INSS + Total_FGTS) STORED,        
+                Media_Contribuicoes REAL,
+                observacoes TEXT,
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)
+            );
+        """)
 
-cur.execute(''' CREATE TABLE IF NOT EXISTS impostos (
-            id integer PRIMARY KEY AUTOINCREMENT, 
-            aluguel real,
-            IPTU real, 
-            luz real,
-            agua real, 
-            internet real,
-            telefone real,  
-            aluguel_Maquina_Cartao real,
-            MEI real,
-            Total_Taxas_Impostos real generated always as (aluguel + IPTU + luz + agua + internet + telefone  + aluguel_Maquina_Cartao + MEI) stored,        
-            descartaveis real,
-            novos_produtos real,
-            equipamentos real,
-            Total_Manutencao real generated always as (descartaveis + novos_produtos + equipamentos) stored,
-            marketing real,
-            prolabore real,
-            terceiros real, 
-            inss real,
-            fgts real,
-            depreciacao real,
-            reserva real,
-            Total_Gestao real generated always as (marketing + prolabore + terceiros + inss + fgts + depreciacao + reserva) stored,
-            Total_Custos_Fixos real generated always as (Total_Taxas_Impostos + Total_Manutencao + Total_Gestao ) stored,
-            Media_Custos_Fixos real,
-            Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)           
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS relatorioMEI (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Apuracao DATETIME,
+                CNPJ INTEGER,
+                Razao_Social TEXT,
+                Produto_Dispensa_NF REAL,
+                Produto_Emissao_NF REAL,
+                Total_Receita_Produtos REAL GENERATED ALWAYS AS (Produto_Dispensa_NF + Produto_Emissao_NF) STORED,
+                Servico_Dispensa_NF REAL,
+                Servico_Emissao_NF REAL,
+                Total_Receita_Servicos REAL GENERATED ALWAYS AS (Servico_Dispensa_NF + Servico_Emissao_NF) STORED,
+                Total_Geral_Receitas REAL GENERATED ALWAYS AS (Total_Receita_Produtos + Total_Receita_Servicos) STORED,
+                Local TEXT,
+                Data DATETIME DEFAULT (CURRENT_TIMESTAMP),
+                Assinatura TEXT
+            );
+        """)
 
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS impostos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, 
+                aluguel REAL,
+                IPTU REAL, 
+                luz REAL,
+                agua REAL, 
+                internet REAL,
+                telefone REAL,  
+                aluguel_Maquina_Cartao REAL,
+                MEI REAL,
+                Total_Taxas_Impostos REAL GENERATED ALWAYS AS (aluguel + IPTU + luz + agua + internet + telefone  + aluguel_Maquina_Cartao + MEI) STORED,        
+                descartaveis REAL,
+                novos_produtos REAL,
+                equipamentos REAL,
+                Total_Manutencao REAL GENERATED ALWAYS AS (descartaveis + novos_produtos + equipamentos) STORED,
+                marketing REAL,
+                prolabore REAL,
+                terceiros REAL, 
+                inss REAL,
+                fgts REAL,
+                depreciacao REAL,
+                reserva REAL,
+                Total_Gestao REAL GENERATED ALWAYS AS (marketing + prolabore + terceiros + inss + fgts + depreciacao + reserva) STORED,
+                Total_Custos_Fixos REAL GENERATED ALWAYS AS (Total_Taxas_Impostos + Total_Manutencao + Total_Gestao ) STORED,
+                Media_Custos_Fixos REAL,
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)           
+            );
+        """)
 
-cur.execute(''' CREATE TABLE IF NOT EXISTS insumos(
-            id integer PRIMARY KEY AUTOINCREMENT,
-            Tipo_Servico text,
-            Nome_Insumo text,
-            Quantidade_Fechada integer,
-            unidade_total text,
-            Preco_Fechado real,
-            Quantidade_Fracionada integer,
-            unidade_fracionada text,           
-            Quantidade_Atendimento real generated always as (Quantidade_Fechada / Quantidade_Fracionada) stored,
-            Custo_Secao real generated always as (Preco_Fechado / Quantidade_Atendimento) stored,
-            Total_Insumos real, 
-            Media_Insumos real, 
-            Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP) 
-            
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS insumos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Tipo_Servico TEXT,
+                Nome_Insumo TEXT,
+                Quantidade_Fechada INTEGER,
+                unidade_total TEXT,
+                Preco_Fechado REAL,
+                Quantidade_Fracionada INTEGER,
+                unidade_fracionada TEXT,           
+                Quantidade_Atendimento REAL GENERATED ALWAYS AS (Quantidade_Fechada / Quantidade_Fracionada) STORED,
+                Custo_Secao REAL GENERATED ALWAYS AS (Preco_Fechado / Quantidade_Atendimento) STORED,
+                Total_Insumos REAL, 
+                Media_Insumos REAL, 
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)             
+            );
+        """)
 
-cur.execute('''CREATE TABLE IF NOT EXISTS depreciacao(
-            id integer PRIMARY KEY AUTOINCREMENT,
-            Objeto text,
-            Preco_Custo real,
-            Anos_Uso integer,            
-            Valor_Depreciacao real generated always as (Preco_Custo / (Anos_Uso * 12)) stored,
-            Total_Depreciacao real,
-            Media_Depreciacao real, 
-            Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)          
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS depreciacao (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Objeto TEXT,
+                Preco_Custo REAL,
+                Anos_Uso INTEGER,            
+                Valor_Depreciacao REAL GENERATED ALWAYS AS (Preco_Custo / (Anos_Uso * 12)) STORED,
+                Total_Depreciacao REAL,
+                Media_Depreciacao REAL, 
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)          
+            );
+        """)
 
-cur.execute('''CREATE TABLE IF NOT EXISTS margem(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            Tipo_Servico text,
-            Preco_Ofertado real,
-            Prolabore real,
-            Prolabore_hora  real generated always as (Prolabore/ 160) stored,
-            Total_Insumos real,        
-            Custo_Variavel real generated always as (Total_Insumos + Prolabore_hora) stored,           
-            Custo_Fixo real,                       
-            Pagar_Custo_Fixo real generated always as (Preco_Ofertado - Custo_Variavel) stored,   
-            Projecao_Atendimentos real generated always as (Custo_Fixo / Pagar_Custo_Fixo) stored,
-            Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)       
-);''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS margem (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Tipo_Servico TEXT,
+                Preco_Ofertado REAL,
+                Prolabore REAL,
+                Prolabore_hora REAL GENERATED ALWAYS AS (Prolabore/ 160) STORED,
+                Total_Insumos REAL,        
+                Custo_Variavel REAL GENERATED ALWAYS AS (Total_Insumos + Prolabore_hora) STORED,           
+                Custo_Fixo REAL,                       
+                Pagar_Custo_Fixo REAL GENERATED ALWAYS AS (Preco_Ofertado - Custo_Variavel) STORED,   
+                Projecao_Atendimentos REAL GENERATED ALWAYS AS (Custo_Fixo / Pagar_Custo_Fixo) STORED,
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)       
+            );
+        """)
 
-cur.execute(''' CREATE TABLE IF NOT EXISTS markup(
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            Tipo_Servico text,
-            Preco_Ofertado real,
-            Impostos real,
-            Depreciacao real, 
-            Vendas real,
-            Custo_Fixo real generated always as ((Impostos + Depreciacao) / Vendas) stored,
-            Insumos real,
-            Pessoal real,            
-            Taxa_Maq_Cartao real,        
-            Custo_Variavel real generated always as ((Insumos / (Insumos + Pessoal)) + (Pessoal / (Insumos + Pessoal)) + Taxa_Maq_Cartao) stored,
-            Margem_Lucro real,            
-            Indice_Markup real generated always as (1 / (1 - Custo_Fixo + Custo_Variavel + Margem_Lucro)) stored,
-            Preco_Justo real generated always as (Custo_Variavel * Indice_Markup) stored, 
-            Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)           
-); ''')
+        execute_sql("""
+            CREATE TABLE IF NOT EXISTS markup (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                Tipo_Servico TEXT,
+                Preco_Ofertado REAL,
+                Impostos REAL,
+                Depreciacao REAL, 
+                Vendas REAL,
+                Custo_Fixo REAL GENERATED ALWAYS AS ((Impostos + Depreciacao) / Vendas) STORED,
+                Insumos REAL,
+                Pessoal REAL,            
+                Taxa_Maq_Cartao REAL,        
+                Custo_Variavel REAL GENERATED ALWAYS AS ((Insumos / (Insumos + Pessoal)) + (Pessoal / (Insumos + Pessoal)) + Taxa_Maq_Cartao) STORED,
+                Margem_Lucro REAL,            
+                Indice_Markup REAL GENERATED ALWAYS AS (1 / (1 - Custo_Fixo + Custo_Variavel + Margem_Lucro)) STORED,
+                Preco_Justo REAL GENERATED ALWAYS AS (Custo_Variavel * Indice_Markup) STORED, 
+                Ultima_Atualizacao DATETIME DEFAULT (CURRENT_TIMESTAMP)           
+            ); 
+        """)
 
-print("Tabelas carregadas com SUCESSO!!!")
+        print("Base de Dados ATIVA!")
 
+# Initialize the database
+create_tables()

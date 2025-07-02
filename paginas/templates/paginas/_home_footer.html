@@ -1,0 +1,22 @@
+      <footer class="footer">
+         
+          <p>&copy; {{ "now"|date('%Y') }} Cre Bortoli. Todos os direitos reservados.</p>
+          
+          <div class="footer-social">
+              <a href="https://www.instagram.com/crebortoli/?hl=pt" target="_blank" rel="noopener noreferrer">
+                  <img src="{{ url_for('static', filename='css/image/insta.png') }}" alt="Instagram">
+              </a>
+              <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Cre%20Bortoli" target="_blank" rel="noopener noreferrer">
+                  <img src="{{ url_for('static', filename='css/image/whats.png') }}" alt="WhatsApp">
+              </a>
+          </div>
+      </footer>
+  
+      <!-- Scripts Carregados Corretamente com url_for -->
+      <script src="{{ url_for('static', filename='js/acessibilidade.js') }}"></script>
+      <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  
+  </body>
+  </html>
+ 

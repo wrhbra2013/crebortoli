@@ -1,45 +1,47 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href='/static/css/style.css'>
-    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
-    <title>Login</title>
-</head>
-<body>
-    <div class="header">
-        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
-        <h1>Estetic  Cre  Bortoli  Depil  Site</h1>
-        
-    </div>
-    <h1>SISTEMA INTEGRADO DE GESTÃO.SIG.v_0.1</h1>
-    <h1>login</h1>
-     <!-- Mensagem-->
-     {% for message in get_flashed_messages() %}
-     <h3 class="span">{{ message }}</h3>
-     {% endfor %}
-    
-    
-    <div class="qrcode">   
-      
-        <img class="imagem" src="/static/auth/password.png"
-                onerror="this.style.display = 'none';">
+{% extends "sig/_base.html" %}
 
-        <!-- Usando FlaskForms -->
-        <form action="" method="POST">
-        {{form.senha.label}}
-        {{form.senha}}
-        {{form.enviar()}}        
+{% block title %}Login - SIG{% endblock %}
+
+{% block content %}
+<div class="login-container">
+    <div class="login-box">        
+        <div class="header">
+            <h1>Espaço Cre Bortoli</h1>
+        </div>
+        
+        <h2>Sistema Integrado de Gestão</h2>
+        <p>Faça o login para continuar</p>
+
+        <!-- Mensagens de Feedback (Flash) com categorias -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="qrcode">   
+            <img class="imagem" src="{{ url_for('static', filename='auth/password.png') }}" 
+                 alt="QR Code de Autenticação"
+                 onerror="this.style.display = 'none';">
+        </div>
+
+        <!-- Formulário com WTForms, mais seguro e estilizado -->
+        <form method="POST" action="{{ url_for('sig.login') }}" class="login-form">
+            {{ form.hidden_tag() }} <!-- Essencial para proteção CSRF -->
+            
+            <div class="form-group">
+                {{ form.senha.label(class="form-label") }}
+                {{ form.senha(class="form-control", placeholder="Digite seu token de acesso") }}
+                {% for error in form.senha.errors %}
+                    <span class="text-danger">{{ error }}</span>
+                {% endfor %}
+            </div>
+            
+            {{ form.enviar(class="btn btn-primary") }}        
         </form>
 
-        <!-- Usando tags html comuns -->
-        <!-- <form action="" method="POST">
-        <label>Senha:</label>
-        <input type="password" id="valor" name="valor" required/>
-        <button type="submit" >OK</button>
-        </form> -->
-
     </div>
-</body>
-</html>
+</div>
+{% endblock %}

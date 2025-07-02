@@ -1,111 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href='/static/css/style.css'>
-    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
-    <title>Busca de Clientes</title>
-</head>
-
-<body>
-    <div class="header">
-        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
-        <h1> Espaço Cre  Bortoli </h1>
-        
-    </div>
-    <nav>       
-        <ul class="menu">
-        <li><a href="{{url_for('paginas.home')}}">Redes Sociais</a></li> 
-        <!-- Submenu -->
-        <li><a href="#" >Clientes</a> 
-        <ul>           
-        <li><a href="{{url_for('sig.postclientes')}}">Cadastro de Clientes</a></li>
-        <li><a href="{{url_for('sig.getclientes')}}">Busca de Clientes</a></li>
-        <li><a href="{{url_for('sig.anaminese')}}">Ficha de Anaminese</a></li>
-        </ul>
-        </li>
-        <!-- Fim submenu -->
-        <!-- Submenu -->
-        <li><a href="#" >Vendas</a> 
-        <ul> 
-        <li><a href="{{url_for('sig.vendas_servicos')}}">Serviços</a></li>
-        <li><a href="{{url_for('sig.vendas_produtos')}}">Produtos</a></li>
-        </ul>
-        </li>
-        <!-- Fim submenu -->
-        <li><a href="{{url_for('sig.compras')}}">Compras</a></li>
-        <li><a href="{{url_for('sig.estoque')}}">Estoque</a></li>
-        <li><a href="{{url_for('sig.pessoal')}}">Pessoal</a></li>
-        <li><a href="#">Financeiro</a>
-        <ul>              
-            <li><a href="{{url_for('sig.depreciacao')}}">Gestão de Depreciacao</a></li>
-            <li><a href="{{url_for('sig.insumos')}}">Gestão de Materiais</a></li>
-            <li><a href="{{url_for('sig.impostos')}}">Gestão de Impostos</a></li>
-            <li><a href="{{url_for('sig.margemlucro')}}">Gestão de Margem de Lucro</a></li>
-            <li><a href="{{url_for('sig.markup')}}">Gestão Markup</a></li>
-            <li><a href="{{url_for('sig.relatorioMEI')}}">Gestão MEI</a></li>
-            <li><a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank">Gestão MEI - Acesso DASN-SIMEI</a></li>
-           
-           
-        </ul>
-        </li>
-        
-        <li><a href="#">Fiscal</a> 
-            <ul>
-                <li><a href="{{url_for('sig.nota')}}">Emiissão de Notas</a></li>  
-                <li><a href="https://www.nfse.gov.br/EmissorNacional/Login?ReturnUrl=%2fEmissorNacional" target="_blank">NFS-e - Contribuinte</a></li>       
-            </ul>
-        </li>                                  
-        </ul>       
-    </nav>
-    <h1>Busca de Clientes.</h1>
-    <div class="container">
-        <form action="" method="POST" target="mydiv">
-            <!-- Pesquisa   -->
-            <div class="form">
-                {{form2.pesquisa_clientes}}
-                {{form2.enviar_clientes}}
-            </div>
-        </form>
-        <div class="table">
-            <table>
-                <!-- coluna   -->
-                <thead>
-                    <!-- Uma passada de for in range reformata a saida de sql. -->
-                    {%for n in range(0,1):%}
-                    <tr>
-                        {% for i in get[1]:%}
-                        <th>{{ i[n] }}</th>
-                        {%endfor%}
-                    </tr>
-                    {%endfor%}
-
-                </thead>
-                <!-- linha -->
-                <!-- A formatação da tabela depende da disposição dos loop for dentro das tags.          -->
-                <tbody>
-
-                    {% for v in get[0]:%}
-                    <tr>
-                        {%for c in range(0,7):%}
-                        <td>{{v[c]}}</td>
-
-                        {%endfor%}
-                         <!-- Deletar linha -->
-                    <td><a href="{{url_for('sig.delete',tabela=tab,id=v[0])}}"><img src="/static/icon/delete.png" /></a></td>   
-                    
-                    </tr>
-                   
-                    {%endfor%}
-                </tbody>
-            </table>
-        </div>
-
-
-    </div>
-
-</body>
-
-</html>
+ 
+ 
+     <!-- Incluindo o menu de navegação reutilizável -->
+     {% include 'sig/_header.html' %}
+ 
+     <main class="container">
+         <section class="page-header">
+             <h2>Busca de Clientes</h2>
+             <p>Encontre clientes cadastrados pelo nome ou CPF.</p>
+         </section>
+ 
+         <!-- Formulário de busca com estrutura aprimorada -->
+         <form class="form search-form" action="" method="POST">
+             <div class="form-group">
+                 <label for="pesquisa_clientes">Pesquisar:</label>
+                 <!-- Renderiza o campo de pesquisa do WTForms -->
+                 {{ form2.pesquisa_clientes(id="pesquisa_clientes", placeholder="Digite o nome ou CPF...") }}
+             </div>
+             <!-- Renderiza o botão de envio do WTForms -->
+             {{ form2.enviar_clientes(class="btn-submit") }}
+         </form>
+ 
+         <!-- Container para a tabela, permitindo rolagem em telas pequenas -->
+         <div class="table-container">
+             <table class="table">
+                 <thead>
+                     <tr>
+                         <!-- Loop simplificado para os cabeçalhos -->
+                         {% for header in get[1] %}
+                             <th>{{ header[0] }}</th>
+                         {% endfor %}
+                         <th>Ações</th> <!-- Coluna extra para ações como deletar/editar -->
+                     </tr>
+                 </thead>
+                 <tbody>
+                     <!-- Loop robusto para as linhas de dados -->
+                     {% for row in get[0] %}
+                     <tr>
+                         <!-- Itera sobre cada célula da linha, sem hardcoding -->
+                         {% for cell in row %}
+                             <td>{{ cell }}</td>
+                         {% endfor %}
+                         <td class="actions-cell">
+                             <!-- Botão de deletar mais acessível e estilizado -->
+                             <a href="{{ url_for('sig.delete', tabela=tab, id=row[0]) }}" class="btn-action btn-delete" title="Excluir Cliente">
+                                 <img src="{{ url_for('static', filename='icon/delete.png') }}" alt="Excluir">
+                             </a>
+                         </td>
+                     </tr>
+                     {% endfor %}
+                 </tbody>
+             </table>
+         </div>
+     </main>
+  {% include 'sig/_footer.html' %}
+     
+ 

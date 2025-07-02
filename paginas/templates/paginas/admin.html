@@ -1,100 +1,84 @@
-<!DOCTYPE HTML>
-<html>
-<html lang=en>
-    <head>
-        <link rel="stylesheet" href="/static/css/style.css">        
-    </head>
-<body>
-    <div>
-        <h1>
-            Area Exclusiva da Administradora.
-        </h1>
-    </div>
-    <div class="header">
-        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
-        <h1>Estetic Cre Bortoli Depil Site</h1>
-    </div>
-
-    
-    <div class="topnav">
-        <a href="{{url_for('paginas.agenda')}}">Agenda</a>
-        <a href="{{url_for('paginas.home')}}">Home</a>        
-    </div>
-    
-    
-    {% for message in get_flashed_messages() %}
-     <h2>{{ message }}</h2>
-     {% endfor %}
-
-     <div class="post"> 
-        <h1>Publicações</h1>       
-       <form action="" method="POST" enctype="multipart/form-data">
-            <div class="form">
-                <label>Imagem</label>
-                <input type="file" id="imagem" name="imagem" />
-            </div>
-
-            {% if filename %}
-            <div class="form">
-                <img src="{{url_for('paginas/display',filename=filename)}}" value="{{post['imagem']}}">
-            </div>
-            {%endif%}
-            <div class="form">
-                <label>Tema</label>
-                <input type="text" id="tema" name="tema" value="{{post['tema']}}"/>
-            </div>
-
-            <div class="form">
-            <label>Postagem</label>
-            <textarea id="post" name="post" required>{{post['post']}}</textarea>
-        </div>
-        <hr>
-        <div class="form">
-            <button type="submit" onclick="confirm('Deseja publicar?')">Publicar</button>
-        </div>        
-       </form>
-    </div>
-          
+ {% include 'paginas/_home_header.html' %}
+ 
+ <main class="container">
+     <section class="admin-header">
+         <h2>Área Exclusiva da Administradora</h2>
+         {% for message in get_flashed_messages() %}
+             <p class="flash-message">{{ message }}</p>
+         {% endfor %}
+     </section>
+ 
      <div class="post">
-        <h1>Agendamentos</h1>     
-       
-        <table border:1px solid>
-            <tr>
-                <th> id </th>
-                <th> Nome </th>
-                <th> Email </th>
-                <th> Telefone </th>
-                <th> Melhor dia </th>
-                <th> Melhor Horario </th>
-                <th> Atendimento </th>
-                <th> Acesso</th>
-            </tr>
-            {%for post in post%}
-            <tr>              
-                <td> {{post[0]}}</td>
-                <td> {{post[1]}}</td>
-                <td> {{post[2]}}</td>
-                <td> {{post[3]}}</td>
-                <td> {{post[4]}}</td>
-                <td> {{post[5]}}</td>
-                <td> {{post[6]}}</td>
-                <td> {{post[7]}}</td>                
-            </tr>  
-            {%endfor%}      
-               
-               
-
-        </table>
-              
-       
-        
-    </div>
-    <footer class="footer">
-        <div class="topnav">
-        <a href="https://www.instagram.com/crebortoli/?hl=pt">instagram</a>
-        <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Cre%20Bortoli">Whatsapp</a>
-        </div>
-        </footer>
-                 
-    </body>
-</html>
+         <h3>Publicações</h3>
+         <form action="" method="POST" enctype="multipart/form-data">
+             {# Usando a classe 'form-group' para um espaçamento consistente #}
+             <div class="form-group">
+                 <label for="imagem">Imagem</label>
+                 <input type="file" id="imagem" name="imagem" />
+             </div>
+ 
+             {% if filename %}
+             <div class="form-group">
+                 <img src="{{ url_for('paginas.display', filename=filename) }}" alt="Imagem da postagem" style="max-width: 200px; border-radius: 8px; margin-top: 10px;">
+             </div>
+             {% endif %}
+ 
+             <div class="form-group">
+                 <label for="tema">Tema</label>
+                 <input type="text" id="tema" name="tema" value="{{ post['tema'] or '' }}" />
+             </div>
+ 
+             <div class="form-group">
+                 <label for="post">Postagem</label>
+                 <textarea id="post" name="post" required>{{ post['post'] or '' }}</textarea>
+             </div>
+             <hr>
+             <div class="form-group">
+                 <button type="submit" onclick="return confirm('Deseja publicar?')">Publicar</button>
+             </div>
+         </form>
+     </div>
+ 
+     <div class="post">
+         <h3>Agendamentos</h3>
+         <div class="table-container">
+             <table>
+                 <thead>
+                     <tr>
+                         <th>ID</th>
+                         <th>Nome</th>
+                         <th>Email</th>
+                         <th>Telefone</th>
+                         <th>Dia</th>
+                         <th>Horário</th>
+                         <th>Atendimento</th>
+                         <th>Acesso</th>
+                     </tr>
+                 </thead>
+                 <tbody>
+                     {# ATENÇÃO: A variável do loop foi alterada para 'agendamento' para evitar conflito com o formulário acima. #}
+                     {# Garanta que sua rota Flask passe a lista com o nome 'agendamentos'. #}
+                     {% for agendamento in agendamentos %}
+                     <tr>
+                         <td>{{ agendamento[0] }}</td>
+                         <td>{{ agendamento[1] }}</td>
+                         <td>{{ agendamento[2] }}</td>
+                         <td>{{ agendamento[3] }}</td>
+                         <td>{{ agendamento[4] }}</td>
+                         <td>{{ agendamento[5] }}</td>
+                         <td>{{ agendamento[6] }}</td>
+                         <td>{{ agendamento[7] }}</td>
+                     </tr>
+                     {% else %}
+                     <tr>
+                         <td colspan="8" style="text-align: center;">Nenhum agendamento encontrado.</td>
+                     </tr>
+                     {% endfor %}
+                 </tbody>
+             </table>
+         </div>
+     </div>
+ </main>
+ 
+ {% include 'sig/_footer.html' %}
+ 

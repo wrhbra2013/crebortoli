@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- O título agora é um bloco que pode ser sobrescrito por outras páginas -->
+    <title>{% block title %}SIG - Espaço Cre Bortoli{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.ico') }}" />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    
+    <!-- O header principal só aparecerá se NÃO for a página de login -->
+    {% if request.endpoint != 'sig.login' %}
+        {% include 'sig/_header.html' %}
+    {% endif %}
+
+    <main>
+        <!-- O conteúdo específico de cada página será inserido aqui -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- O footer só aparecerá se NÃO for a página de login -->
+    {% if request.endpoint != 'sig.login' %}
+        {% include 'sig/_footer.html' %}
+    {% endif %}
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/acessibilidade.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
