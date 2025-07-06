@@ -1,692 +1,30 @@
-/*
-  ==============================================
-  STYLE.CSS REFACTORIZADO E OTIMIZADO
-  ==============================================
-  - Variáveis CSS para um tema consistente.
-  - Estrutura "Sticky Footer" com Flexbox.
-  - Consolidação de seletores e regras responsivas.
-  - Remoção de redundâncias para um código mais limpo.
-  - Nomenclatura clara e semântica.
-  ==============================================
-*/
-
-/* --- Variáveis Globais e Reset --- */
-:root {
-  --cor-primaria: rgb(236, 17, 17);
-  --cor-texto: #333;
-  --cor-texto-claro: #fff;
-  --cor-fundo-escuro: #000;
-  --cor-fundo-claro: #fff;
-  --cor-fundo-cinza: rgb(99, 95, 95);
-  --cor-borda: #c0c0c0;
-  --cor-flash-msg: yellow;
-
-  --fonte-personalizada: 'personalizado', sans-serif;
-  --fonte-padrao: Arial, Helvetica, sans-serif;
-}
-
-/* Reset e Box-sizing padrão */
-*,
-*::before,
-*::after {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
-@font-face {
-  font-family: 'personalizado';
-  src: url('/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf');
-}
-
-body {
-  font-family: var(--fonte-padrao);
-  background-image: url('/static/css/image/pink.jpeg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-  color: var(--cor-texto);
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-/* --- Layout Principal --- */
-.container {
-  flex-grow: 1;
-  width: 100%;
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-/* --- Cabeçalho e Rodapé --- */
-.header {
-  background-color: var(--cor-fundo-escuro);
-  color: var(--cor-primaria);
-  text-align: center;
-  padding: 20px;
-  font-family: var(--fonte-personalizada);
-  width: 100%;
-  /* Regras consolidadas para o botão sandwich */
-  position: relative;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.header h1 {
-  color: var(--cor-primaria);
-}
-
-.footer {
-  background-color: var(--cor-fundo-escuro);
-  color: var(--cor-primaria);
-  text-align: center;
-  padding: 20px;
-  width: 100%;
-}
-
-.footer a {
-  color: var(--cor-primaria);
-  transition: color 0.3s ease;
-}
-
-.footer a:hover {
-  color: var(--cor-texto-claro);
-}
-
-/* --- Menu de Navegação --- */
-.main-nav {
-  /* Estilos base para a navegação, que serão modificados no @media */
-}
-
-.menu {
-  list-style-type: none;
-  border: 1px solid var(--cor-borda);
-  width: 100%;
-  display: flex;
-  justify-content: center;
-  flex-wrap: wrap;
-  background-color: var(--cor-fundo-claro);
-  position: relative;
-  z-index: 10;
-}
-
-.menu li {
-  border-right: 1px solid var(--cor-borda);
-}
-
-.menu li:last-child {
-  border-right: none;
-}
-
-.menu li a {
-  color: var(--cor-texto);
-  text-decoration: none;
-  padding: 8px 15px;
-  display: block;
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-.menu li a:hover {
-  background: var(--cor-texto);
-  color: var(--cor-texto-claro);
-}
-
-.menu li .dropdown-menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background-color: var(--cor-fundo-claro);
-  list-style: none;
-  display: none;
-  min-width: 180px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border: 1px solid var(--cor-borda);
-}
-
-.menu li:hover > .dropdown-menu {
-  display: block;
-}
-
-.menu .dropdown-menu li {
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid var(--cor-borda);
-}
-
-.menu .dropdown-menu li:last-child {
-  border-bottom: none;
-}
-
-/* --- Componentes --- */
-.flash-message {
-  background: rgba(54, 25, 25, 0.8);
-  padding: 1rem;
-  margin-bottom: 1rem;
-  text-align: center;
-  color: var(--cor-flash-msg);
-  animation: fadeOut 5s ease-in-out forwards;
-  width: 100%;
-  max-width: 500px;
-  border-radius: 5px;
-}
-
-@keyframes fadeOut {
-  0% { opacity: 1; transform: translateY(0); }
-  80% { opacity: 1; transform: translateY(0); }
-  100% { opacity: 0; transform: translateY(-20px); }
-}
-
-.post {
-  margin: 20px 0;
-  text-align: center;
-  width: 100%;
-  max-width: 600px;
-  border: 1px solid var(--cor-borda);
-  border-radius: 10px;
-  padding: 1.5rem;
-  background-color: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}
-
-.form {
-  width: 100%;
-  max-width: 500px;
-  margin: 2rem 0;
-  border: 1px solid var(--cor-borda);
-  border-radius: 8px;
-  padding: 1.5rem;
-  background-color: rgba(255, 255, 255, 0.9);
-}
-
-.table-container {
-  width: 100%;
-  max-width: 800px;
-  margin: 2rem 0;
-  overflow-x: auto;
-  border: 1px solid var(--cor-borda);
-  border-radius: 8px;
-}
-
-.table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.table th,
-.table td {
-  border: 1px solid var(--cor-borda);
-  padding: 0.75rem;
-  text-align: left;
-  word-break: break-word;
-}
-
-.table th {
-  background-color: #f2f2f2;
-  color: var(--cor-texto);
-  font-weight: bold;
-}
-
-/* --- Dashboard --- */
-.dashboard-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  width: 100%;
-  max-width: 800px;
-}
-
-.dashboard-header h2 {
-  font-size: 2rem;
-  margin-bottom: 0.5rem;
-}
-
-.dashboard-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 1.5rem;
-  width: 100%;
-  max-width: 900px;
-}
-
-.dashboard-card {
-  background-color: var(--cor-fundo-claro);
-  border: 1px solid var(--cor-borda);
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-  display: flex;
-  flex-direction: column;
-}
-
-.dashboard-card h3 {
-  font-size: 1.2rem;
-  margin-bottom: 1rem;
-}
-
-.dashboard-value {
-  font-size: 2.5rem;
-  font-weight: bold;
-  color: var(--cor-primaria);
-  margin-bottom: 1rem;
-  flex-grow: 1;
-}
-
-.card-link {
-  color: var(--cor-primaria);
-  text-decoration: none;
-  font-weight: bold;
-  align-self: flex-start;
-  transition: transform 0.2s ease;
-}
-
-.card-link:hover {
-  text-decoration: underline;
-  transform: translateX(4px);
-}
-
-/* --- Utilitários --- */
-.search-form {
-  display: flex;
-  align-items: flex-end;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.search-form .form-group {
-  flex-grow: 1;
-  margin-bottom: 0;
-}
-
-.actions-cell {
-  text-align: center;
-  white-space: nowrap;
-}
-
-.btn-action {
-  display: inline-block;
-  padding: 6px;
-  border-radius: 4px;
-  transition: background-color 0.2s ease;
-}
-
-.btn-action img {
-  width: 16px;
-  height: 16px;
-  vertical-align: middle;
-}
-
-.btn-delete:hover {
-  background-color: #ffdddd;
-}
-
-.page-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  width: 100%;
-  max-width: 800px;
-}
-
-.qrcode {
-  width: 200px;
-  height: 200px;
-  margin: 20px auto;
-  padding: 15px;
-  background-color: var(--cor-fundo-claro);
-  border: 1px solid var(--cor-borda);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.grafico {
-  border: 1px solid var(--cor-fundo-escuro);
-  border-radius: 10px;
-  display: block;
-  margin: 1rem auto;
-  max-width: 100%;
-  height: auto;
-}
-
-/*
- ==============================================
-   ESTILOS RESPONSIVOS E MENU SANDWICH
- ==============================================
-*/
-
-/* Estilos do botão sandwich (escondido em telas grandes) */
-.sandwich-button {
-  display: none;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  padding: 10px;
-  z-index: 1001;
-  position: absolute;
-  right: 20px;
-}
-
-.sandwich-icon {
-  display: block;
-  position: relative;
-  width: 24px;
-  height: 2px;
-  background-color: var(--cor-primaria);
-  transition: background-color 0.3s ease;
-}
-
-.sandwich-icon::before,
-.sandwich-icon::after {
-  content: '';
-  position: absolute;
-  width: 100%;
-  height: 2px;
-  background-color: var(--cor-primaria);
-  transition: transform 0.3s ease;
-  left: 0;
-}
-
-.sandwich-icon::before {
-  top: -8px;
-}
-
-.sandwich-icon::after {
-  bottom: -8px;
-}
-
-/* Animação do ícone para 'X' */
-.sandwich-button.is-active .sandwich-icon {
-  background-color: transparent;
-}
-
-.sandwich-button.is-active .sandwich-icon::before {
-  transform: translateY(8px) rotate(45deg);
-}
-
-.sandwich-button.is-active .sandwich-icon::after {
-  transform: translateY(-8px) rotate(-45deg);
-}
-
-/* Bloco único para todas as regras de telas menores */
-@media (max-width: 992px) {
-  .sandwich-button {
-    display: block; /* Mostra o botão */
-  }
-
-  .main-nav {
-    position: fixed;
-    top: 0;
-    left: -100%; /* Começa fora da tela */
-    width: 80%;
-    max-width: 300px;
-    height: 100vh;
-    background-color: var(--cor-fundo-escuro);
-    padding-top: 80px;
-    z-index: 1000;
-    transition: left 0.4s ease-in-out;
-    overflow-y: auto;
-  }
-
-  /* Classe adicionada via JS para mostrar o menu */
-  .main-nav.is-active {
-    left: 0;
-  }
-
-  .menu {
-    flex-direction: column;
-    align-items: flex-start;
-    border: none;
-  }
-
-  .menu li {
-    width: 100%;
-    border-right: none;
-    border-bottom: 1px solid var(--cor-fundo-cinza);
-  }
-
-  .menu li:last-child {
-    border-bottom: none;
-  }
-
-  .menu li a {
-    padding: 15px 20px;
-    color: var(--cor-texto-claro);
-  }
-
-  .menu li .dropdown-menu {
-    position: static;
-    display: none;
-    background-color: rgba(255, 255, 255, 0.1);
-    border: none;
-    box-shadow: none;
-    padding-left: 20px;
-  }
-
-  /* Mostra o submenu quando o item pai tem a classe .open (via JS) */
-  .menu li.open > .dropdown-menu {
-    display: block;
-  }
-}
-
-/* === Estilos para a Página de Login === */
-
-.login-container {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 90vh; /* Ocupa quase toda a altura da tela */
-    background-color: #f4f4f9; /* Um fundo suave */
-    padding: 1rem;
-}
-
-.login-box {
-    background-color: #fff;
-    padding: 2rem 3rem;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-    text-align: center;
-    max-width: 420px;
-    width: 100%;
-}
-
-.login-box h1 {
-    color: #333;
-    margin-bottom: 0.5rem;
-}
-
-.login-box h2 {
-    font-size: 1.2rem;
-    color: #555;
-    font-weight: 300;
-    margin-bottom: 1.5rem;
-}
-
-.login-box .qrcode {
-    margin: 1.5rem 0;
-}
-
-.login-box .qrcode .imagem {
-    max-width: 150px;
-    height: auto;
-    border: 1px solid #eee;
-    padding: 5px;
-    border-radius: 4px;
-}
-
-/* === Estilos para Formulários (reutilizável) === */
-.form-group {
-    margin-bottom: 1.5rem;
-    text-align: left;
-}
-
-.form-label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-    color: #444;
-}
-
-.form-control {
-    width: 100%;
-    padding: 0.8rem;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    box-sizing: border-box; /* Garante que padding não afete a largura */
-    transition: border-color 0.2s;
-}
-
-.form-control:focus {
-    border-color: #d18ea9; /* Cor de destaque do seu site */
-    outline: none;
-}
-
-.btn.btn-primary {
-    width: 100%;
-    padding: 0.8rem;
-    background-color: #d18ea9; /* Cor principal */
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 1rem;
-    font-weight: bold;
-    transition: background-color 0.3s;
-}
-
-.btn.btn-primary:hover {
-    background-color: #b97891; /* Cor mais escura no hover */
-}
-
-/* === Estilos para Mensagens Flash === */
-.alert {
-    padding: 1rem;
-    margin-bottom: 1rem;
-    border-radius: 4px;
-    color: #fff;
-    text-align: center;
-}
-
-.alert-success { background-color: #28a745; }
-.alert-danger { background-color: #dc3545; }
-.alert-info { background-color: #17a2b8; }
-.alert-warning { background-color: #ffc107; color: #333; }
-
-/* --- Estilos para o Menu Sanduíche --- */
-
-/* Por padrão, em telas maiores, o botão sanduíche fica escondido */
-.sandwich-button {
-    display: none;
-    /* ... outros estilos que você já tenha para o botão ... */
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 10px;
-    z-index: 1001; /* Garante que o botão fique sobre outros elementos */
-}
-
-.sandwich-icon {
-    /* ... estilos para as 3 barrinhas do ícone ... */
-    width: 24px;
-    height: 2px;
-    background-color: var(--cor-primaria);
-    transition: background-color 0.3s ease;
-}
-
-.sandwich-icon::before,
-.sandwich-icon::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 2px;
-    background-color: var(--cor-primaria);
-    transition: transform 0.3s ease;
-    left: 0;
-}
-
-.sandwich-icon::before {
-    top: -8px;
-}
-
-.sandwich-icon::after {
-    bottom: -8px;
-}
-
-/* Animação do ícone para 'X' */
-.sandwich-button.is-active .sandwich-icon {
-    background-color: transparent;
-}
-
-.sandwich-button.is-active .sandwich-icon::before {
-    transform: translateY(8px) rotate(45deg);
-}
-
-.sandwich-button.is-active .sandwich-icon::after {
-    transform: translateY(-8px) rotate(-45deg);
-    
-}
-
-
-/* Estilos para telas pequenas (ex: celulares) */
-@media (max-width: 768px) {
-    
-    /* Mostra o botão sanduíche */
-    .sandwich-button {
-        display: block;
-    }
-
-    /* Esconde o menu de navegação */
-    .main-nav {
-        position: absolute; /* Posição fixa para cobrir a tela */
-        top: 0;
-        left: 0;
-        width: 80%; /* Ocupa 80% da largura da tela */
-        height: 100%;
-        background-color: #333; /* Cor de fundo para o menu */
-        transform: translateX(-100%); /* Joga o menu para fora da tela à esquerda */
-        transition: transform 0.3s ease-in-out; /* Animação suave */
-        z-index: 1000; /* Garante que o menu fique sobre o conteúdo */
-        padding-top: 60px; /* Espaço para não ficar colado no topo */
-    }
-
-    /* Quando o menu estiver ativo, ele volta para a tela */
-    .main-nav.is-active {
-        transform: translateX(0);
-    }
-
-    /* Ajusta a lista de links para ficar vertical */
-    .main-nav .menu {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .main-nav .menu li {
-        margin: 15px 0;
-    }
-
-    .main-nav .menu a {
-        color: white;
-        font-size: 1.2rem;
-    }
-}
+/* /home/wander/crebortoli/static/css/style2.css (Refatorado) */
 
 /* ==========================================================================
    1. ESTILOS GLOBAIS E VARIÁVEIS DE COR
    ========================================================================== */
 
-/* Usar variáveis torna a customização de cores muito mais fácil */
 :root {
     --cor-principal: #8a4baf; /* Um tom de roxo elegante */
+    --cor-principal-escura: #6a1b9a;
+    --cor-titulo: #4a148c; /* Um roxo mais escuro para títulos */
     --cor-texto: #333;
     --cor-texto-claro: #f8f9fa;
     --cor-fundo: #fdfcff;
     --cor-borda: #e0e0e0;
     --sombra-suave: 0 4px 12px rgba(0, 0, 0, 0.08);
     --fonte-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    --fonte-personalizada: 'World of Water', cursive, red;
 }
+
+@font-face {
+    font-family: 'World of Water';
+    src: url('../fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    color: red;
+}
+
 
 /* Reset básico e configuração da fonte */
 * {
@@ -697,6 +35,7 @@ body {
 
 html {
     font-size: 16px;
+    scroll-behavior: smooth;
 }
 
 body {
@@ -719,7 +58,7 @@ a:hover {
 h1, h2, h3 {
     line-height: 1.2;
     margin-bottom: 1rem;
-    color: #4a148c; /* Um roxo mais escuro para títulos */
+    color: var(--cor-titulo);
 }
 
 /* ==========================================================================
@@ -737,17 +76,21 @@ h1, h2, h3 {
 }
 
 /* ==========================================================================
-   3. CABEÇALHO (JÁ INCLUI O MENU SANDUÍCHE)
+   3. CABEÇALHO E NAVEGAÇÃO
    ========================================================================== */
 
 .header {
     display: flex;
+    font-family: var(--fonte-personalizada);
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
     background-color: #fff;
     border-bottom: 1px solid var(--cor-borda);
     box-shadow: var(--sombra-suave);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .header h1 {
@@ -755,20 +98,26 @@ h1, h2, h3 {
     font-size: 1.5rem;
 }
 
-
-
+.header-title {
+    font-family: var(--fonte-personalizada);
+       
+}
 /* ==========================================================================
-   4. SEÇÕES DA PÁGINA HOME
+   4. SEÇÕES E COMPONENTES GERAIS
    ========================================================================== */
 
+.page-header,
 .intro-section {
     text-align: center;
     padding: 2rem 0;
-    border-bottom: 1px solid var(--cor-borda);
     margin-bottom: 2rem;
 }
 
-.intro-section h2 {
+.intro-section {
+    border-bottom: 1px solid var(--cor-borda);
+}
+
+.intro-section h2, .page-header h2 {
     font-size: 2.5rem;
 }
 
@@ -798,14 +147,13 @@ h1, h2, h3 {
 .alert-warning { background-color: #ffc107; color: #333; }
 .alert-info { background-color: #17a2b8; }
 
-
 /* ==========================================================================
-   5. CARTÕES DE POSTAGEM (A GRANDE MELHORIA VISUAL)
+   5. CARTÕES DE POSTAGEM
    ========================================================================== */
 
 .post-list {
     display: grid;
-    gap: 2rem; /* Espaçamento entre os cartões */
+    gap: 2rem;
 }
 
 .post-card {
@@ -813,7 +161,7 @@ h1, h2, h3 {
     border: 1px solid var(--cor-borda);
     border-radius: 8px;
     box-shadow: var(--sombra-suave);
-    overflow: hidden; /* Garante que a imagem não vaze das bordas arredondadas */
+    overflow: hidden;
     transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
 }
 
@@ -827,7 +175,7 @@ h1, h2, h3 {
     justify-content: space-between;
     align-items: center;
     padding: 1rem 1.5rem;
-    background-color: #f7f2fa; /* Fundo levemente roxo */
+    background-color: #f7f2fa;
     font-size: 0.9rem;
     color: #555;
 }
@@ -836,7 +184,7 @@ h1, h2, h3 {
     width: 100%;
     height: auto;
     max-height: 400px;
-    object-fit: cover; /* Garante que a imagem cubra a área sem distorcer */
+    object-fit: cover;
 }
 
 .post-body {
@@ -871,7 +219,7 @@ h1, h2, h3 {
 }
 
 /* ==========================================================================
-   6. FORMULÁRIO DE COMENTÁRIOS
+   6. FORMULÁRIOS
    ========================================================================== */
 
 .comment-form-section {
@@ -892,6 +240,7 @@ h1, h2, h3 {
     font-weight: bold;
 }
 
+.form-group input,
 .form-group textarea {
     width: 100%;
     padding: 0.75rem;
@@ -902,6 +251,7 @@ h1, h2, h3 {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
+.form-group input:focus,
 .form-group textarea:focus {
     outline: none;
     border-color: var(--cor-principal);
@@ -922,20 +272,127 @@ h1, h2, h3 {
 }
 
 .btn-submit:hover {
-    background-color: #6a1b9a; /* Um roxo mais escuro no hover */
+    background-color: var(--cor-principal-escura);
     transform: scale(1.05);
     text-decoration: none;
 }
 
 /* ==========================================================================
-   7. RODAPÉ
+   7. DASHBOARD E TABELAS
+   ========================================================================== */
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.dashboard-card {
+  background-color: #fff; /* CORRIGIDO: Usando uma cor definida */
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: var(--sombra-suave);
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-card h3 {
+  font-size: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.dashboard-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: var(--cor-principal); /* CORRIGIDO: Usando uma cor definida */
+  margin-bottom: 1rem;
+  flex-grow: 1;
+}
+
+.card-link {
+  color: var(--cor-principal);
+  text-decoration: none;
+  font-weight: bold;
+  align-self: flex-start;
+  transition: transform 0.2s ease;
+}
+
+.card-link:hover {
+  text-decoration: underline;
+  transform: translateX(4px);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 2rem;
+}
+
+.table th,
+.table td {
+  border: 1px solid var(--cor-borda);
+  padding: 0.75rem;
+  text-align: left;
+  word-break: break-word;
+}
+
+.table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.actions-cell {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.btn-action {
+  display: inline-block;
+  padding: 6px;
+  border-radius: 50%; /* Círculo para ícones */
+  transition: background-color 0.2s ease;
+}
+
+.btn-action img {
+  width: 16px;
+  height: 16px;
+  vertical-align: middle;
+}
+
+.btn-action:hover {
+    background-color: #f0e4f7; /* Fundo roxo bem claro */
+}
+
+.btn-delete:hover {
+  background-color: #ffdddd;
+}
+
+.search-form {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 2rem;
+}
+
+.search-form .form-group {
+  flex-grow: 1;
+  margin-bottom: 0;
+}
+
+/* ==========================================================================
+   8. RODAPÉ
    ========================================================================== */
 
 .footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+    flex-wrap: wrap;
     gap: 1rem;
     padding: 2rem;
     margin-top: 2rem;
@@ -958,7 +415,7 @@ h1, h2, h3 {
 }
 
 /* ==========================================================================
-   8. RESPONSIVIDADE (PARA CELULARES)
+   9. RESPONSIVIDADE
    ========================================================================== */
 
 @media (max-width: 768px) {
@@ -974,64 +431,270 @@ h1, h2, h3 {
         padding: 1rem;
     }
 
-    /* Mostra o botão sanduíche e ajusta o menu */
     .sandwich-button {
-        display: block;
+        display: block; /* Este botão deve estar no seu HTML para funcionar */
     }
 
     .main-nav {
-        /* ... seus estilos de menu mobile aqui ... */
         position: fixed;
         top: 0;
-        left: -100%; /* Esconde o menu fora da tela */
-        width: 70%; /* Largura do menu lateral */
+        left: 0;
+        width: 70%;
         height: 100%;
-        background-color: #4a148c; /* Cor de fundo do menu mobile */
+        background-color: var(--cor-titulo);
         padding-top: 60px;
-        transition: left 0.3s ease-in-out;
         z-index: 1000;
+        transform: translateX(-100%); /* MELHORADO: Mais performático */
+        transition: transform 0.3s ease-in-out;
     }
 
     .main-nav.is-active {
-        left: 0; /* Mostra o menu */
+        transform: translateX(0); /* MELHORADO */
     }
 
-    .main-nav ul {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 0 1rem;
-    }
-
-    .main-nav ul li {
-        width: 100%;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .main-nav ul li:last-child {
-        border-bottom: none;
-    }
-
-    .main-nav ul a {
-        color: var(--cor-texto-claro);
-        padding: 0.8rem 0.5rem;
-        display: block;
-    }
-
-    .main-nav ul a:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        text-decoration: none;
-    }
-
-    .main-nav ul {
-        display: none; /* Esconde o menu desktop */
-    }
-
-    .intro-section h2 {
-        font-size: 2rem;
-    }
+    /* ... resto dos seus estilos de menu mobile ... */
 
     .footer {
-        flex-direction: column; /* Empilha os itens do rodapé */
+        flex-direction: column;
         text-align: center;
     }
 }
+
+ 
+     /* Estilos gerais para centralizar o conteúdo */
+     .login-container {
+         display: flex;
+         justify-content: center;
+         align-items: center;
+         min-height: 80vh; /* Ajusta a altura para ocupar a maior parte da tela */
+         background-color: #f4f7f6;
+         padding: 20px;
+         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+     }
+ 
+     /* A caixa principal do formulário de login */
+     .login-box {
+         background-color: #ffffff;
+         padding: 2rem 2.5rem;
+         border-radius: 12px;
+         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+         text-align: center;
+         max-width: 400px;
+         width: 100%;
+     }
+ 
+     /* Cabeçalho dentro da caixa de login */
+     .login-box .header h1 {
+         font-size: 1.8rem;
+         color: #333;
+         margin-bottom: 0.5rem;
+     }
+ 
+     .login-box h2 {
+         font-size: 1.2rem;
+         color: #555;
+         margin-top: 0;
+         margin-bottom: 0.5rem;
+         font-weight: 500;
+     }
+ 
+     .login-box p {
+         color: #777;
+         margin-bottom: 1.5rem;
+     }
+ 
+     /* Estilos para as mensagens de feedback (flash) */
+     .alert {
+         padding: 1rem;
+         margin-bottom: 1.5rem;
+         border: 1px solid transparent;
+         border-radius: 8px;
+         text-align: left;
+     }
+ 
+     .alert-danger {
+         color: #a94442;
+         background-color: #f2dede;
+         border-color: #ebccd1;
+     }
+ 
+     .alert-success {
+         color: #3c763d;
+         background-color: #dff0d8;
+         border-color: #d6e9c6;
+     }
+ 
+     /* Estilo para a imagem do QR Code */
+     .qrcode .imagem {
+         max-width: 150px;
+         height: auto;
+         margin: 1rem auto;
+         display: block;
+     }
+ 
+     /* Estilos para o formulário */
+     .login-form {
+         display: flex;
+         flex-direction: column;
+     }
+ 
+     .form-group {
+         margin-bottom: 1.5rem;
+         text-align: left;
+     }
+ 
+     .form-label {
+         display: block;
+         margin-bottom: 0.5rem;
+         font-weight: 600;
+         color: #444;
+     }
+ 
+     .form-control {
+         width: 100%;
+         padding: 0.8rem 1rem;
+         border: 1px solid #ccc;
+         border-radius: 8px;
+         font-size: 1rem;
+         box-sizing: border-box; /* Garante que o padding não afete a largura total */
+         transition: border-color 0.2s, box-shadow 0.2s;
+     }
+ 
+     .form-control:focus {
+         outline: none;
+         border-color: #007bff;
+         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
+     }
+ 
+     .text-danger {
+         color: #dc3545;
+         font-size: 0.875em;
+         margin-top: 0.25rem;
+     }
+ 
+     /* Estilo para o botão de envio */
+     .btn.btn-primary {
+         background-color: #007bff;
+         color: white;
+         padding: 0.8rem 1rem;
+         border: none;
+         border-radius: 8px;
+         font-size: 1rem;
+         font-weight: 600;
+         cursor: pointer;
+         transition: background-color 0.2s;
+     }
+ 
+     .btn.btn-primary:hover {
+         background-color: #0056b3;
+     }
+
+     /* ==========================================================================
+        MENU SANDWICH (MOBILE)
+        ========================================================================== */
+     
+     /* Estilo do botão sandwich (as três linhas) */
+     .sandwich-button {
+         display: none; /* Escondido em telas grandes */
+         background: transparent;
+         border: none;
+         cursor: pointer;
+         padding: 10px;
+         z-index: 1001; /* Fica acima do menu */
+     }
+     
+     .sandwich-icon {
+         display: block;
+         position: relative;
+         width: 24px;
+         height: 2px;
+         background-color: var(--cor-titulo);
+         transition: all 0.2s ease-in-out;
+     }
+     
+     .sandwich-icon::before,
+     .sandwich-icon::after {
+         content: '';
+         position: absolute;
+         left: 0;
+         width: 100%;
+         height: 2px;
+         background-color: var(--cor-titulo);
+         transition: all 0.2s ease-in-out;
+     }
+     
+     .sandwich-icon::before {
+         top: -8px; /* Linha de cima */
+     }
+     
+     .sandwich-icon::after {
+         bottom: -8px; /* Linha de baixo */
+     }
+     
+     /* Animação do botão para virar um "X" quando ativo */
+     .sandwich-button.is-active .sandwich-icon {
+         background-color: transparent; /* Linha do meio some */
+     }
+     
+     .sandwich-button.is-active .sandwich-icon::before {
+         transform: translateY(8px) rotate(45deg);
+     }
+     
+     .sandwich-button.is-active .sandwich-icon::after {
+         transform: translateY(-8px) rotate(-45deg);
+     }
+     
+     
+     /* Media Query para telas menores (mobile) */
+     @media (max-width: 768px) {
+         
+         /* Mostra o botão sandwich */
+         .sandwich-button {
+             display: block;
+         }
+     
+         /* Esconde o menu de navegação e o posiciona fora da tela */
+         .main-nav {
+             position: fixed;
+             top: 0;
+             left: 0;
+             width: 80%; /* Ocupa 80% da largura da tela */
+             max-width: 300px;
+             height: 100vh; /* Ocupa 100% da altura */
+             background-color: #fff;
+             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+             padding-top: 80px; /* Espaço para o header */
+             transform: translateX(-100%); /* Começa escondido à esquerda */
+             transition: transform 0.3s ease-in-out;
+             z-index: 1000;
+             overflow-y: auto; /* Permite rolagem se o menu for grande */
+         }
+     
+         /* Classe que o JavaScript vai adicionar para mostrar o menu */
+         .main-nav.is-active {
+             transform: translateX(0); /* Traz o menu para a tela */
+         }
+     
+         /* Ajusta a lista de links para o layout vertical */
+         .main-nav .menu {
+             flex-direction: column;
+             align-items: flex-start;
+         }
+     
+         .main-nav .menu li {
+             width: 100%;
+         }
+     
+         .main-nav .menu a {
+             display: block;
+             padding: 1rem 1.5rem;
+             width: 100%;
+             border-bottom: 1px solid var(--cor-borda);
+         }
+     
+         /* Esconde submenus por padrão no mobile para não poluir */
+         .main-nav .menu ul {
+             display: none; /* Simplificação para mobile, pode ser melhorado com JS se precisar de submenus que abrem */
+         }
+     }
+     

@@ -1,47 +1,53 @@
-{% extends "sig/_base.html" %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+ 
+ 
+ {% block title %}Login - SIG{% endblock %}
+ 
+ {% block content %}
 
-{% block title %}Login - SIG{% endblock %}
-
-{% block content %}
-<div class="login-container">
-    <div class="login-box">        
-        <div class="header">
-            <h1>Espaço Cre Bortoli</h1>
-        </div>
-        
-        <h2>Sistema Integrado de Gestão</h2>
-        <p>Faça o login para continuar</p>
-
-        <!-- Mensagens de Feedback (Flash) com categorias -->
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }}">{{ message }}</div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <div class="qrcode">   
-            <img class="imagem" src="{{ url_for('static', filename='auth/password.png') }}" 
-                 alt="QR Code de Autenticação"
-                 onerror="this.style.display = 'none';">
-        </div>
-
-        <!-- Formulário com WTForms, mais seguro e estilizado -->
-        <form method="POST" action="{{ url_for('sig.login') }}" class="login-form">
-            {{ form.hidden_tag() }} <!-- Essencial para proteção CSRF -->
-            
-            <div class="form-group">
-                {{ form.senha.label(class="form-label") }}
-                {{ form.senha(class="form-control", placeholder="Digite seu token de acesso") }}
-                {% for error in form.senha.errors %}
-                    <span class="text-danger">{{ error }}</span>
-                {% endfor %}
-            </div>
-            
-            {{ form.enviar(class="btn btn-primary") }}        
-        </form>
-
-    </div>
-</div>
-{% endblock %}
+ 
+ <div class="login-container">
+     <div class="login-box">
+         <a href="{{url_for('paginas.home')}}">Voltar para a Home</a>
+         <div class="header">
+             <h1>Espaço Cre Bortoli</h1>
+         </div>
+ 
+         <h2>Sistema Integrado de Gestão</h2>
+         <p>Faça o login para continuar</p>
+ 
+         <!-- Mensagens de Feedback (Flash) com categorias -->
+         {% with messages = get_flashed_messages(with_categories=true) %}
+             {% if messages %}
+                 {% for category, message in messages %}
+                     <div class="alert alert-{{ category }}">{{ message }}</div>
+                 {% endfor %}
+             {% endif %}
+         {% endwith %}
+ 
+         <div class="qrcode">
+             <img class="imagem" src="{{ url_for('static', filename='auth/password.png') }}"
+                  alt="QR Code de Autenticação"
+                  onerror="this.style.display = 'none';">
+         </div>
+ 
+         <!-- Formulário com WTForms, mais seguro e estilizado -->
+         <form method="POST" action="{{ url_for('sig.login') }}" class="login-form">
+             {{ form.hidden_tag() }} <!-- Essencial para proteção CSRF -->
+ 
+             <div class="form-group">
+                 {{ form.senha.label(class="form-label") }}
+                 {{ form.senha(class="form-control", placeholder="Digite seu token de acesso") }}
+                 {% for error in form.senha.errors %}
+                     <span class="text-danger">{{ error }}</span>
+                 {% endfor %}
+             </div>
+ 
+             {{ form.enviar(class="btn btn-primary") }}
+         </form>
+     
+     </div>
+    
+ </div>
+ {%endblock%}
+ 

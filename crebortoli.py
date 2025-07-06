@@ -3,11 +3,26 @@ from flask import Flask, render_template
 from sig.gestao import app_gestao
 from paginas.web import app_site
 from datetime import datetime # 1. Importe o módulo datetime
+from markupsafe import Markup
+
 
 app = Flask(__name__)
 
+def nl2br(value):
+    """
+    Converte quebras de linha em uma string para a tag HTML <br>.
+    """
+    if value:
+        # O uso de Markup é crucial para dizer ao Jinja que o
+        # resultado é um HTML seguro e não deve ser escapado.
+        return Markup(str(value).replace('\n', '<br>\n'))
+    return ""
+
+# Registra a função como um filtro no Jinja2 com o nome 'nl2br'
+app.jinja_env.filters['nl2br'] = nl2br
+
 #Chave secreta do forms
-app.config['SECRET_KEY'] = 'SECRET_KEY'
+app.config['SECRET_KEY'] = '@admin'
 
 # 2. Crie e registre o filtro de data personalizado
 @app.template_filter('date')
@@ -44,5 +59,5 @@ def index():
     # return render_template('sig/sig.html')
 
 #Mapa do site
-#print('Mapa do site')
-#print(app.url_map)
+print('Mapa do site')
+print(app.url_map)

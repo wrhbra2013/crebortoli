@@ -1,249 +1,81 @@
-   {% include 'paginas/_home_header.html' %}
+ {% extends "sig/_base.html" %}
  
-   <style>
-       /* --- Estilos Gerais --- */
-       :root {
-           --cor-primaria: #8e44ad; /* Roxo suave */
-           --cor-fundo: #f4f4f9;
-           --cor-card: #ffffff;
-           --cor-texto: #333333;
-           --cor-borda: #e0e0e0;
-           --sombra-card: 0 4px 8px rgba(0, 0, 0, 0.1);
-           --raio-borda: 8px;
-       }
-   
-       .main-content .container {
-           max-width: 900px;
-           margin: 2rem auto;
-           padding: 0 1rem;
-       }
-   
-       /* --- Seção de Introdução --- */
-       .intro-section {
-           text-align: center;
-           margin-bottom: 2.5rem;
-       }
-   
-       .intro-section h2 {
-           font-size: 2.2rem;
-           color: var(--cor-primaria);
-           margin-bottom: 0.5rem;
-       }
-   
-       /* --- Mensagens Flash --- */
-       .flash-messages {
-           margin-bottom: 1.5rem;
-       }
-       .alert {
-           padding: 1rem;
-           border-radius: var(--raio-borda);
-           color: #fff;
-           text-align: center;
-       }
-       .alert-success { background-color: #28a745; }
-       .alert-danger { background-color: #dc3545; }
-       .alert-warning { background-color: #ffc107; }
-   
-       /* --- Seção de Posts --- */
-       .section-title {
-           text-align: center;
-           font-size: 1.8rem;
-           color: var(--cor-texto);
-           margin-bottom: 2rem;
-           border-bottom: 2px solid var(--cor-primaria);
-           padding-bottom: 0.5rem;
-           display: inline-block;
-       }
-   
-       .post-list {
-           display: grid;
-           gap: 1.5rem;
-       }
-   
-       .post-card {
-           background-color: var(--cor-card);
-           border-radius: var(--raio-borda);
-           box-shadow: var(--sombra-card);
-           overflow: hidden;
-           transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-       }
-   
-       .post-card:hover {
-           transform: translateY(-5px);
-           box-shadow: 0 8px 16px rgba(0,0,0,0.15);
-       }
-   
-       .post-header {
-           display: flex;
-           justify-content: space-between;
-           align-items: center;
-           padding: 0.75rem 1rem;
-           background-color: #fafafa;
-           border-bottom: 1px solid var(--cor-borda);
-           font-size: 0.85rem;
-           color: #666;
-       }
-   
-       .post-image {
-           width: 100%;
-           height: auto;
-           max-height: 400px;
-           object-fit: cover;
-       }
-   
-       .post-body {
-           padding: 1.5rem;
-           line-height: 1.6;
-       }
-   
-       .post-comment {
-           background-color: #f9f2ff; /* Fundo levemente roxo para o comentário */
-           margin: 1rem;
-           padding: 1rem;
-           border-left: 4px solid var(--cor-primaria);
-           border-radius: 0 var(--raio-borda) var(--raio-borda) 0;
-       }
-   
-       .comment-text {
-           font-style: italic;
-           color: #555;
-           margin: 0 0 0.5rem 0;
-       }
-   
-       .comment-meta {
-           font-size: 0.8rem;
-           text-align: right;
-           color: #777;
-       }
-   
-       .no-posts {
-           text-align: center;
-           padding: 2rem;
-           color: #777;
-       }
-   
-       /* --- Formulário de Comentário --- */
-       .comment-form-section {
-           background-color: var(--cor-card);
-           padding: 2rem;
-           border-radius: var(--raio-borda);
-           box-shadow: var(--sombra-card);
-           margin-top: 3rem;
-       }
-   
-       .comment-form-section h3 {
-           text-align: center;
-           margin-top: 0;
-           margin-bottom: 1.5rem;
-           font-size: 1.5rem;
-       }
-   
-       .form-group {
-           margin-bottom: 1rem;
-       }
-   
-       .form-group label {
-           display: block;
-           margin-bottom: 0.5rem;
-           font-weight: bold;
-       }
-   
-       .form-group textarea {
-           width: 100%;
-           padding: 0.75rem;
-           border: 1px solid var(--cor-borda);
-           border-radius: var(--raio-borda);
-           font-family: inherit;
-           font-size: 1rem;
-           resize: vertical;
-       }
-   
-       .btn-submit {
-           display: block;
-           width: 100%;
-           padding: 0.8rem;
-           background-color: var(--cor-primaria);
-           color: white;
-           border: none;
-           border-radius: var(--raio-borda);
-           font-size: 1.1rem;
-           font-weight: bold;
-           cursor: pointer;
-           transition: background-color 0.2s;
-       }
-   
-       .btn-submit:hover {
-           background-color: #7a2f9a; /* Tom mais escuro de roxo */
-       }
-   
-   </style>
-    
-   <main class="main-content">
-       <div class="container">
-           <section class="intro-section">
-               <h2>Beleza e Bem-Estar em um só lugar</h2>
-               <p>Explore nossas dicas e novidades para cuidar de você.</p>
-           </section>
-   
-           <!-- Seção para exibir mensagens de feedback (ex: formulário enviado) -->
-           {% with messages = get_flashed_messages(with_categories=true) %}
-               {% if messages %}
-                   <div class="flash-messages">
-                   {% for category, message in messages %}
-                       <div class="alert alert-{{ category }}">{{ message }}</div>
-                   {% endfor %}
-                   </div>
-               {% endif %}
-           {% endwith %}
-   
-           <!-- Seção de Posts -->
-           <section class="post-section">
-               <h3 class="section-title">Últimas Postagens</h3>
-               <div class="post-list">
-                   <!-- Este loop agora funcionará com os dados do banco de dados -->
-                   {% for post in posts %}
-                   <article class="post-card">
-                       <header class="post-header">
-                           <span class="post-author">Cre Bortoli</span>
-                           <time class="post-date" datetime="{{ post['last_update'] }}">{{ post['last_update'].strftime('%d de %B de %Y') }}</time>
-                       </header>
-   
-                       {% if post['imagem'] %}
-                       <img class="post-image" src="{{ url_for('paginas.display', filename=post['imagem']) }}"
-                            alt="Imagem da postagem {{ loop.index }}"
-                            onerror="this.style.display='none';">
-                       {% endif %}
-   
-                       <div class="post-body">
-                           <p>{{ post['post'] }}</p>
-                       </div>
-   
-                       {% if post['comentario'] %}
-                       <div class="post-comment">
-                           <blockquote class="comment-text">{{ post['comentario'] }}</blockquote>
-                           <p class="comment-meta">Comentário de <span class="comment-author">Cliente</span> em <time datetime="{{ post['last_update'] }}">{{ post['last_update'].strftime('%d/%m/%Y') }}</time></p>
-                       </div>
-                       {% endif %}
-                   </article>
-                   {% else %}
-                       <p class="no-posts">Ainda não há nenhuma postagem. Volte em breve!</p>
-                   {% endfor %}
-               </div>
-           </section>
-   
-           <section class="comment-form-section">
-               <h3>Deixe sua opinião:</h3>
-               <!-- Ação do formulário vazia ("") faz com que ele seja enviado para a mesma URL -->
-               <form action="" method="POST">
-                   <div class="form-group">
-                       <label for="coment">Seu comentário:</label>
-                       <textarea id="coment" name="coment" rows="4" required placeholder="Escreva algo..."></textarea>
-                   </div>
-                   <button type="submit" class="btn-submit">Enviar</button>
-               </form>
-           </section>
-       </div>
-   </main>
-   
-   {% include 'paginas/_home_footer.html' %}
+ {% block title %}Espaço Cre Bortoli - Beleza e Bem-estar em Marília{% endblock %}
+ 
+ {# Substitui o header padrão do SIG pelo header público #}
+ {% block header %}
+     {% include 'paginas/_home_header.html' %}
+ {% endblock header %}
+ 
+ {% block content %}
+ <div class="container">
+     <!-- Hero Section: A primeira impressão -->
+     <section class="hero">
+         <img src="{{ url_for('static', filename='css/image/crebortoli.png') }}" alt="Logo do Espaço Cre Bortoli" class="hero-image">
+         <div class="hero-content">
+             <h2>Bem-vinda ao Espaço Cre Bortoli</h2>
+             <p>Onde a sua beleza e o seu bem-estar se encontram.</p>
+             <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Olá!%20Gostaria%20de%20agendar%20um%20horário." class="button-primary" target="_blank" rel="noopener noreferrer">Agende seu Horário via WhatsApp</a>
+         </div>
+     </section>
+ 
+     <!-- About Us Section: Conectando com o cliente -->
+     <section id="about" class="about-us">
+         <h3>Sobre Nós</h3>
+         <p>No Espaço Cre Bortoli, nossa missão é realçar sua beleza natural e proporcionar momentos únicos de relaxamento e cuidado. Com uma equipe especializada e produtos de alta qualidade, oferecemos uma experiência personalizada para atender às suas necessidades e superar suas expectativas.</p>
+     </section>
+ 
+     <!-- Services Section: Apresentação visual dos serviços em formato de grid -->
+     <section id="services" class="services">
+         <h3>Nossos Serviços</h3>
+         <h1>Limpeza de pele</h1>
+         <h1>Depilacao</h1>
+               
+     </section>
+ 
+     <!-- Contact Section: Informações claras e acessíveis -->
+     <section id="contact" class="contact">
+         <h3>Entre em Contato</h3>
+         <div class="contact-details">
+             <p><strong>Endereço:</strong> Rua Francisco Martinelli, 492, Palmital, Marília - SP</p>
+             <p><strong>Telefone/WhatsApp:</strong> <a href="tel:+5514996638056">(14) 99663-8056</a></p>
+             <p><strong>Email:</strong> <a href="mailto:contato@crebortoli.com.br">contato@crebortoli.com.br</a></p>
+         </div>
+         <div class="social-media">
+             <p>Siga-nos nas redes sociais:</p>
+             <!-- Usando os mesmos ícones do footer para consistência visual -->
+             <a href="https://www.instagram.com/crebortoli/?hl=pt" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                 <img src="{{ url_for('static', filename='css/image/insta.png') }}" alt="Instagram">
+             </a>
+             <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Cre%20Bortoli" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                 <img src="{{ url_for('static', filename='css/image/whats.png') }}" alt="WhatsApp">
+             </a>
+         </div>
+     </section>
+ 
+     {#
+     <!-- Seção de Depoimentos (Sugestão para o futuro) -->
+     <section id="testimonials" class="testimonials">
+         <h3>O que nossas clientes dizem</h3>
+         <div class="testimonial-card">
+             <blockquote>
+                 "Atendimento maravilhoso e serviço impecável! Me senti renovada."
+             </blockquote>
+             <cite>- Cliente Satisfeita</cite>
+         </div>
+         <div class="testimonial-card">
+             <blockquote>
+                 "As melhores profissionais da cidade. Recomendo de olhos fechados!"
+             </blockquote>
+             <cite>- Outra Cliente Feliz</cite>
+         </div>
+     </section>
+     #}
+ </div>
+ {% endblock content %}
+ 
+ {# Substitui o footer padrão do SIG pelo footer público #}
+ {% block footer %}
+     {% include 'paginas/_home_footer.html' %}
+ {% endblock footer %}
  

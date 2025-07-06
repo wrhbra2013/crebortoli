@@ -1,33 +1,37 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- O título agora é um bloco que pode ser sobrescrito por outras páginas -->
-    <title>{% block title %}SIG - Espaço Cre Bortoli{% endblock %}</title>
-    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.ico') }}" />
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    
-    <!-- O header principal só aparecerá se NÃO for a página de login -->
-    {% if request.endpoint != 'sig.login' %}
-        {% include 'sig/_header.html' %}
-    {% endif %}
-
-    <main>
-        <!-- O conteúdo específico de cada página será inserido aqui -->
-        {% block content %}{% endblock %}
-    </main>
-
-    <!-- O footer só aparecerá se NÃO for a página de login -->
-    {% if request.endpoint != 'sig.login' %}
-        {% include 'sig/_footer.html' %}
-    {% endif %}
-
-    <!-- Scripts -->
-    <script src="{{ url_for('static', filename='js/acessibilidade.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
-    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-</body>
-</html>
+ <!DOCTYPE html>
+ <html lang="pt-BR">
+ <head>
+     <meta charset="UTF-8">
+     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+     <title>{% block title %}SIG - Espaço Cre Bortoli{% endblock %}</title>
+     <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.ico') }}" />
+     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+     {# Bloco extra para adicionar CSS ou meta tags específicas de uma página #}
+     {% block head_extra %}{% endblock %}
+ </head>
+ <body>
+     
+     {% block header %}
+         {# Por padrão, o header do SIG é incluído. Templates filhos podem sobrescrever isso. #}
+         {% include 'sig/_header.html' %}
+     {% endblock header %}
+ 
+     <main>
+         {# O conteúdo específico de cada página será inserido aqui #}
+         {% block content %}{% endblock %}
+     </main>
+ 
+     {% block footer %}
+         {# O footer padrão é incluído aqui. Também pode ser sobrescrito. #}
+         {% include 'sig/_footer.html' %}
+     {% endblock footer %}
+ 
+     {# Bloco de scripts para permitir que páginas filhas adicionem seus próprios scripts #}
+     {% block scripts %}
+         <script src="{{ url_for('static', filename='js/acessibilidade.js') }}"></script>
+         <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
+         <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+     {% endblock scripts %}
+ </body>
+ </html>
+ 
