@@ -189,3 +189,4 @@ class MarkupForm(FlaskForm):
     txmc = DecimalField('Taxa da Máquina de Cartão: ')
     mg = DecimalField('Percentual de Margem de Lucro:')
     enviar = SubmitField('Registrar Markup')
+

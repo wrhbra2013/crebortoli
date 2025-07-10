@@ -1,52 +1,100 @@
- {% include 'paginas/_home_header.html' %}
+ {% extends "sig/_base.html" %}
  
-   
-    <div class="container">
-        <h1> Agenda de Horários</h1>
-
-        {% for message in get_flashed_messages() %}
-        <p class="span">{{ message }}</p>
-        {% endfor %}
-
-        <div class="imagem">
-            <img src="/static/css/image/hora.png" alt="hora" />
-        </div>
-
-        
-        <form  action="" method="POST">
-            <div class="form">
-                <label for="nome">Nome:</label>
-                <input type="text" id="nome" name="nome" required />
-            </div>
-            <div class="form">
-                <label for="email">Email:</label>
-                <input type="email" id="email" name="email" required />
-            </div>
-            <div class="form">
-                <label for="telefone">Telefone:</label>
-                <input type="tel" id="tel" name="tel" placeholder="(xx)xxxxx-xxxx" required />
-            </div>
-            <div class="form">
-                <label for="dia">Melhor Dia:</label>
-                <input type="date" id="dia" name="dia" required />
-            </div>
-            <div class="form">
-                <label for="hora">Melhor Hora:</label>
-                <input type="time" id="hora" name="hora" required />
-            </div>
-            <div class="form">
-
-                <label for="msg"> Tipo de Atendimento:</label>
-                <select id="msg" name="msg" required>
-                    <option value="">Escolha</option>
-                    <option value="Depilação">Depilação</option>
-                </select>
-            </div>
-            <div class="form">
-                <button type="submit" onclick="alert('Horário reservado para você ' + document.getElementById('nome').value)">Agendar</button>
-            </div>
-        </form>
-        
-    </div>
-   
- {% include 'sig/_footer.html' %}
+ {# Define o título específico desta página #}
+ {% block title %}Agendamento - Espaço Cre Bortoli{% endblock %}
+ 
+ {# Sobrescreve o bloco do header para usar o header público da home #}
+ {% block header %}
+     {% include 'paginas/_home_header.html' %}
+ {% endblock header %}
+ 
+ {% block content %}
+ <div class="container">
+     <h1>Agenda de Horários</h1>
+     <p>Preencha o formulário abaixo para solicitar seu agendamento.</p>
+ 
+     <!-- Mensagens de Feedback (Flash) com categorias para sucesso ou erro -->
+     {% with messages = get_flashed_messages(with_categories=true) %}
+         {% if messages %}
+             {% for category, message in messages %}
+                 <div class="alert alert-{{ category }}">{{ message }}</div>
+             {% endfor %}
+         {% endif %}
+     {% endwith %}
+ 
+     <div class="agenda-container">
+         <div class="agenda-image">
+             {# Usando url_for para carregar a imagem estática de forma segura #}
+             <img src="{{ url_for('static', filename='css/image/hora.png') }}" alt="Ilustração de um relógio e calendário" />
+         </div>
+ 
+         {# 
+           Este formulário foi adaptado para usar o padrão Flask-WTF, como na sua tela de login.
+           Isso requer que você crie uma classe de formulário (ex: AgendaForm) no seu backend.
+           Benefícios: Validação centralizada, proteção CSRF e código mais limpo no template.
+         #}
+         <form action="{{ url_for('paginas.agenda') }}" method="POST" class="agenda-form">
+             {{ form.hidden_tag() }} <!-- Essencial para proteção CSRF -->
+ 
+             <div class="form-group">
+                 {{ form.nome.label(class="form-label") }}
+                 {{ form.nome(class="form-control", placeholder="Seu nome completo", required=true) }}
+                 {% for error in form.nome.errors %}
+                     <span class="text-danger">{{ error }}</span>
+                 {% endfor %}
+             </div>
+ 
+             <div class="form-group">
+                 {{ form.email.label(class="form-label") }}
+                 {{ form.email(class="form-control", placeholder="seu.email@exemplo.com", required=true) }}
+                 {% for error in form.email.errors %}
+                     <span class="text-danger">{{ error }}</span>
+                 {% endfor %}
+             </div>
+ 
+             <div class="form-group">
+                 {{ form.telefone.label(class="form-label") }}
+                 {{ form.telefone(class="form-control", placeholder="(xx) xxxxx-xxxx", required=true) }}
+                 {% for error in form.telefone.errors %}
+                     <span class="text-danger">{{ error }}</span>
+                 {% endfor %}
+             </div>
+ 
+             <div class="form-group">
+                 {{ form.data.label(class="form-label") }}
+                 {{ form.data(class="form-control", required=true) }}
+                 {% for error in form.data.errors %}
+                     <span class="text-danger">{{ error }}</span>
+                 {% endfor %}
+             </div>
+ 
+             <div class="form-group">
+                 {{ form.hora.label(class="form-label") }}
+                 {{ form.hora(class="form-control", required=true) }}
+                 {% for error in form.hora.errors %}
+                     <span class="text-danger">{{ error }}</span>
+                 {% endfor %}
+             </div>
+ 
+             <div class="form-group">
+                 {{ form.servico.label(class="form-label") }}
+                 {{ form.servico(class="form-control", required=true) }}
+                 {% for error in form.servico.errors %}
+                     <span class="text-danger">{{ error }}</span>
+                 {% endfor %}
+             </div>
+ 
+             <div class="form-group">
+                 {# O botão de submit não precisa de JavaScript inline #}
+                 {{ form.submit(class="btn btn-primary") }}
+             </div>
+         </form>
+     </div>
+ </div>
+ {% endblock content %}
+ 
+ {# Sobrescreve o bloco do footer para usar o footer público da home #}
+ {% block footer %}
+     {% include 'paginas/_home_footer.html' %}
+ {% endblock footer %}
+ 

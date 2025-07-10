@@ -8,7 +8,13 @@
  </header>
  
  <nav class="main-nav">
-     <!-- ... (rest of the navigation is correct) ... --><ul class="menu">
+    <div class="nav-header">
+        <p class="user-info">Bem-vindo, {{ current_user.username }}!</p>
+        <p class="user-role">Função: {{ current_user.role.capitalize() }}</p>
+    </div>
+    
+       
+      <ul class="menu">
         <li><a href="{{ url_for('paginas.home') }}">Home</a></li>
         <li><a href="{{ url_for('sig.view_table', table_name='clientes') }}">Clientes</a></li>
         <li><a href="{{ url_for('sig.view_table', table_name='vendas_servicos') }}">Vendas e Serviços</a></li>
