@@ -28,9 +28,9 @@
  
      {# Bloco de scripts para permitir que páginas filhas adicionem seus próprios scripts #}
      {% block scripts %}
-         <script src="{{ url_for('static', filename='js/acessibilidade.js') }}"></script>
+         <script src="{{ url_for('static', filename='js/contrast.js') }}"></script>
          <script src="{{ url_for('static', filename='js/menu.js') }}"></script>
-        
+        <script src="{{ url_for('static', filename='js/main.js') }}"></script>
      {% endblock scripts %}
  </body>
  </html>

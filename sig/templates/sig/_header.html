@@ -2,23 +2,33 @@
  <header class="header">
      <!-- CORRECTION: 'classs' typo fixed to 'class' -->
      <h1 class="header-title">Espaço Cre Bortoli</h1>
+ 
+     <button id="menu-toggle" class="menu-toggle" aria-label="Abrir Menu">
+         <span class="menu-icon"></span>
+     </button>
      <button class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
          <span class="sandwich-icon"></span>
      </button>
+     
  </header>
  
- <nav class="main-nav">
-    <div class="nav-header">
-        <p class="user-info">Bem-vindo, {{ current_user.username }}!</p>
-        <p class="user-role">Função: {{ current_user.role.capitalize() }}</p>
-    </div>
-    
-       
+ <nav class="main-nav">           
       <ul class="menu">
-        <li><a href="{{ url_for('paginas.home') }}">Home</a></li>
-        <li><a href="{{ url_for('sig.view_table', table_name='clientes') }}">Clientes</a></li>
-        <li><a href="{{ url_for('sig.view_table', table_name='vendas_servicos') }}">Vendas e Serviços</a></li>
-        <li><a href="{{ url_for('sig.view_table', table_name='agenda') }}">Agenda</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.dashboard') }}">Dashboard</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='clientes') }}">Clientes</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='compras') }}">Compras</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='vendas_servicos') }}">Vendas Serviços</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='vendas_produtos') }}">Vendas Produtos</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='relatorioMEI') }}">Relatórios MEI</a></li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Cadastros
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_cliente') }}">Cadastrar Cliente</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_compra') }}">Registrar Compra</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_venda_servico') }}">Registrar Venda de Serviço</a></li>
         <li><a href="{{ url_for('sig.logout') }}">Sair</a></li>
     </ul>
  </nav>

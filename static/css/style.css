@@ -452,6 +452,32 @@ h1, h2, h3 {
         transform: translateX(0); /* MELHORADO */
     }
 
+    .main-nav ul {
+        flex-direction: column;
+        align-items: flex-start;
+        padding: 0 1rem;
+    }
+
+    .main-nav ul li {
+        width: 100%;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .main-nav ul li:last-child {
+        border-bottom: none;
+    }
+
+    .main-nav ul a {
+        color: var(--cor-texto-claro);
+        padding: 0.8rem 0.5rem;
+        display: block;
+    }
+
+    .main-nav ul a:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        text-decoration: none;
+    }
+
     /* ... resto dos seus estilos de menu mobile ... */
 
     .footer {
@@ -656,7 +682,7 @@ h1, h2, h3 {
          /* Esconde o menu de navegação e o posiciona fora da tela */
          .main-nav {
              position: fixed;
-             top: 0;
+            top: 0;
              left: 0;
              width: 80%; /* Ocupa 80% da largura da tela */
              max-width: 300px;
@@ -677,7 +703,7 @@ h1, h2, h3 {
      
          /* Ajusta a lista de links para o layout vertical */
          .main-nav .menu {
-             flex-direction: column;
+             flex-direction: row;
              align-items: flex-start;
          }
      
@@ -686,7 +712,7 @@ h1, h2, h3 {
          }
      
          .main-nav .menu a {
-             display: block;
+             display: inline;
              padding: 1rem 1.5rem;
              width: 100%;
              border-bottom: 1px solid var(--cor-borda);
@@ -698,3 +724,151 @@ h1, h2, h3 {
          }
      }
      
+    /* In your CSS file (e.g., style.css or within a <style> tag in your template) */
+    .navbar {
+        background-color: #f8f9fa; /* Example background color */
+        color:#333;
+    }
+    
+    .navbar-brand {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+    }
+    
+    .navbar-nav {
+        list-style: none;
+        margin: 0;
+        padding: 10px;
+    }
+    
+    .navbar-brand {
+        font-weight: bold;
+    }
+    
+    .navbar-nav {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+    }
+    
+    .nav-item {
+        margin-right: 15px;
+    }
+    
+    .nav-link {
+        text-decoration: none;
+        color: #333;
+    }
+    
+    .navbar-toggler {
+        display: none; /* Hide by default on larger screens */
+        cursor: pointer;
+    }
+    
+    .navbar-toggler-icon {
+        /* Style your hamburger icon here */
+        display: block;
+        width: 20px;
+        height: 2px;
+        background-color: #333;
+        position: relative;
+        transition: background-color 0.3s ease;
+    }
+    
+    .navbar-toggler-icon::before,
+    .navbar-toggler-icon::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        width: 20px;
+        height: 2px;
+        background-color: #333;
+        transition: transform 0.3s ease;
+    }
+    
+    .navbar-toggler-icon::before {
+        top: -6px;
+    }
+    
+    .navbar-toggler-icon::after {
+        bottom: -6px;
+    }
+    
+    
+    /* Media query for smaller screens */
+    @media (max-width: 768px) {
+        .navbar-nav {
+            display: none; /* Hide menu items by default on small screens */
+            flex-direction: column;
+            width: 100%;
+        }
+    
+        .navbar-collapse {
+            width: 100%;
+        }
+    
+        .navbar-toggler {
+            display: block; /* Show the hamburger icon */
+        }
+    
+        .nav-item {
+            margin: 10px 0;
+            color:#0056b3;
+        }
+     
+        .navbar-nav.show {
+            display: flex; /* Show the menu when the "show" class is added */
+            
+        }
+    }
+    /* ... existing styles ... */
+    
+    /* Styles for the contrast button */
+    .contrast-button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 0.5rem;
+        margin-right: 1rem;  /* Adjust spacing */
+    }
+    
+    .contrast-icon {
+        /* Style your contrast icon – a simple example */
+        display: inline-block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: var(--cor-texto); /* Initially use text color for icon */
+        position: relative;
+    }
+    
+    .contrast-icon::before {
+        content: "";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background-color: var(--cor-fundo);
+    }
+    
+    /* Toggle contrast using a class on the body */
+    body.high-contrast {
+        --cor-fundo: var(--cor-texto);
+        --cor-texto: var(--cor-fundo-original); /* Swap background and text */
+    }
+    
+    /* Store the original background color for toggling */
+    :root {
+        /* ... other variables ... */
+        --cor-fundo-original: var(--cor-fundo);
+    }
+    
+    /* ... rest of your CSS, adjust for contrast where needed ... */
+    
+    
+    

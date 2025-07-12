@@ -20,13 +20,13 @@ app_gestao = Blueprint('sig', __name__, url_prefix='/sig', template_folder='temp
 # DECORADOR DE AUTENTICAÇÃO
 # ==============================================================================
 def login_required(f):
-    """Garante que o usuário esteja logado antes de acessar uma rota."""
+    """Garante que o usuário esteja logado e passa o usuário para o template."""
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('logged_in'):
-            flash('Você precisa estar logado para acessar esta página.', 'warning')
+        if 'logged_in' not in session:
+            flash('Por favor, faça login para acessar esta página.', 'warning')
             return redirect(url_for('sig.login'))
-        return f(*args, **kwargs)
+        return f(*args, **kwargs)         
     return decorated_function
 
 # ==============================================================================
@@ -267,3 +267,4 @@ def cadastrar_venda_servico():
         except Exception as e:
             flash(f'Erro ao registrar venda: {e}', 'danger')
     return render_template('sig/vendas_servicos.html', form=form, titulo="Registrar Venda de Serviço")
+

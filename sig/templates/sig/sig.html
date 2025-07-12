@@ -35,7 +35,7 @@
              <p class="dashboard-value {% if lucro_mes >= 0 %}text-success{% else %}text-danger{% endif %}">
                  R$ {{ "%.2f"|format(lucro_mes|default(0, true)) }}
              </p>
-             <a href="#" class="card-link">Análise financeira &rarr;</a>
+             <a href="#" class="card-link">Análise financeira &rarr;</a>  <!-- Kept this as a placeholder -->
          </div>
  
          <!-- Card: Total de Clientes -->
@@ -49,14 +49,14 @@
          <div class="dashboard-card">
              <h3>Agendamentos (Hoje)</h3>
              <p class="dashboard-value">{{ agendamentos_hoje|default(0) }}</p>
-             <a href="{{ url_for('sig.view_table', table_name='agenda') }}" class="card-link">Ver agenda &rarr;</a>
+             <a href="#" class="card-link">Ver agenda &rarr;</a> <!-- Kept this as a placeholder, assuming no 'agenda' table -->
          </div>
          
          <!-- Card: Pró-Labore -->
          <div class="dashboard-card">
              <h3>Pró-Labore</h3>
              <p class="dashboard-value">R$ {{ "%.2f"|format(pro_labore_mes|default(0, true)) }}</p>
-             <a href="#" class="card-link">Ver detalhes &rarr;</a>
+             <a href="#" class="card-link">Ver detalhes &rarr;</a>  <!-- Kept this as a placeholder -->
          </div>
          
      </div>
