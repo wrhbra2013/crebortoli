@@ -12,7 +12,7 @@
     --cor-texto-claro: #f8f9fa;
     --cor-fundo: #fdfcff;
     --cor-borda: #e0e0e0;
-    --sombra-suave: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --sombra-suave: 0 4px 12px rgba(12, 11, 11, 0.08);
     --fonte-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     --fonte-personalizada: 'World of Water', cursive, red;
 }
@@ -453,7 +453,7 @@ h1, h2, h3 {
     }
 
     .main-nav ul {
-        flex-direction: column;
+        flex-direction: row;
         align-items: flex-start;
         padding: 0 1rem;
     }
@@ -461,6 +461,7 @@ h1, h2, h3 {
     .main-nav ul li {
         width: 100%;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        color: black;
     }
 
     .main-nav ul li:last-child {
@@ -468,9 +469,9 @@ h1, h2, h3 {
     }
 
     .main-nav ul a {
-        color: var(--cor-texto-claro);
+        color: var(--cor-texto-escuro);
         padding: 0.8rem 0.5rem;
-        display: block;
+        display: inline;
     }
 
     .main-nav ul a:hover {
