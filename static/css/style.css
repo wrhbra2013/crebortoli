@@ -713,7 +713,7 @@ h1, h2, h3 {
          }
      
          .main-nav .menu a {
-             display: inline;
+             display: block;
              padding: 1rem 1.5rem;
              width: 100%;
              border-bottom: 1px solid var(--cor-borda);
@@ -871,5 +871,16 @@ h1, h2, h3 {
     
     /* ... rest of your CSS, adjust for contrast where needed ... */
     
+    
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .search-form {
+        margin-bottom: 20px;
+    }
+    .table-responsive {
+        overflow-x: auto;
+    }
     
     

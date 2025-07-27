@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ titulo }}</title>
+   
+    <link rel="stylesheet" href="{{ url_for('static/css', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>{{ titulo }}</h1>
+
+        <form method="GET" class="search-form">
+            <div class="input-group">
+                {{ form_pesquisa.query(class="form-control", placeholder="Pesquisar...") }}
+                <div class="input-group-append">
+                    <button class="btn btn-primary" type="submit">Pesquisar</button>
+                </div>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        {% for header in cabecalho %}
+                            <th>{{ header }}</th>
+                        {% endfor %}
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in dados %}
+                        <tr>
+                            {% for item in row %}
+                                <td>{{ item }}</td>
+                            {% endfor %}
+                            <td>
+                                <form method="POST" action="{{ url_for('sig.delete_record', table_name=table_name, record_id=row[0]) }}" onsubmit="return confirm('Tem certeza que deseja excluir este registro?')">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <a href="{{ url_for('sig.dashboard') }}" class="btn btn-secondary">Voltar ao Dashboard</a>
+    </div>
+
+  
+</body>
+</html>

@@ -6,25 +6,25 @@
      </section>
  
      <form action="" method="POST">
-         {# Renderizando o formulário WTForms de forma mais limpa #}
+         {{ form.csrf_token }}  {# CSRF protection #} 
+         {% for field in form %}
+             {% if field.type != 'CSRFTokenField' %}
+                 <div class="form-group">
+                     {{ field.label(class="form-label") }}
+                     {{ field(class="form-control") }}
+                     {% if field.errors %}
+                         <ul class="errors">
+                             {% for error in field.errors %}
+                                 <li>{{ error }}</li>
+                             {% endfor %}
+                         </ul>
+                     {% endif %}
+                 </div>
+             {% endif %}
+         {% endfor %}
+ 
          <div class="form-group">
-             {{ form3.nome.label }}
-             {{ form3.nome(class="form-control") }}
-         </div>
-         <div class="form-group">
-             {{ form3.cpf.label }}
-             {{ form3.cpf(class="form-control") }}
-         </div>
-         <div class="form-group">
-             {{ form3.email.label }}
-             {{ form3.email(class="form-control") }}
-         </div>
-         <div class="form-group">
-             {{ form3.telefone.label }}
-             {{ form3.telefone(class="form-control") }}
-         </div>
-         <div class="form-group">
-             {{ form3.enviar(class="btn-submit") }}
+             <button type="submit" class="btn btn-primary">Cadastrar</button>
          </div>
      </form>
  </main>
