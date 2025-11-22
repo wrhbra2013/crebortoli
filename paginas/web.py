@@ -5,8 +5,10 @@ from flask import (
     Blueprint, render_template, url_for, request, redirect, flash, current_app
 )
 from werkzeug.utils import secure_filename
-import sqlite3  # Importa o módulo sqlite3
-from init_db import DB_FILE  # Importa a constante DB_FILE
+import psycopg2
+from psycopg2.extras import DictCursor
+from .forms import AgendaForm
+from init_db import get_connection
 
 # --- Configuração do Blueprint ---
 # Boas práticas: usar o nome do módulo '__name__' e definir template_folder.
@@ -29,65 +31,63 @@ def is_allowed_file(filename):
 # FUNÇÕES DE INTERAÇÃO COM O BANCO DE DADOS (Refatoradas para Segurança e Consistência)
 # ==============================================================================
 
-def get_connection():
-    """Retorna uma conexão com o banco de dados."""
-    return sqlite3.connect(DB_FILE, check_same_thread=False)
+def db_execute(sql, params=(), commit=False):
+    """Função genérica para executar comandos SQL (INSERT, UPDATE, DELETE)."""
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+        if commit:
+            conn.commit()
+    finally:
+        if conn:
+            conn.close()
+
+def db_fetch(sql, params=(), one=False):
+    """Função genérica para buscar dados (SELECT)."""
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=DictCursor) as cur:
+            cur.execute(sql, params)
+            return cur.fetchone() if one else cur.fetchall()
+    finally:
+        if conn:
+            conn.close()
 
 def update_post_comment(post_id, comentario):
     """Atualiza o comentário de um post específico."""
-    sql = "UPDATE post SET comentario = ?, Ultima_Atualizacao = CURRENT_TIMESTAMP WHERE id = ?;"
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, (comentario, post_id))
-        conn.commit()
+    sql = "UPDATE post SET comentario = %s, Ultima_Atualizacao = CURRENT_TIMESTAMP WHERE id = %s;"
+    db_execute(sql, (comentario, post_id), commit=True)
 
 def create_cliente(nome, email, telefone):
     """Insere um novo cliente no banco de dados."""
-    sql = "INSERT INTO clientes (nome, email, telefone) VALUES (?, ?, ?);"
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, (nome, email, telefone))
-        conn.commit()
+    sql = "INSERT INTO clientes (nome, email, telefone) VALUES (%s, %s, %s);"
+    db_execute(sql, (nome, email, telefone), commit=True)
 
 def create_agendamento(nome, dia, hora, atendimento):
     """Cria um novo agendamento."""
-    sql = "INSERT INTO agenda (Cliente, Dia, Hora, Atendimento) VALUES (?, ?, ?, ?);"
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, (nome, dia, hora, atendimento))
-        conn.commit()
+    sql = "INSERT INTO agenda (Cliente, Dia, Hora, Atendimento) VALUES (%s, %s, %s, %s);"
+    db_execute(sql, (nome, dia, hora, atendimento), commit=True)
 
 def create_enquete_response(opiniao):
     """Salva uma resposta da enquete."""
-    sql = "INSERT INTO enquete (resposta) VALUES (?);"
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, (opiniao,))
-        conn.commit()
+    sql = "INSERT INTO enquete (resposta) VALUES (%s);"
+    db_execute(sql, (opiniao,), commit=True)
 
 def create_post(tema, post_text, imagem_filename=""):
     """Cria um novo post."""
-    sql = "INSERT INTO post (imagem, tema, post, comentario) VALUES (?, ?, ?, ?);"
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, (imagem_filename, tema, post_text, ''))  # Comentário inicial vazio
-        conn.commit()
+    sql = "INSERT INTO post (imagem, tema, post, comentario) VALUES (%s, %s, %s, %s);"
+    db_execute(sql, (imagem_filename, tema, post_text, ''), commit=True)
 
 def delete_post_by_id(post_id):
     """Deleta um post pelo seu ID."""
-    sql = "DELETE FROM post WHERE id = ?;"
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, (post_id,))
-        conn.commit()
+    sql = "DELETE FROM post WHERE id = %s;"
+    db_execute(sql, (post_id,), commit=True)
 
 def update_post_by_id(post_id, tema, post_text):
     """Atualiza o tema e o texto de um post específico."""
-    sql = "UPDATE post SET post = ?, tema = ?, Ultima_Atualizacao = CURRENT_TIMESTAMP WHERE id = ?;"
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, (post_text, tema, post_id))
-        conn.commit()
+    sql = "UPDATE post SET post = %s, tema = %s, Ultima_Atualizacao = CURRENT_TIMESTAMP WHERE id = %s;"
+    db_execute(sql, (post_text, tema, post_id), commit=True)
 
 def buscar_todos_posts():
     """Busca todas as postagens, ordenadas pela mais recente."""
@@ -96,20 +96,12 @@ def buscar_todos_posts():
         FROM post p
         ORDER BY p.Ultima_Atualizacao DESC;
     """
-    with get_connection() as conn:
-        conn.row_factory = sqlite3.Row  # Para acesso aos dados por nome de coluna
-        cur = conn.cursor()
-        cur.execute(sql)
-        posts = cur.fetchall()
-        return posts
+    return db_fetch(sql)
 
 def buscar_agendamentos():
     """Busca todos os agendamentos, ordenados por dia e hora."""
     sql = "SELECT * FROM agenda ORDER BY Dia, Hora;"
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql)
-        return cur.fetchall()
+    return db_fetch(sql)
 
 # ==============================================================================
 # ROTAS (VIEWS)
@@ -127,13 +119,14 @@ def index():
 
 @app_site.route('/agenda', methods=['GET', 'POST'])
 def agenda():
-    if request.method == 'POST':
-        nome_cliente = request.form['nome']
-        email_cliente = request.form['email']
-        telefone_cliente = request.form['tel']
-        dia_agendamento = request.form['dia']
-        hora_agendamento = request.form['hora']
-        tipo_atendimento = request.form['msg']
+    form = AgendaForm()
+    if form.validate_on_submit():
+        nome_cliente = form.nome.data
+        email_cliente = form.email.data
+        telefone_cliente = form.telefone.data
+        dia_agendamento = form.data.data
+        hora_agendamento = form.hora.data
+        tipo_atendimento = form.servico.data
 
         create_cliente(nome_cliente, email_cliente, telefone_cliente)
         create_agendamento(nome_cliente, dia_agendamento, hora_agendamento, tipo_atendimento)
@@ -141,7 +134,7 @@ def agenda():
         flash('Agendamento realizado com sucesso!', 'success')
         return redirect(url_for('paginas.agenda'))
 
-    return render_template('paginas/agenda.html')
+    return render_template('paginas/agenda.html', form=form)
 
 @app_site.route('/admin', methods=['GET', 'POST'])
 def admin():
@@ -164,11 +157,8 @@ def admin():
 
     # Carrega os dados para exibir na página de admin
     agendamentos = buscar_agendamentos()
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM post ORDER BY id DESC;")
-        posts = cur.fetchall()
-
+    posts = db_fetch("SELECT * FROM post ORDER BY id DESC;")
+    
     return render_template('paginas/admin.html', posts=posts, agendamentos=agendamentos)
 
 @app_site.route('/display/<path:filename>')
@@ -201,11 +191,8 @@ def delete(id):
 @app_site.route('/delete_agenda/<string:cliente>/<string:dia>', methods=['POST'])
 def delete_agenda(cliente, dia):
     try:
-        sql = "DELETE FROM agenda WHERE Cliente = ? AND Dia = ?;"
-        with get_connection() as conn:  # Usando get_connection
-            cur = conn.cursor()
-            cur.execute(sql, (cliente, dia))
-            conn.commit()
+        sql = "DELETE FROM agenda WHERE Cliente = %s AND Dia = %s;"
+        db_execute(sql, (cliente, dia), commit=True)
         flash('Agendamento deletado com sucesso!', 'success')
     except Exception as e:
         flash(f'Erro ao deletar agendamento: {e}', 'danger')
@@ -220,12 +207,7 @@ def edit(id):
         flash('Post atualizado com sucesso!', 'success')
         return redirect(url_for('paginas.admin'))
 
-    with get_connection() as conn:
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-        cur.execute("SELECT * FROM post WHERE id = ?;", (id,))
-        post = cur.fetchone()
-
+    post = db_fetch("SELECT * FROM post WHERE id = %s;", (id,), one=True)
     if post is None:
         flash('Post não encontrado!', 'danger')
         return redirect(url_for('paginas.admin'))

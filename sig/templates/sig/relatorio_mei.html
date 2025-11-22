@@ -27,12 +27,16 @@
             <form method="POST" action="">
                 {{ form.hidden_tag() }}
                 <div class="form-fields">
-                    <div class="form-group">{{ form.produto.label }} {{ form.produto(class="form-control") }}</div>
-                    <div class="form-group">{{ form.marca.label }} {{ form.marca(class="form-control") }}</div>
-                    <div class="form-group">{{ form.quantidade.label }} {{ form.quantidade(class="form-control") }}</div>
-                    <div class="form-group">{{ form.unidade.label }} {{ form.unidade(class="form-control") }}</div>
-                    <div class="form-group">{{ form.validade.label }} {{ form.validade(class="form-control") }}</div>
-                    <div class="form-group">{{ form.preco.label }} {{ form.preco(class="form-control") }}</div>
+                    <div class="form-group">{{ form.apuracao.label }} {{ form.apuracao(class="form-control") }}</div>
+                    <div class="form-group">{{ form.cnpj.label }} {{ form.cnpj(class="form-control") }}</div>
+                    <div class="form-group">{{ form.razao_social.label }} {{ form.razao_social(class="form-control") }}</div>
+                    <div class="form-group">{{ form.pdn.label }} {{ form.pdn(class="form-control") }}</div>
+                    <div class="form-group">{{ form.pen.label }} {{ form.pen(class="form-control") }}</div>
+                    <div class="form-group">{{ form.sdn.label }} {{ form.sdn(class="form-control") }}</div>
+                    <div class="form-group">{{ form.sen.label }} {{ form.sen(class="form-control") }}</div>
+                    <div class="form-group">{{ form.local.label }} {{ form.local(class="form-control") }}</div>
+                    <div class="form-group">{{ form.data.label }} {{ form.data(class="form-control") }}</div>
+                    <div class="form-group">{{ form.assinatura.label }} {{ form.assinatura(class="form-control") }}</div>
                 </div>
                 {{ form.enviar(class="btn btn-primary") }}
             </form>

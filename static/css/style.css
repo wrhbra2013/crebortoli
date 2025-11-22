@@ -93,6 +93,55 @@ h1, h2, h3 {
     z-index: 100;
 }
 
+.main-nav {
+    display: flex;
+    align-items: center;
+}
+
+.main-nav .menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.main-nav .menu > .nav-item {
+    position: relative; /* Essencial para o posicionamento do submenu */
+}
+
+.main-nav .menu > .nav-item > a {
+    display: block;
+    padding: 1rem 1.5rem;
+    color: var(--cor-texto);
+    font-weight: 500;
+}
+
+.main-nav .menu > .nav-item > a:hover {
+    background-color: #f7f2fa;
+    text-decoration: none;
+}
+
+/* Estilos do Submenu (Dropdown) */
+.dropdown-menu {
+    display: none; /* Escondido por padrão */
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background-color: #fff;
+    border: 1px solid var(--cor-borda);
+    border-radius: 0 0 8px 8px;
+    box-shadow: var(--sombra-suave);
+    list-style: none;
+    padding: 0.5rem 0;
+    margin: 0;
+    min-width: 220px; /* Largura mínima do dropdown */
+    z-index: 1001;
+}
+
+.nav-item.dropdown:hover .dropdown-menu {
+    display: block; /* Mostra no hover em telas grandes */
+}
+
 .header h1 {
     margin: 0;
     font-size: 1.5rem;
@@ -674,6 +723,7 @@ h1, h2, h3 {
      
      /* Media Query para telas menores (mobile) */
      @media (max-width: 768px) {
+        .main-nav .menu { flex-direction: column; }
          
          /* Mostra o botão sandwich */
          .sandwich-button {
@@ -882,5 +932,16 @@ h1, h2, h3 {
     .table-responsive {
         overflow-x: auto;
     }
+    
+/* ==========================================================================
+   10. UTILITIES
+   ========================================================================== */
+.text-success {
+    color: #28a745 !important; /* Verde para sucesso/lucro */
+}
+
+.text-danger {
+    color: #dc3545 !important; /* Vermelho para perigo/prejuízo */
+}
     
     

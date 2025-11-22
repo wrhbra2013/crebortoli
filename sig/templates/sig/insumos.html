@@ -1,124 +1,43 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href='/static/css/style.css'>
-     <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
-    <title>Custo Fixo -  Insumos</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.ico') }}" />
+    <title>{{ titulo }} - SIG Cre Bortoli</title>
 </head>
 <body>
-    <div class="header">
-        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
-        <h1> Espaço Cre  Bortoli </h1>
-        
-    </div>
-    <nav>       
-        <ul class="menu">
-        <li><a href="{{url_for('paginas.home')}}">Redes Sociais</a></li> 
-        <!-- Submenu -->
-        <li><a href="#" >Clientes</a> 
-        <ul>           
-        <li><a href="{{url_for('sig.postclientes')}}">Cadastro de Clientes</a></li>
-        <li><a href="{{url_for('sig.getclientes')}}">Busca de Clientes</a></li>
-        <li><a href="{{url_for('sig.anaminese')}}">Ficha de Anaminese</a></li>
-        </ul>
-        </li>
-        <!-- Fim submenu -->
-        <!-- Submenu -->
-        <li><a href="#" >Vendas</a> 
-        <ul> 
-        <li><a href="{{url_for('sig.vendas_servicos')}}">Serviços</a></li>
-        <li><a href="{{url_for('sig.vendas_produtos')}}">Produtos</a></li>
-        </ul>
-        </li>
-        <!-- Fim submenu -->
-        <li><a href="{{url_for('sig.compras')}}">Compras</a></li>
-        <li><a href="{{url_for('sig.estoque')}}">Estoque</a></li>
-        <li><a href="{{url_for('sig.pessoal')}}">Pessoal</a></li>
-        <li><a href="#">Financeiro</a>
-        <ul>              
-            <li><a href="{{url_for('sig.depreciacao')}}">Gestão de Depreciacao</a></li>
-            <li><a href="{{url_for('sig.insumos')}}">Gestão de Materiais</a></li>
-            <li><a href="{{url_for('sig.impostos')}}">Gestão de Impostos</a></li>
-            <li><a href="{{url_for('sig.margemlucro')}}">Gestão de Margem de Lucro</a></li>
-            <li><a href="{{url_for('sig.markup')}}">Gestão Markup</a></li>
-            <li><a href="{{url_for('sig.relatorioMEI')}}">Gestão MEI</a></li>
-            <li><a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank">Gestão MEI - Acesso DASN-SIMEI</a></li>
-           
-           
-        </ul>
-        </li>
-        
-        <li><a href="#">Fiscal</a> 
-            <ul>
-                <li><a href="{{url_for('sig.nota')}}">Emiissão de Notas</a></li>  
-                <li><a href="https://www.nfse.gov.br/EmissorNacional/Login?ReturnUrl=%2fEmissorNacional" target="_blank">NFS-e - Contribuinte</a></li>       
-            </ul>
-        </li>                                  
-        </ul>       
-    </nav>
+    {% include 'sig/_header.html' %}
 
-    
+    <main class="container">
+        <h1>{{ titulo }}</h1>
 
-    <h1>Custos Variáveis - Materiais.</h1>
-    <div class="container">
-        <form action="" method="POST" target="div2">  
-        
-        <div class="form" > 
-        {{form15.tipo_servico.label}}
-        {{form15.tipo_servico}}
-        {{form15.nome_insumo.label}}        
-        {{form15.nome_insumo}}
-        {{form15.qtde_fechada.label}}
-        {{form15.qtde_fechada}}
-        {{form15.qfe_unidade.label}}
-        {{form15.qfe_unidade}}
-        {{form15.preco_fechado.label}}
-        {{form15.preco_fechado}}
-        {{form15.qtde_fracionada.label}}
-        {{form15.qtde_fracionada}}
-        {{form15.qfr_unidade.label}}
-        {{form15.qfr_unidade}}       
-        {{form15.enviar}}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-container">
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                <div class="form-fields">
+                    <div class="form-group">{{ form.tipo_servico.label }} {{ form.tipo_servico(class="form-control") }}</div>
+                    <div class="form-group">{{ form.nome_insumo.label }} {{ form.nome_insumo(class="form-control") }}</div>
+                    <div class="form-group">{{ form.qtde_fechada.label }} {{ form.qtde_fechada(class="form-control") }}</div>
+                    <div class="form-group">{{ form.qfe_unidade.label }} {{ form.qfe_unidade(class="form-control") }}</div>
+                    <div class="form-group">{{ form.qtde_fracionada.label }} {{ form.qtde_fracionada(class="form-control") }}</div>
+                    <div class="form-group">{{ form.qfr_unidade.label }} {{ form.qfr_unidade(class="form-control") }}</div>
+                    <div class="form-group">{{ form.preco_fechado.label }} {{ form.preco_fechado(class="form-control") }}</div>
+                </div>
+                {{ form.enviar(class="btn btn-primary") }}
+            </form>
         </div>
-        </form>  
-        <div class="table">
-            <table>                  
-                <!-- coluna   -->
-                <thead>
-                    <!-- Uma passada de for in range reformata a saida de sql. -->
-                    {%for n in range(0,1):%} 
-                    <tr>                   
-                        {% for i in get[1]:%}                          
-                            <th>{{ i[n] }}</th>                                          
-                            {%endfor%}  
-                    </tr>                 
-                    {%endfor%} 
-                   
-                </thead>          
-                <!-- linha -->          
-                <tbody>                 
-                    {% for v in get[0]:%} 
-                     <!-- Linhas -->
-                      <tr>  
-                        {%for c in range(0,15)%} 
-                        <!-- elementos da linha          -->
-                         <td>{{v[c]}}</td> 
-                         
-                                       
-                         {%endfor%} 
-                         <!-- Deletar linha -->
-                         <td><a href="{{url_for('sig.delete',tabela=tab,id=v[0])}}"><img src="/static/icon/delete.png" /></a></td>
-                         
-                        </tr> 
-                     
-                        {%endfor%} 
-                       
-                      
-                  </tbody>              
-            </table>
-        </div> 
-    </div>
+    </main>
 </body>
 </html>

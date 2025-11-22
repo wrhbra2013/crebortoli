@@ -30,9 +30,6 @@
                 <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_depreciacao') }}">Cadastrar Depreciação</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_margem') }}">Cadastrar Margem</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_markup') }}">Cadastrar Markup</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_imposto') }}">Cadastrar Imposto</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_servico') }}">Cadastrar Serviço</a></li>
-            <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_produto') }}">Cadastrar Produto</a></li>
             </ul>
         </li>
 
@@ -46,6 +43,13 @@
                 <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='vendas_servicos') }}">Listar Vendas de Serviços</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='vendas_produtos') }}">Listar Vendas de Produtos</a></li>
                 <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='relatorioMEI') }}">Listar Relatórios MEI</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='colaboradores') }}">Listar Colaboradores</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='anaminese') }}">Listar Fichas de Anamnese</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='impostos') }}">Listar Custos Fixos</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='insumos') }}">Listar Insumos</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='depreciacao') }}">Listar Depreciação</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='margem') }}">Listar Margem de Contribuição</a></li>
+                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='markup') }}">Listar Markup</a></li>
             </ul>
         </li>
         

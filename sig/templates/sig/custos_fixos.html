@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.ico') }}" />
+    <title>{{ titulo }} - SIG Cre Bortoli</title>
+</head>
+<body>
+    {% include 'sig/_header.html' %}
+
+    <main class="container">
+        <h1>{{ titulo }}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-container">
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                <div class="form-fields">
+                    <div class="form-group">{{ form.alu.label }} {{ form.alu(class="form-control") }}</div>
+                    <div class="form-group">{{ form.IPTU.label }} {{ form.IPTU(class="form-control") }}</div>
+                    <div class="form-group">{{ form.luz.label }} {{ form.luz(class="form-control") }}</div>
+                    <div class="form-group">{{ form.agua.label }} {{ form.agua(class="form-control") }}</div>
+                    <div class="form-group">{{ form.tel.label }} {{ form.tel(class="form-control") }}</div>
+                    <div class="form-group">{{ form.net.label }} {{ form.net(class="form-control") }}</div>
+                    <div class="form-group">{{ form.alu_car.label }} {{ form.alu_car(class="form-control") }}</div>
+                    <div class="form-group">{{ form.MEI.label }} {{ form.MEI(class="form-control") }}</div>
+                    <div class="form-group">{{ form.descart.label }} {{ form.descart(class="form-control") }}</div>
+                    <div class="form-group">{{ form.n_prod.label }} {{ form.n_prod(class="form-control") }}</div>
+                    <div class="form-group">{{ form.equip.label }} {{ form.equip(class="form-control") }}</div>
+                    <div class="form-group">{{ form.mkt.label }} {{ form.mkt(class="form-control") }}</div>
+                    <div class="form-group">{{ form.prolab.label }} {{ form.prolab(class="form-control") }}</div>
+                    <div class="form-group">{{ form.terc.label }} {{ form.terc(class="form-control") }}</div>
+                    <div class="form-group">{{ form.reserva.label }} {{ form.reserva(class="form-control") }}</div>
+                </div>
+                {{ form.enviar(class="btn btn-primary") }}
+            </form>
+        </div>
+    </main>
+</body>
+</html>

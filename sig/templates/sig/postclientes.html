@@ -1,33 +1,40 @@
- {% include 'sig/_header.html' %}
- 
- <main class="container">
-     <section>
-         <h2>Cadastro de Clientes</h2>
-     </section>
- 
-     <form action="" method="POST">
-         {{ form.csrf_token }}  {# CSRF protection #} 
-         {% for field in form %}
-             {% if field.type != 'CSRFTokenField' %}
-                 <div class="form-group">
-                     {{ field.label(class="form-label") }}
-                     {{ field(class="form-control") }}
-                     {% if field.errors %}
-                         <ul class="errors">
-                             {% for error in field.errors %}
-                                 <li>{{ error }}</li>
-                             {% endfor %}
-                         </ul>
-                     {% endif %}
-                 </div>
-             {% endif %}
-         {% endfor %}
- 
-         <div class="form-group">
-             <button type="submit" class="btn btn-primary">Cadastrar</button>
-         </div>
-     </form>
- </main>
- 
- {% include 'sig/_footer.html' %}
- 
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.ico') }}" />
+    <title>{{ titulo }} - SIG Cre Bortoli</title>
+</head>
+<body>
+    {% include 'sig/_header.html' %}
+
+    <main class="container">
+        <h1>{{ titulo }}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-container">
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                <div class="form-fields">
+                    <div class="form-group">{{ form.nome.label }} {{ form.nome(class="form-control") }}</div>
+                    <div class="form-group">{{ form.cpf.label }} {{ form.cpf(class="form-control") }}</div>
+                    <div class="form-group">{{ form.email.label }} {{ form.email(class="form-control") }}</div>
+                    <div class="form-group">{{ form.telefone.label }} {{ form.telefone(class="form-control") }}</div>
+                </div>
+                {{ form.enviar(class="btn btn-primary") }}
+            </form>
+        </div>
+    </main>
+</body>
+</html>

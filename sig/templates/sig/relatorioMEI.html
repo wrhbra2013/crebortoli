@@ -1,148 +1,80 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "sig/_base.html" %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+{% block title %}Gestão MEI - SIG{% endblock %}
 
-    <link rel="stylesheet" href='/static/css/style.css'>
-    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
-    <title>Relatório MEI</title>
-
-</head>
-
-<body>
-    <div class="header">
-        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
-        <h1> Espaço Cre  Bortoli </h1>
-        
-    </div>
-    <nav>       
-        <ul class="menu">
-        <li><a href="{{url_for('paginas.home')}}">Redes Sociais</a></li> 
-        <!-- Submenu -->
-        <li><a href="#" >Clientes</a> 
-        <ul>           
-        <li><a href="{{url_for('sig.postclientes')}}">Cadastro de Clientes</a></li>
-        <li><a href="{{url_for('sig.getclientes')}}">Busca de Clientes</a></li>
-        <li><a href="{{url_for('sig.anaminese')}}">Ficha de Anaminese</a></li>
-        </ul>
-        </li>
-        <!-- Fim submenu -->
-        <!-- Submenu -->
-        <li><a href="#" >Vendas</a> 
-        <ul> 
-        <li><a href="{{url_for('sig.vendas_servicos')}}">Serviços</a></li>
-        <li><a href="{{url_for('sig.vendas_produtos')}}">Produtos</a></li>
-        </ul>
-        </li>
-        <!-- Fim submenu -->
-        <li><a href="{{url_for('sig.compras')}}">Compras</a></li>
-        <li><a href="{{url_for('sig.estoque')}}">Estoque</a></li>
-        <li><a href="{{url_for('sig.pessoal')}}">Pessoal</a></li>
-        <li><a href="#">Financeiro</a>
-        <ul>              
-            <li><a href="{{url_for('sig.depreciacao')}}">Gestão de Depreciacao</a></li>
-            <li><a href="{{url_for('sig.insumos')}}">Gestão de Materiais</a></li>
-            <li><a href="{{url_for('sig.impostos')}}">Gestão de Impostos</a></li>
-            <li><a href="{{url_for('sig.margemlucro')}}">Gestão de Margem de Lucro</a></li>
-            <li><a href="{{url_for('sig.markup')}}">Gestão Markup</a></li>
-            <li><a href="{{url_for('sig.relatorioMEI')}}">Gestão MEI</a></li>
-            <li><a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank">Gestão MEI - Acesso DASN-SIMEI</a></li>
-           
-           
-        </ul>
-        </li>
-        
-        <li><a href="#">Fiscal</a> 
-            <ul>
-                <li><a href="{{url_for('sig.nota')}}">Emiissão de Notas</a></li>  
-                <li><a href="https://www.nfse.gov.br/EmissorNacional/Login?ReturnUrl=%2fEmissorNacional" target="_blank">NFS-e - Contribuinte</a></li>       
-            </ul>
-        </li>                                  
-        </ul>       
-    </nav>
+{% block content %}
+<div class="container">
     <h1>Gestão MEI</h1>
-    <div class="container">
-        <!-- Em algum lugar do seu template, como sig/relatorioMEI.html -->
-        <p>
-            Para emitir a guia de pagamento DAS, acesse o portal oficial.
-            <a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank" rel="noopener noreferrer">
-                Acessar Portal do Simples Nacional
-            </a>
-        </p>
-        
-        <form action="" method="POST" target="mydiv">
 
-            <fieldset class="form">
-                <legend> Relatório Mensal das Receitas Brutas. </legend>
-                {{form13.apuracao.label}}
-                {{form13.apuracao}}
-                {{form13.cnpj.label}}
-                {{form13.cnpj}}
-                {{form13.razao_social.label}}
-                {{form13.razao_social}}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flashes">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
 
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('sig.cadastrar_relatorio_mei') }}">
+            {{ form.hidden_tag() }}
+            <fieldset class="form"><legend>Relatório Mensal das Receitas Brutas</legend>
+                <div class="form-group">{{ form.apuracao.label }} {{ form.apuracao(class="form-control") }}</div>
+                <div class="form-group">{{ form.cnpj.label }} {{ form.cnpj(class="form-control") }}</div>
+                <div class="form-group">{{ form.razao_social.label }} {{ form.razao_social(class="form-control") }}</div>
             </fieldset>
-            <fieldset class="form">
-                <legend> Receita Bruta Total - Venda de Produtos(Comércio)</legend>
-                {{form13.pdn.label}}
-                {{form13.pdn}}
-                {{form13.pen.label}}
-                {{form13.pen}}
+            <fieldset class="form"><legend>Receita Bruta Total - Venda de Produtos (Comércio)</legend>
+                <div class="form-group">{{ form.pdn.label }} {{ form.pdn(class="form-control") }}</div>
+                <div class="form-group">{{ form.pen.label }} {{ form.pen(class="form-control") }}</div>
             </fieldset>
-            <fieldset class="form">
-                <legend>Receita Bruta Mensal - Prestação de Serviços</legend>
-                {{form13.sdn.label}}
-                {{form13.sdn}}
-                {{form13.sen.label}}
-                {{form13.sen}}
-
+            <fieldset class="form"><legend>Receita Bruta Mensal - Prestação de Serviços</legend>
+                <div class="form-group">{{ form.sdn.label }} {{ form.sdn(class="form-control") }}</div>
+                <div class="form-group">{{ form.sen.label }} {{ form.sen(class="form-control") }}</div>
             </fieldset>
-            <fieldset class="form">
-                <legend>Validação:</legend>
-                {{form13.local.label}}
-                {{form13.local}}
-                {{form13.assinatura.label}}
-                {{form13.assinatura}}
-                {{form13.enviar}}
-                <input type="button"  value="Emitir Relatório" onclick="emitir_nota()" target="_blank"/>
-              
-
+            <fieldset class="form"><legend>Validação</legend>
+                <div class="form-group">{{ form.local.label }} {{ form.local(class="form-control") }}</div>
+                <div class="form-group">{{ form.data.label }} {{ form.data(class="form-control") }}</div>
+                <div class="form-group">{{ form.assinatura.label }} {{ form.assinatura(class="form-control") }}</div>
             </fieldset>
-
+            {{ form.submit(class="btn btn-primary") }}
         </form>
-       
-       
-        <div class="table">
-            <table>
-                <!-- coluna   -->
-                <thead>
-                    <!-- Uma passada de for in range reformata a saida de sql. -->
-                    {%for n in range(0,1):%}
-                    <tr>
-                        {% for i in get[1]:%}
-                        <th>{{ i[n] }}</th>
-                        {%endfor%}
-                    </tr>
-                    {%endfor%}
-
-                </thead>
-                <!-- linha -->
-                <tbody>
-                    {% for v in get[0]:%}
-                    <tr>
-                        {%for c in range(0,22)%}
-                        <td>{{v[c]}}</td>
-                        {%endfor%}
-                         <!-- Deletar linha -->
-                         <td><a href="{{url_for('sig.delete',tabela=tab,id=v[0])}}"><img src="/static/icon/delete.png" /></a></td>
-                    </tr>
-                    {%endfor%}
-                </tbody>
-            </table>
-        </div>
     </div>
-</body>
 
-</html>
+    <hr>
+    <h2>Relatórios Salvos</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    {% for header in cabecalho %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dados %}
+                <tr>
+                    {% for value in row %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                    <td>
+                        <form action="{{ url_for('sig.delete_record', table_name=table_name, record_id=row.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja deletar este registro?');">
+                            {{ form.hidden_tag() }}
+                            <button type="submit" class="btn-delete">
+                                <img src="{{ url_for('static', filename='icon/delete.png') }}" alt="Deletar" />
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{{ cabecalho|length + 1 }}">Nenhum relatório encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

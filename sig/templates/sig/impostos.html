@@ -1,139 +1,83 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <link rel="stylesheet" href='/static/css/style.css'>
-    <link rel="icon" type="image/png" href="/static/icon/favicon.ico" />
-    <title>Sistema Integrado de Gestão</title>
-    <title>Custos Fixos.</title>
-</head>
-<body>
-    <div class="header">
-        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
-        <h1> Espaço Cre  Bortoli </h1>
-        
-    </div>
-    <nav>       
-        <ul class="menu">
-        <li><a href="{{url_for('paginas.home')}}">Redes Sociais</a></li> 
-        <!-- Submenu -->
-        <li><a href="#" >Clientes</a> 
-        <ul>           
-        <li><a href="{{url_for('sig.postclientes')}}">Cadastro de Clientes</a></li>
-        <li><a href="{{url_for('sig.getclientes')}}">Busca de Clientes</a></li>
-        <li><a href="{{url_for('sig.anaminese')}}">Ficha de Anaminese</a></li>
-        </ul>
-        </li>
-        <!-- Fim submenu -->
-        <!-- Submenu -->
-        <li><a href="#" >Vendas</a> 
-        <ul> 
-        <li><a href="{{url_for('sig.vendas_servicos')}}">Serviços</a></li>
-        <li><a href="{{url_for('sig.vendas_produtos')}}">Produtos</a></li>
-        </ul>
-        </li>
-        <!-- Fim submenu -->
-        <li><a href="{{url_for('sig.compras')}}">Compras</a></li>
-        <li><a href="{{url_for('sig.estoque')}}">Estoque</a></li>
-        <li><a href="{{url_for('sig.pessoal')}}">Pessoal</a></li>
-        <li><a href="#">Financeiro</a>
-        <ul>              
-            <li><a href="{{url_for('sig.depreciacao')}}">Gestão de Depreciacao</a></li>
-            <li><a href="{{url_for('sig.insumos')}}">Gestão de Materiais</a></li>
-            <li><a href="{{url_for('sig.impostos')}}">Gestão de Impostos</a></li>
-            <li><a href="{{url_for('sig.margemlucro')}}">Gestão de Margem de Lucro</a></li>
-            <li><a href="{{url_for('sig.markup')}}">Gestão Markup</a></li>
-            <li><a href="{{url_for('sig.relatorioMEI')}}">Gestão MEI</a></li>
-            <li><a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank">Gestão MEI - Acesso DASN-SIMEI</a></li>
-           
-           
-        </ul>
-        </li>
-        
-        <li><a href="#">Fiscal</a> 
-            <ul>
-                <li><a href="{{url_for('sig.nota')}}">Emiissão de Notas</a></li>  
-                <li><a href="https://www.nfse.gov.br/EmissorNacional/Login?ReturnUrl=%2fEmissorNacional" target="_blank">NFS-e - Contribuinte</a></li>       
-            </ul>
-        </li>                                  
-        </ul>       
-    </nav>
-    <h1> Custo Fixo -  Impostos & Pagamentos.</h1>
-    <div class="container">
-    <form action="" method="POST" target="mydiv">
-          <fieldset class="form">           
-            <legend>Taxas & Impostos.</legend>
-            {{form14.alu.label}}
-            {{form14.alu}}
-            {{form14.IPTU.label}}
-            {{form14.IPTU}}
-            {{form14.luz.label}}
-            {{form14.luz}}
-            {{form14.agua.label}}
-            {{form14.agua}}
-            {{form14.tel.label}}
-            {{form14.tel}}
-            {{form14.net.label}}
-            {{form14.net}}
-            {{form14.alu_car.label}}
-            {{form14.alu_car}}
-            {{form14.MEI.label}}
-            {{form14.MEI}}
+{% extends "sig/_base.html" %}
 
-        </fieldset>
-        <fieldset class="form">
-            <legend>Manutenção</legend>
-            {{form14.descart.label}}
-            {{form14.descart}}
-            {{form14.n_prod.label}}
-            {{form14.n_prod}}
-            {{form14.equip.label}}
-            {{form14.equip}}
-        </fieldset>
-        <fieldset class="form">
-            <legend>Gestão</legend>
-            {{form14.mkt.label}}
-            {{form14.mkt}}
-            {{form14.prolab.label}}
-            {{form14.prolab}}
-            {{form14.terc.label}}
-            {{form14.terc}}
-            {{form14.reserva.label}}
-            {{form14.reserva}}
-            {{form14.enviar}}
+{% block title %}Custos Fixos - SIG{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1>Custo Fixo - Impostos & Pagamentos</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flashes">
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">{{ message }}</div>
+            {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('sig.cadastrar_custos_fixos') }}">
+            {{ form.hidden_tag() }}
+            <fieldset class="form"><legend>Taxas & Impostos</legend>
+                <div class="form-group">{{ form.alu.label }} {{ form.alu(class="form-control") }}</div>
+                <div class="form-group">{{ form.IPTU.label }} {{ form.IPTU(class="form-control") }}</div>
+                <div class="form-group">{{ form.luz.label }} {{ form.luz(class="form-control") }}</div>
+                <div class="form-group">{{ form.agua.label }} {{ form.agua(class="form-control") }}</div>
+                <div class="form-group">{{ form.tel.label }} {{ form.tel(class="form-control") }}</div>
+                <div class="form-group">{{ form.net.label }} {{ form.net(class="form-control") }}</div>
+                <div class="form-group">{{ form.alu_car.label }} {{ form.alu_car(class="form-control") }}</div>
+                <div class="form-group">{{ form.MEI.label }} {{ form.MEI(class="form-control") }}</div>
             </fieldset>
-            
-    </form>
+            <fieldset class="form"><legend>Manutenção</legend>
+                <div class="form-group">{{ form.descart.label }} {{ form.descart(class="form-control") }}</div>
+                <div class="form-group">{{ form.n_prod.label }} {{ form.n_prod(class="form-control") }}</div>
+                <div class="form-group">{{ form.equip.label }} {{ form.equip(class="form-control") }}</div>
+            </fieldset>
+            <fieldset class="form"><legend>Gestão</legend>
+                <div class="form-group">{{ form.mkt.label }} {{ form.mkt(class="form-control") }}</div>
+                <div class="form-group">{{ form.prolab.label }} {{ form.prolab(class="form-control") }}</div>
+                <div class="form-group">{{ form.terc.label }} {{ form.terc(class="form-control") }}</div>
+                <div class="form-group">{{ form.reserva.label }} {{ form.reserva(class="form-control") }}</div>
+            </fieldset>
+            {{ form.submit(class="btn btn-primary") }}
+        </form>
+    </div>
 
-    <div class="table">
-        <table>                  
-            <!-- coluna   -->
+    <hr>
+    <h2>Custos Salvos</h2>
+    <div class="table-responsive">
+        <table class="table table-striped">
             <thead>
-                <!-- Uma passada de for in range reformata a saida de sql. -->
-                {%for n in range(0,1):%} 
-                <tr>                   
-                    {% for i in get[1]:%}                          
-                        <th>{{ i[n] }}</th>                                          
-                        {%endfor%}  
-                </tr>                 
-                {%endfor%} 
-               
-            </thead>          
-            <!-- linha -->          
-            <tbody>                 
-                {% for v in get[0]:%} 
-                  <tr>  
-                    {%for c in range(0,25)%}                    
-                     <td>{{v[c]}}</td>                     
-                     {%endfor%}   
-                <!-- Deletar linha -->
-                    <td><a href="{{url_for('sig.delete',tabela=tab,id=v[0])}}"><img src="/static/icon/delete.png" /></a></td> 
-                    </tr>
-                    {%endfor%}            
-              </tbody>              
+                <tr>
+                    {% for header in cabecalho %}
+                        <th>{{ header }}</th>
+                    {% endfor %}
+                    <th>Ação</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dados %}
+                <tr>
+                    {% for value in row %}
+                        <td>{{ value }}</td>
+                    {% endfor %}
+                    <td>
+                        <form action="{{ url_for('sig.delete_record', table_name=table_name, record_id=row.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja deletar este registro?');">
+                            {{ form.hidden_tag() }}
+                            <button type="submit" class="btn-delete">
+                                <img src="{{ url_for('static', filename='icon/delete.png') }}" alt="Deletar" />
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{{ cabecalho|length + 1 }}">Nenhum custo encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
         </table>
-    </div> 
- </div>
-   
-</body>
-</html>
+    </div>
+</div>
+{% endblock %}

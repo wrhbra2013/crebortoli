@@ -1,13 +1,12 @@
-from flask import (
-Blueprint, render_template, redirect, url_for, request, flash, session, current_app, abort
-)
+from flask import (Blueprint, render_template, redirect, url_for, request, flash, session, current_app, abort)
 from datetime import timedelta, date
 from functools import wraps
-import sqlite3
-from init_db import DB_FILE
+import psycopg2
+from psycopg2.extras import DictCursor
+from init_db import get_connection
 
 # Importa todos os formulários padronizados do form.py
-from .form import *;
+from .form import *
 
 #==============================================================================
 # CONFIGURAÇÃO DO BLUEPRINT
@@ -44,27 +43,30 @@ def make_session_permanent():
 # ==============================================================================
 # FUNÇÕES DE BANCO DE DADOS (Refatoradas e Otimizadas)
 # ==============================================================================
-def get_connection():
-    """Cria e retorna uma nova conexão com o banco de dados."""
-    return sqlite3.connect(DB_FILE)
-
 def db_execute(sql, params=(), commit=False):
     """Função genérica para executar comandos SQL (INSERT, UPDATE, DELETE)."""
-    with get_connection() as conn:
-        cur = conn.cursor()
-        cur.execute(sql, params)
+    conn = get_connection()
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
         if commit:
             conn.commit()
+    finally:
+        if conn:
+            conn.close()
 
 def db_fetch(sql, params=(), one=False):
     """Função genérica para buscar dados (SELECT), retornando dados e cabeçalhos."""
-    with get_connection() as conn:
-        conn.row_factory = sqlite3.Row  # Permite acesso por nome de coluna
-        cur = conn.cursor()
-        cur.execute(sql, params)
-        headers = [desc[0] for desc in cur.description] if cur.description else []
-        result = cur.fetchone() if one else cur.fetchall()
-        return result, headers
+    conn = get_connection()
+    try:
+        with conn.cursor(cursor_factory=DictCursor) as cur:
+            cur.execute(sql, params)
+            headers = [desc[0] for desc in cur.description] if cur.description else []
+            result = cur.fetchone() if one else cur.fetchall()
+            return result, headers
+    finally:
+        if conn:
+            conn.close()
 
 # --- Funções de Consulta Específicas ---
 def get_table_data(get_func, search_term=""):
@@ -72,34 +74,75 @@ def get_table_data(get_func, search_term=""):
     return get_func(search_term)
 
 def get_clientes(search_term=""):
-    sql = "SELECT id, nome, email, telefone, STRFTIME('%d/%m/%Y', Ultima_Atualizacao) as 'Atualizado em' FROM clientes WHERE nome LIKE ? ORDER BY nome;"
+    sql = "SELECT id, nome, email, telefone, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Atualizado em\" FROM clientes WHERE nome LIKE %s ORDER BY nome;"
     return db_fetch(sql, ('%' + search_term + '%',))
 
 def get_compras(search_term=""):
-    sql = "SELECT id, Produto, Marca, Quantidade, Preco_Unitario, STRFTIME('%d/%m/%Y', Validade) as Validade FROM compras WHERE Produto LIKE ? ORDER BY id DESC;"
+    sql = "SELECT id, Produto, Marca, Quantidade, Preco_Unitario, TO_CHAR(Validade, 'DD/MM/YYYY') as Validade FROM compras WHERE Produto LIKE %s ORDER BY id DESC;"
     return db_fetch(sql, ('%' + search_term + '%',))
 
 def get_vendas_servicos(search_term=""):
-    sql = "SELECT id, Cliente, Servico, Preco_Final, STRFTIME('%d/%m/%Y', Ultima_Atualizacao) as 'Realizada em' FROM vendas_servicos WHERE Cliente LIKE ? ORDER BY id DESC;"
+    sql = "SELECT id, Cliente, Servico, Preco_Final, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Realizada em\" FROM vendas_servicos WHERE Cliente LIKE %s ORDER BY id DESC;"
     return db_fetch(sql, ('%' + search_term + '%',))
 
 def get_vendas_produtos(search_term=""):
-    sql = "SELECT id, Cliente, Produto, Preco_Final, STRFTIME('%d/%m/%Y', Ultima_Atualizacao) as 'Realizada em' FROM vendas_produtos WHERE Cliente LIKE ? ORDER BY id DESC;"
+    sql = "SELECT id, Cliente, Produto, Preco_Final, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Realizada em\" FROM vendas_produtos WHERE Cliente LIKE %s ORDER BY id DESC;"
     return db_fetch(sql, ('%' + search_term + '%',))
 
 def get_relatorioMEI(search_term=""):
-    sql = "SELECT id, Apuracao, Total_Geral_Receitas, Data FROM relatorioMEI WHERE Apuracao LIKE ? ORDER BY Apuracao DESC;"
+    # A busca em campo de data/timestamp pode precisar de ajuste dependendo do formato de 'search_term'
+    sql = "SELECT id, Apuracao, Total_Geral_Receitas, Data FROM relatorioMEI WHERE CAST(Apuracao AS TEXT) LIKE %s ORDER BY Apuracao DESC;"
+    return db_fetch(sql, ('%' + search_term + '%',))
+
+def get_agendamentos(search_term=""):
+    sql = "SELECT Cliente, TO_CHAR(Dia, 'DD/MM/YYYY') as Dia, Hora, Atendimento FROM agenda WHERE Cliente LIKE %s ORDER BY Dia, Hora;"
+    return db_fetch(sql, ('%' + search_term + '%',))
+
+def get_impostos(search_term=""):
+    """Busca dados de custos fixos (tabela impostos)."""
+    sql = "SELECT id, aluguel, IPTU, luz, agua, prolabore, Total_Custos_Fixos, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Atualizado em\" FROM impostos WHERE CAST(id AS TEXT) LIKE %s ORDER BY id DESC;"
+    return db_fetch(sql, ('%' + search_term + '%',))
+
+def get_insumos(search_term=""):
+    """Busca dados de insumos."""
+    sql = "SELECT id, Tipo_Servico, Nome_Insumo, Custo_Secao, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Atualizado em\" FROM insumos WHERE Nome_Insumo LIKE %s ORDER BY id DESC;"
+    return db_fetch(sql, ('%' + search_term + '%',))
+
+def get_depreciacao(search_term=""):
+    """Busca dados de depreciação."""
+    sql = "SELECT id, Objeto, Preco_Custo, Anos_Uso, Valor_Depreciacao, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Atualizado em\" FROM depreciacao WHERE Objeto LIKE %s ORDER BY id DESC;"
+    return db_fetch(sql, ('%' + search_term + '%',))
+
+def get_margem(search_term=""):
+    """Busca dados de margem de contribuição."""
+    sql = "SELECT id, Tipo_Servico, Preco_Ofertado, Custo_Variavel, Custo_Fixo, Projecao_Atendimentos, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Atualizado em\" FROM margem WHERE Tipo_Servico LIKE %s ORDER BY id DESC;"
+    return db_fetch(sql, ('%' + search_term + '%',))
+
+def get_markup(search_term=""):
+    """Busca dados de markup."""
+    sql = "SELECT id, Tipo_Servico, Preco_Ofertado, Indice_Markup, Preco_Justo, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Atualizado em\" FROM markup WHERE Tipo_Servico LIKE %s ORDER BY id DESC;"
+    return db_fetch(sql, ('%' + search_term + '%',))
+
+def get_colaboradores(search_term=""):
+    """Busca dados de colaboradores."""
+    sql = "SELECT id, Nome, Funcao, Salario, TO_CHAR(Ultima_Atualizacao, 'DD/MM/YYYY') as \"Atualizado em\" FROM colaboradores WHERE Nome LIKE %s ORDER BY id DESC;"
+    return db_fetch(sql, ('%' + search_term + '%',))
+
+def get_anamnese(search_term=""):
+    """Busca dados de fichas de anamnese."""
+    sql = "SELECT id, nome, cpf, queixa_principal, TO_CHAR(nascimento, 'DD/MM/YYYY') as \"Nascimento\" FROM anaminese WHERE nome LIKE %s ORDER BY nome;"
     return db_fetch(sql, ('%' + search_term + '%',))
 
 def delete_record_by_id(table_name, record_id):
     """Função segura para deletar um registro de uma tabela permitida."""
     allowed_tables = {
-        'clientes', 'compras', 'vendas_servicos', 'vendas_produtos', 'colaboradores',
-        'impostos', 'insumos', 'depreciacao', 'margem', 'markup', 'relatorioMEI'
+        'post', 'enquete', 'clientes', 'anaminese', 'agenda', 'compras',
+        'vendas_produtos', 'vendas_servicos', 'colaboradores', 'relatorioMEI',
+        'impostos', 'insumos', 'depreciacao', 'margem', 'markup'
     }
     if table_name not in allowed_tables:
         raise ValueError(f"A exclusão na tabela '{table_name}' não é permitida.")
-    sql = f"DELETE FROM {table_name} WHERE id = ?;"
+    sql = f"DELETE FROM {table_name} WHERE id = %s;"
     db_execute(sql, (record_id,), commit=True)
 
 # ==============================================================================
@@ -133,30 +176,44 @@ def logout():
 @login_required
 def dashboard():
     """Painel principal do SIG com KPIs (Key Performance Indicators)."""
+    kpis = {
+        'total_clientes': 0,
+        'total_receitas_mes': 0.0,
+        'total_custos_mes': 0.0,
+        'lucro_mes': 0.0,
+        'agendamentos_hoje': 0,
+        'pro_labore_mes': 0.0
+    }
     try:
-        # Busca total de clientes
-        total_clientes, _ = db_fetch("SELECT COUNT(id) FROM clientes;", one=True)
-
-        # Busca vendas e custos do mês atual
         current_month = date.today().strftime('%Y-%m')
-        vendas_mes, _ = db_fetch("SELECT SUM(Preco_Final) FROM vendas_servicos WHERE strftime('%Y-%m', Ultima_Atualizacao) = ?;", (current_month,), one=True)
-        compras_mes, _ = db_fetch("SELECT SUM(Preco_Unitario * Quantidade) FROM compras WHERE strftime('%Y-%m', Ultima_Atualizacao) = ?;", (current_month,), one=True)
+        today_str = date.today().strftime('%Y-%m-%d')
 
-        # Garante que os valores não sejam None
-        total_clientes = total_clientes[0] if total_clientes else 0
-        total_vendas_mes = vendas_mes[0] if vendas_mes and vendas_mes[0] else 0.0
-        total_compras_mes = compras_mes[0] if compras_mes and compras_mes[0] else 0.0
-        lucro_mes = total_vendas_mes - total_compras_mes
+        # --- Receitas do Mês (Serviços + Produtos) ---
+        vendas_servicos_mes, _ = db_fetch("SELECT SUM(Preco_Final) FROM vendas_servicos WHERE TO_CHAR(Ultima_Atualizacao, 'YYYY-MM') = %s;", (current_month,), one=True)
+        vendas_produtos_mes, _ = db_fetch("SELECT SUM(Preco_Final) FROM vendas_produtos WHERE TO_CHAR(Ultima_Atualizacao, 'YYYY-MM') = %s;", (current_month,), one=True)
+        total_receitas_mes = (vendas_servicos_mes[0] or 0) + (vendas_produtos_mes[0] or 0)
 
-    except sqlite3.Error as e:
+        # --- Custos do Mês (Compras + Custos Fixos) ---
+        custos_compras_mes, _ = db_fetch("SELECT SUM(Custo_Estoque) FROM compras WHERE TO_CHAR(Ultima_Atualizacao, 'YYYY-MM') = %s;", (current_month,), one=True)
+        custos_fixos_mes, _ = db_fetch("SELECT SUM(Total_Custos_Fixos) FROM impostos WHERE TO_CHAR(Ultima_Atualizacao, 'YYYY-MM') = %s;", (current_month,), one=True)
+        total_custos_mes = (custos_compras_mes[0] or 0) + (custos_fixos_mes[0] or 0)
+
+        # --- Outros KPIs ---
+        total_clientes, _ = db_fetch("SELECT COUNT(id) FROM clientes;", one=True)
+        agendamentos_hoje, _ = db_fetch("SELECT COUNT(*) FROM agenda WHERE Dia = %s;", (today_str,), one=True)
+        pro_labore_mes, _ = db_fetch("SELECT SUM(prolabore) FROM impostos WHERE TO_CHAR(Ultima_Atualizacao, 'YYYY-MM') = %s;", (current_month,), one=True)
+
+        kpis['total_clientes'] = total_clientes[0] if total_clientes else 0
+        kpis['total_receitas_mes'] = float(total_receitas_mes)
+        kpis['total_custos_mes'] = float(total_custos_mes)
+        kpis['lucro_mes'] = float(total_receitas_mes - total_custos_mes)
+        kpis['agendamentos_hoje'] = agendamentos_hoje[0] if agendamentos_hoje else 0
+        kpis['pro_labore_mes'] = float(pro_labore_mes[0] or 0.0)
+
+    except psycopg2.Error as e:
         flash(f"Ocorreu um erro ao buscar os dados do dashboard: {e}", "danger")
-        total_clientes, total_vendas_mes, total_compras_mes, lucro_mes = 0, 0.0, 0.0, 0.0
 
-    return render_template('sig/sig.html',
-                        total_clientes=total_clientes,
-                        total_vendas_mes=total_vendas_mes,
-                        total_compras_mes=total_compras_mes,
-                        lucro_mes=lucro_mes)
+    return render_template('sig/sig.html', **kpis)
 
 # ==============================================================================
 # ROTA DINÂMICA PARA VISUALIZAÇÃO DE TABELAS (GET)
@@ -170,7 +227,15 @@ def view_table(table_name):
         'compras': {'get_func': get_compras, 'template': 'view_table.html', 'title': 'Histórico de Compras'},
         'vendas_servicos': {'get_func': get_vendas_servicos, 'template': 'view_table.html', 'title': 'Vendas de Serviços'},
         'vendas_produtos': {'get_func': get_vendas_produtos, 'template': 'view_table.html', 'title': 'Vendas de Produtos'},
-        'relatorioMEI': {'get_func': get_relatorioMEI, 'template': 'view_table.html', 'title': 'Relatórios MEI'}
+        'relatorioMEI': {'get_func': get_relatorioMEI, 'template': 'view_table.html', 'title': 'Relatórios MEI'},
+        'agenda': {'get_func': get_agendamentos, 'template': 'view_table.html', 'title': 'Agenda de Horários'},
+        'impostos': {'get_func': get_impostos, 'template': 'view_table.html', 'title': 'Custos Fixos'},
+        'insumos': {'get_func': get_insumos, 'template': 'view_table.html', 'title': 'Insumos'},
+        'depreciacao': {'get_func': get_depreciacao, 'template': 'view_table.html', 'title': 'Depreciação'},
+        'margem': {'get_func': get_margem, 'template': 'view_table.html', 'title': 'Margem de Contribuição'},
+        'markup': {'get_func': get_markup, 'template': 'view_table.html', 'title': 'Markup'},
+        'colaboradores': {'get_func': get_colaboradores, 'template': 'view_table.html', 'title': 'Colaboradores'},
+        'anaminese': {'get_func': get_anamnese, 'template': 'view_table.html', 'title': 'Fichas de Anamnese'}
     }
     config = table_map.get(table_name)
     if not config:
@@ -216,299 +281,289 @@ def delete_record(table_name, record_id):
     return redirect(request.referrer or url_for('sig.dashboard'))  # Handle GET requests
 
 # ==============================================================================
-# HELPER FUNCTION FOR REGISTRATION ROUTES
-# ==============================================================================
-def handle_registration(form, sql, params, success_message, template, title):
-    if form.validate_on_submit():
-        try:
-            db_execute(sql, params, commit=True)
-            flash(success_message, 'success')
-            return redirect(request.url)  # Redirect to the same registration page
-        except sqlite3.IntegrityError:
-            flash('Erro: Já existe um registro com estas informações.', 'danger')
-        except Exception as e:
-            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
-    return render_template(template, form=form, titulo=title)
-
-# ==============================================================================
 # ROTAS DE CADASTRO (Nomes e Formulários Padronizados)
 # ==============================================================================
 # Note: As rotas foram renomeadas para 'cadastrar_*' para maior clareza.
 # Os nomes dos formulários foram atualizados para os nomes padronizados em form.py.
+# A função 'handle_registration' foi removida para uma lógica mais clara em cada rota.
 
 @app_gestao.route('/cadastrar_cliente', methods=['GET', 'POST'])
 @login_required
 def cadastrar_cliente():
     form = ClienteForm()
     if form.validate_on_submit():
-        # Process the form data (POST request)
-        sql = "INSERT INTO clientes (nome, cpf, email, telefone) VALUES (?, ?, ?, ?);"
+        sql = "INSERT INTO clientes (nome, cpf, email, telefone) VALUES (%s, %s, %s, %s);"
         params = (form.nome.data, form.cpf.data, form.email.data, form.telefone.data)
-    return handle_registration(form, sql, params, 'Cliente cadastrado com sucesso!', 'sig/postclientes.html', "Cadastrar Cliente")
-    # Render the form (GET request)
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Cliente cadastrado com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_cliente'))
+        except psycopg2.IntegrityError:
+            flash('Erro: Já existe um registro com estas informações (ex: CPF ou email duplicado).', 'danger')
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
     return render_template('sig/postclientes.html', form=form, titulo="Cadastrar Cliente")
-        return handle_registration(form, sql, params, 'Cliente cadastrado com sucesso!', 'sig/cadastrar_cliente.html', "Cadastrar Cliente")
-    # Render the form (GET request) - this should be inside the function, before the other return
-    return render_template('sig/cadastrar_cliente.html', form=form, titulo="Cadastrar Cliente")
+
 @app_gestao.route('/cadastrar_compra', methods=['GET', 'POST'])
 @login_required
 def cadastrar_compra():
     form = CompraForm()
-    sql = "INSERT INTO compras (Produto, Marca, Quantidade, Unidade, Validade, Preco_Unitario) VALUES (?, ?, ?, ?, ?, ?);"
-    params = (form.produto.data, form.marca.data, form.quantidade.data, form.unidade.data, form.validade.data, form.preco.data)
-    return handle_registration(form, sql, params, 'Compra registrada com sucesso!', 'sig/compras.html', "Registrar Compra")
+    if form.validate_on_submit():
+        sql = "INSERT INTO compras (Produto, Marca, Quantidade, Unidade, Validade, Preco_Unitario) VALUES (%s, %s, %s, %s, %s, %s);"
+        params = (form.produto.data, form.marca.data, form.quantidade.data, form.unidade.data, form.validade.data, form.preco.data)
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Compra registrada com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_compra'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+    return render_template('sig/compras.html', form=form, titulo="Registrar Compra")
 
 @app_gestao.route('/cadastrar_venda_servico', methods=['GET', 'POST'])
 @login_required
 def cadastrar_venda_servico():
     form = VendaServicoForm()
-    sql = """
-    INSERT INTO vendas_servicos (
-        Cliente, Servico, Tempo_Min, Desconto, Preco_Final, Observacoes
-    ) VALUES (?, ?, ?, ?, ?, ?);
-    """
-    preco_final = form.preco.data * (1 - form.desconto.data / 100)
-    params = (
-        form.cliente.data, form.servico.data, form.tempo_min.data,
-        form.desconto.data, preco_final, form.observacoes.data
-    )
-    return handle_registration(form, sql, params, 'Venda de serviço registrada com sucesso!', 'sig/vendas_servicos.html', "Registrar Venda de Serviço")
+    if form.validate_on_submit():
+        sql = """
+        INSERT INTO vendas_servicos (Cliente, Servico, Tempo_Minutos, Desconto, Preco, Observacoes) 
+        VALUES (%s, %s, %s, %s, %s, %s);
+        """
+        params = (
+            form.cliente.data, form.servico.data, form.tempo_min.data.strftime('%H:%M:%S'),
+            form.desconto.data, form.preco.data, form.observacoes.data
+        )
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Venda de serviço registrada com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_venda_servico'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+    return render_template('sig/vendas_servicos.html', form=form, titulo="Registrar Venda de Serviço")
     
 @app_gestao.route('/cadastrar_venda_produto', methods=['GET', 'POST'])
 @login_required
 def cadastrar_venda_produto():
     form = VendaProdutoForm()
-    sql = """
-    INSERT INTO vendas_produtos (
-        Cliente, Produto, Marca, Quantidade, Validade, Preco_aVista, Desconto, Qtde_Parcelas, Preco_Final
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-    """
-    preco_final = form.preco_aVista.data * (1 - form.desconto.data / 100)
-    params = (
-        form.cliente.data, form.produto.data, form.marca.data, form.quantidade.data,
-        form.validade.data, form.preco_aVista.data, form.desconto.data,
-        form.qtde_parcelas.data, preco_final
-    )
-    return handle_registration(form, sql, params, 'Venda de produto registrada com sucesso!', 'sig/vendas_produtos.html', "Registrar Venda de Produto")
+    if form.validate_on_submit():
+        sql = """
+        INSERT INTO vendas_produtos (Cliente, Produto, Marca, Quantidade, Validade, Preco_aVista, Desconto, Qtde_Parcelas) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s);
+        """
+        params = (
+            form.cliente.data, form.produto.data, form.marca.data, form.quantidade.data,
+            form.validade.data, form.preco_aVista.data, form.desconto.data,
+            form.qtde_parcelas.data
+        )
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Venda de produto registrada com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_venda_produto'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+    return render_template('sig/vendas_produtos.html', form=form, titulo="Registrar Venda de Produto")
 
 @app_gestao.route('/cadastrar_colaborador', methods=['GET', 'POST'])
 @login_required
 def cadastrar_colaborador():
     form = ColaboradorForm()
-    sql = """
-    INSERT INTO colaboradores (
-        Nome, Endereco, Cidade, Email, Telefone, Funcao, Regime, Salario, Observacoes
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);
-    """
-    params = (
-        form.nome.data, form.endereco.data, form.cidade.data, form.email.data,
-        form.telefone.data, form.funcao.data, form.regime.data, form.salario.data,
-        form.observacoes.data
-    )
-    return handle_registration(form, sql, params, 'Colaborador cadastrado com sucesso!', 'sig/colaboradores.html', "Cadastrar Colaborador")
+    if form.validate_on_submit():
+        sql = """
+        INSERT INTO colaboradores (Nome, Endereco, Cidade, Email, Telefone, Funcao, Regime_Empregaticio, Salario, observacoes) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """
+        params = (
+            form.nome.data, form.endereco.data, form.cidade.data, form.email.data,
+            form.telefone.data, form.funcao.data, form.regime.data, form.salario.data,
+            form.observacoes.data
+        )
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Colaborador cadastrado com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_colaborador'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+    return render_template('sig/colaboradores.html', form=form, titulo="Cadastrar Colaborador")
 
 @app_gestao.route('/cadastrar_anamnese', methods=['GET', 'POST'])
 @login_required
 def cadastrar_anamnese():
     form = AnamneseForm()
-    sql = """
-    INSERT INTO anamnese (
-    nome, nascimento, profissao, endereco, telefone, indicacao, queixa_principal,
-    alergia_medicamentos, alergia_medicamentos_quais, alergia_aspirina, alergia_aspirina_quais,
-    tratamentos_medicos, tratamentos_medicos_quais, cirurgias, cirurgias_quais,
-    medicamentos, medicamentos_quais, proteses, proteses_quais,
-    gene, gene_quais, diabetes, pressao, doenca_renal, epilepsia,
-    menstruacao, gestante, tratamento_estetico, tratamento_estetico_quais,
-    cosmeticos, cosmeticos_quais, filtro_solar, filtro_solar_quais,
-    bronzeamento, bronzeamento_quais, obs, assinatura, documento, data
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    """
-    params = (
-    form.nome.data, form.nascimento.data, form.profissao.data, form.endereco.data,
-    form.telefone.data, form.indicacao.data, form.queixa_principal.data,
-    form.alergia_medicamentos.data, form.alergia_medicamentos_quais.data,
-    form.alergia_aspirina.data, form.alergia_aspirina_quais.data,
-    form.tratamentos_medicos.data, form.tratamentos_medicos_quais.data,
-    form.cirurgias.data, form.cirurgias_quais.data,
-    form.medicamentos.data, form.medicamentos_quais.data,
-    form.proteses.data, form.proteses_quais.data,
-    form.gene.data, form.gene_quais.data, form.diabetes.data,
-    form.pressao.data, form.doenca_renal.data, form.epilepsia.data,
-    form.menstruacao.data, form.gestante.data,
-    form.tratamento_estetico.data, form.tratamento_estetico_quais.data,
-    form.cosmeticos.data, form.cosmeticos_quais.data,
-    form.filtro_solar.data, form.filtro_solar_quais.data,
-    form.bronzeamento.data, form.bronzeamento_quais.data,
-    form.obs.data, form.assinatura.data, form.documento.data, form.data.data)
-    return handle_registration(form, sql, params, 'Ficha de Anamnese registrada com sucesso!', 'sig/anamnese.html', "Registrar Ficha de Anamnese")
+    if request.method == 'GET':
+        # Busca clientes para popular o dropdown
+        clientes, _ = get_clientes()
+        form.nome.choices = [(c['nome'], c['nome']) for c in clientes]
+
+    if form.validate_on_submit():
+        # Helper para combinar campos 'Sim/Não' com 'Quais?'
+        def combine_fields(select_data, text_data):
+            return f"{select_data}: {text_data}" if select_data == 'Sim' and text_data else select_data
+
+        sql = """
+        INSERT INTO anaminese (
+            nome, nascimento, profissao, endereco, telefone, indicacao, queixa_principal,
+            alergia_medicamentos, alergia_aspirina, tratamentos_medicos, cirurgia, uso_medicamentos,
+            proteses, doencas_familiares, diabetes, pressao, doenca_renal, epilepsia,
+            menstruacao, gestacao, tratamento_estetico, uso_cosmeticos, filtro_solar,
+            bronzeamento, observacoes, assinatura, cpf
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """
+        params = (
+            form.nome.data, form.nascimento.data, form.profissao.data, form.endereco.data, form.telefone.data, form.indicacao.data, form.queixa_principal.data,
+            combine_fields(form.alergia_medicamentos.data, form.alergia_medicamentos_quais.data),
+            combine_fields(form.alergia_aspirina.data, form.alergia_aspirina_quais.data),
+            combine_fields(form.tratamentos_medicos.data, form.tratamentos_medicos_quais.data),
+            combine_fields(form.cirurgias.data, form.cirurgias_quais.data),
+            combine_fields(form.medicamentos.data, form.medicamentos_quais.data),
+            combine_fields(form.proteses.data, form.proteses_quais.data),
+            combine_fields(form.gene.data, form.gene_quais.data),
+            form.diabetes.data, form.pressao.data, form.doenca_renal.data, form.epilepsia.data,
+            form.menstruacao.data, form.gestante.data,
+            combine_fields(form.tratamento_estetico.data, form.tratamento_estetico_quais.data),
+            combine_fields(form.cosmeticos.data, form.cosmeticos_quais.data),
+            combine_fields(form.filtro_solar.data, form.filtro_solar_quais.data),
+            combine_fields(form.bronzeamento.data, form.bronzeamento_quais.data),
+            form.obs.data, form.assinatura.data, form.documento.data
+        )
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Ficha de Anamnese registrada com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_anamnese'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+    return render_template('sig/anamnese.html', form=form, titulo="Registrar Ficha de Anamnese")
         
 @app_gestao.route('/cadastrar_relatorio_mei', methods=['GET', 'POST'])
 @login_required
 def cadastrar_relatorio_mei():
     form = RelatorioMEIForm()
-    sql = """
-    INSERT INTO relatorioMEI (
-        Apuracao, CNPJ, Razao_Social, Receita_Produtos_Dispensa_NF,
-        Receita_Produtos_Emissao_NF, Receita_Servicos_Dispensa_NF,
-        Receita_Servicos_Emissao_NF, Total_Geral_Receitas, Local, Data, Assinatura_CPF
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    """
-    total_receitas = (
-        (form.pdn.data if form.pdn.data is not None else 0) +
-        (form.pen.data if form.pen.data is not None else 0) +
-        (form.sdn.data if form.sdn.data is not None else 0) +
-        (form.sen.data if form.sen.data is not None else 0)
-    )
-    params = (
-        form.apuracao.data, form.cnpj.data, form.razao_social.data,
-        form.pdn.data, form.pen.data, form.sdn.data, form.sen.data,
-        total_receitas, form.local.data, form.data.data, form.assinatura.data
-            )
-    return handle_registration(form, sql, params, 'Relatório MEI registrado com sucesso!', 'sig/relatorio_mei.html', "Registrar Relatório MEI")
+    if form.validate_on_submit():
+        sql = """
+        INSERT INTO relatorioMEI (
+            Apuracao, CNPJ, Razao_Social, Produto_Dispensa_NF, Produto_Emissao_NF,
+            Servico_Dispensa_NF, Servico_Emissao_NF, Local, Data, Assinatura
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """
+        params = (
+            form.apuracao.data, form.cnpj.data, form.razao_social.data,
+            form.pdn.data, form.pen.data, form.sdn.data, form.sen.data,
+            form.local.data, form.data.data, form.assinatura.data
+        )
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Relatório MEI registrado com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_relatorio_mei'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+    
+    dados, cabecalho = get_relatorioMEI()
+    return render_template('sig/relatorio_mei.html', 
+                           form=form, 
+                           titulo="Registrar Relatório MEI",
+                           dados=dados,
+                           cabecalho=cabecalho,
+                           table_name='relatorioMEI')
         
 @app_gestao.route('/cadastrar_custos_fixos', methods=['GET', 'POST'])
 @login_required
 def cadastrar_custos_fixos():
     form = CustosFixosForm()
-    sql = """
-    INSERT INTO custos_fixos (
-        Aluguel, IPTU, Luz, Agua, Telefone, Internet, Aluguel_Maquina_Cartao,
-        MEI, Material_Descartavel, Novos_Produtos_Lancamentos, Financiamento_Equipamentos,
-        Marketing, Pro_Labore, Outros_Funcionarios_Prestadores_Servicos, Reserva_Emergencia
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
-    """
-    params = (
-        form.alu.data, form.IPTU.data, form.luz.data, form.agua.data,
-        form.tel.data, form.net.data, form.alu_car.data, form.MEI.data,
-        form.descart.data, form.n_prod.data, form.equip.data, form.mkt.data,
-        form.prolab.data, form.terc.data, form.reserva.data
-    )
-    return handle_registration(form, sql, params, 'Custos Fixos registrados com sucesso!', 'sig/custos_fixos.html', "Registrar Custos Fixos")
+    if form.validate_on_submit():
+        sql = """
+        INSERT INTO impostos (
+            aluguel, IPTU, luz, agua, telefone, internet, aluguel_Maquina_Cartao, MEI,
+            descartaveis, novos_produtos, equipamentos, marketing, prolabore, terceiros, reserva
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s);
+        """
+        params = (
+            form.alu.data, form.IPTU.data, form.luz.data, form.agua.data,
+            form.tel.data, form.net.data, form.alu_car.data, form.MEI.data,
+            form.descart.data, form.n_prod.data, form.equip.data, form.mkt.data,
+            form.prolab.data, form.terc.data, form.reserva.data
+        )
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Custos Fixos registrados com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_custos_fixos'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+
+    dados, cabecalho = get_impostos()
+    return render_template('sig/custos_fixos.html', 
+                           form=form, 
+                           titulo="Registrar Custos Fixos",
+                           dados=dados,
+                           cabecalho=cabecalho,
+                           table_name='impostos')
 
 @app_gestao.route('/cadastrar_insumo', methods=['GET', 'POST'])
 @login_required
 def cadastrar_insumo():
     form = InsumoForm()
-    sql = """
-    INSERT INTO insumos (
-        Tipo_Servico, Nome_Insumo, Qtde_Fechada, Qtde_Fechada_Unidade,
-        Qtde_Fracionada, Qtde_Fracionada_Unidade, Preco_Fechado
-    ) VALUES (?, ?, ?, ?, ?, ?, ?);
-    """
-    params = (
-    form.tipo_servico.data, form.nome_insumo.data, form.qtde_fechada.data,
-            form.qfe_unidade.data, form.qtde_fracionada.data,
-            form.qfr_unidade.data, form.preco_fechado.data
+    if form.validate_on_submit():
+        sql = """
+        INSERT INTO insumos (
+            Tipo_Servico, Nome_Insumo, Quantidade_Fechada, unidade_total,
+            Preco_Fechado, Quantidade_Fracionada, unidade_fracionada
+        ) VALUES (%s, %s, %s, %s, %s, %s, %s);
+        """
+        params = (
+            form.tipo_servico.data, form.nome_insumo.data, form.qtde_fechada.data,
+            form.qfe_unidade.data, form.preco_fechado.data, form.qtde_fracionada.data,
+            form.qfr_unidade.data
         )
-    return handle_registration(form, sql, params, 'Insumo registrado com sucesso!', 'sig/insumos.html', "Registrar Insumo")
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Insumo registrado com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_insumo'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+    return render_template('sig/insumos.html', form=form, titulo="Registrar Insumo")
         
 @app_gestao.route('/cadastrar_depreciacao', methods=['GET', 'POST'])
 @login_required
 def cadastrar_depreciacao():
     form = DepreciacaoForm()
-    sql = """
-    INSERT INTO depreciacao (
-        Objeto, Preco_Custo, Vida_Util_Anos
-    ) VALUES (?, ?, ?);
-    """
-    params = (
-        form.obj.data, form.preco_custo.data, form.vida_util.data
-    )
-    return handle_registration(form, sql, params, 'Depreciação registrada com sucesso!', 'sig/depreciacao.html', "Registrar Depreciação")
+    if form.validate_on_submit():
+        sql = "INSERT INTO depreciacao (Objeto, Preco_Custo, Anos_Uso) VALUES (%s, %s, %s);"
+        params = (form.obj.data, form.preco_custo.data, form.vida_util.data)
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Depreciação registrada com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_depreciacao'))
+        except Exception as e:
+            flash(f'Ocorreu um erro inesperado: {e}', 'danger')
+    return render_template('sig/depreciacao.html', form=form, titulo="Registrar Depreciação")
 
 @app_gestao.route('/cadastrar_margem', methods=['GET', 'POST'])
 @login_required
 def cadastrar_margem():
     form = MargemForm()
-    sql = """
-    INSERT INTO margem (
-        Servico, Preco_Ofertado
-    ) VALUES (?, ?);
-    """
-    params = (
-        form.servico.data, form.preco_oferta.data
-    )
-    return handle_registration(form, sql, params, 'Margem registrada com sucesso!', 'sig/margem.html', "Registrar Margem")
+    if form.validate_on_submit():
+        # ATENÇÃO: A tabela 'margem' requer mais campos que o formulário oferece.
+        # A inserção pode falhar se as outras colunas não permitirem valores nulos.
+        sql = "INSERT INTO margem (Tipo_Servico, Preco_Ofertado) VALUES (%s, %s);"
+        params = (form.servico.data, form.preco_oferta.data)
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Margem registrada com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_margem'))
+        except Exception as e:
+            flash(f'Ocorreu um erro ao registrar a margem: {e}', 'danger')
+    return render_template('sig/margemlucro.html', form=form, titulo="Registrar Margem")
 
 @app_gestao.route('/cadastrar_markup', methods=['GET', 'POST'])
 @login_required
 def cadastrar_markup():
     form = MarkupForm()
-    sql = """
-    INSERT INTO markup (
-        Taxa_Maquina_Cartao, Percentual_Margem_Lucro
-    ) VALUES (?, ?);
-    """
-    params = (
-        form.txmc.data, form.mg.data
-    )
-    return handle_registration(form, sql, params, 'Markup registrado com sucesso!', 'sig/markup.html', "Registrar Markup")
-    
-@app_gestao.route('/cadastrar_imposto', methods=['GET', 'POST'])
-@login_required
-def cadastrar_imposto():
-    form = ImpostoForm()
-    sql = """
-    INSERT INTO impostos (
-        Tipo, Aliquota, Descricao
-    ) VALUES (?, ?, ?);
-    """
-    params = (
-        form.tipo.data, form.aliquota.data, form.descricao.data
-    )
-    return handle_registration(form, sql, params, 'Imposto registrado com sucesso!', 'sig/impostos.html', "Registrar Imposto")
-    
-@app_gestao.route('/cadastrar_servico', methods=['GET', 'POST'])
-@login_required
-def cadastrar_servico():
-    form = ServicoForm()
-    sql = """
-    INSERT INTO servicos (
-        Nome, Descricao, Preco_Base
-    ) VALUES (?, ?, ?);
-    """
-    params = (
-        form.nome.data, form.descricao.data, form.preco_base.data
-    )
-    return handle_registration(form, sql, params, 'Serviço cadastrado com sucesso!', 'sig/servicos.html', "Cadastrar Serviço")
-
-@app_gestao.route('/cadastrar_produto', methods=['GET', 'POST'])
-@login_required
-def cadastrar_produto():
-    form = ProdutoForm()
-    sql = """
-    INSERT INTO produtos (
-        Nome, Descricao, Preco_Custo, Preco_Venda, Quantidade_Estoque
-    ) VALUES (?, ?, ?, ?, ?);
-    """
-    params = (
-        form.nome.data, form.descricao.data, form.preco_custo.data,
-        form.preco_venda.data, form.quantidade_estoque.data
-    )
-    return handle_registration(form, sql, params, 'Produto cadastrado com sucesso!', 'sig/produtos.html', "Cadastrar Produto")
-
-
-
-
-# --- Gestão de Impostos ---
-class ImpostoForm(FlaskForm):
-    tipo = StringField('Tipo de Imposto:', validators=[DataRequired()])
-    aliquota = DecimalField('Alíquota (%):', validators=[DataRequired()])
-    descricao = TextAreaField('Descrição:')
-    enviar = SubmitField('Registrar Imposto')
-
-# --- Gestão de Serviços ---
-class ServicoForm(FlaskForm):
-    nome = StringField('Nome do Serviço:', validators=[DataRequired()])
-    descricao = TextAreaField('Descrição do Serviço:')
-    preco_base = DecimalField('Preço Base:', validators=[DataRequired()])
-    enviar = SubmitField('Cadastrar Serviço')
-
-# --- Gestão de Produtos ---
-class ProdutoForm(FlaskForm):
-    nome = StringField('Nome do Produto:', validators=[DataRequired()])
-    descricao = TextAreaField('Descrição do Produto:')
-    preco_custo = DecimalField('Preço de Custo:', validators=[DataRequired()])
-    preco_venda = DecimalField('Preço de Venda:', validators=[DataRequired()])
-    quantidade_estoque = IntegerField('Quantidade em Estoque:', validators=[DataRequired()])
-    enviar = SubmitField('Cadastrar Produto')
+    if form.validate_on_submit():
+        # ATENÇÃO: A tabela 'markup' requer mais campos que o formulário oferece.
+        # A inserção pode falhar se as outras colunas não permitirem valores nulos.
+        sql = "INSERT INTO markup (Taxa_Maq_Cartao, Margem_Lucro) VALUES (%s, %s);"
+        params = (form.txmc.data, form.mg.data)
+        try:
+            db_execute(sql, params, commit=True)
+            flash('Markup registrado com sucesso!', 'success')
+            return redirect(url_for('sig.cadastrar_markup'))
+        except Exception as e:
+            flash(f'Ocorreu um erro ao registrar o markup: {e}', 'danger')
+    return render_template('sig/markup.html', form=form, titulo="Registrar Markup")

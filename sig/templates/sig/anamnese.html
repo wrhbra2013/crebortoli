@@ -1,59 +1,83 @@
- {% include 'sig/_header.html' %}
- 
- <main class="container">
-     <section>
-         <h1>Ficha de Anaminese</h1>
-     </section>
- 
-     <form action="" method="POST">
-         {# O WTForms já gera as labels, então podemos simplificar #}
-         <fieldset class="form-fieldset">
-             <legend>Dados Pessoais</legend>
-             <div class="form-group">{{ form4.nome.label }} {{ form4.nome(class="form-control") }}</div>
-             <div class="form-group">{{ form4.nascimento.label }} {{ form4.nascimento(class="form-control") }}</div>
-             <div class="form-group">{{ form4.profissao.label }} {{ form4.profissao(class="form-control") }}</div>
-             <div class="form-group">{{ form4.endereco.label }} {{ form4.endereco(class="form-control") }}</div>
-             <div class="form-group">{{ form4.telefone.label }} {{ form4.telefone(class="form-control") }}</div>
-             <div class="form-group">{{ form4.indicacao.label }} {{ form4.indicacao(class="form-control") }}</div>
-             <div class="form-group">{{ form4.queixa_principal.label }} {{ form4.queixa_principal(class="form-control", rows="3") }}</div>
-         </fieldset>
- 
-         <fieldset class="form-fieldset">
-             <legend>Estado Clínico</legend>
-             {# ... (coloque os outros campos do formulário aqui no mesmo padrão) ... #}
-             <div class="form-group">{{ form4.alergia_medicamentos.label }} {{ form4.alergia_medicamentos }} {{ form4.alergia_medicamentos_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.alergia_aspirina.label }} {{ form4.alergia_aspirina }} {{ form4.alergia_aspirina_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.tratamentos_medicos.label }} {{ form4.tratamentos_medicos }} {{ form4.tratamentos_medicos_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.cirurgias.label }} {{ form4.cirurgias }} {{ form4.cirurgias_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.medicamentos.label }} {{ form4.medicamentos }} {{ form4.medicamentos_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.proteses.label }} {{ form4.proteses }} {{ form4.proteses_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.gene.label }} {{ form4.gene }} {{ form4.gene_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.diabetes.label }} {{ form4.diabetes }}</div>
-             <div class="form-group">{{ form4.pressao.label }} {{ form4.pressao }} {{ form4.pressao_quais(class="form-control", placeholder="Qual?") }}</div>
-             <div class="form-group">{{ form4.doenca_renal.label }} {{ form4.doenca_renal }}</div>
-             <div class="form-group">{{ form4.epilepsia.label }} {{ form4.epilepsia }} {{ form4.epilepsia_quais(class="form-control", placeholder="Qual?") }}</div>
-             <div class="form-group">{{ form4.menstruacao.label }} {{ form4.menstruacao }} {{ form4.menstruacao_quais(class="form-control", placeholder="Qual?") }}</div>
-             <div class="form-group">{{ form4.gestante.label }} {{ form4.gestante }} {{ form4.gestante_quais(class="form-control", placeholder="Qual?") }}</div>
-             <div class="form-group">{{ form4.tratamento_estetico.label }} {{ form4.tratamento_estetico }} {{ form4.tratamento_estetico_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.cosmeticos.label }} {{ form4.cosmeticos }} {{ form4.cosmeticos_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.filtro_solar.label }} {{ form4.filtro_solar }} {{ form4.filtro_solar_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.bronzeamento.label }} {{ form4.bronzeamento }} {{ form4.bronzeamento_quais(class="form-control", placeholder="Quais?") }}</div>
-             <div class="form-group">{{ form4.obs.label }} {{ form4.obs(class="form-control", rows="4") }}</div>
-         </fieldset>
- 
-         <fieldset class="form-fieldset">
-             <legend>Termo de Responsabilidade</legend>
-             <p class="termo-responsabilidade">"As declarações citadas são expressões da verdade isentando à esteticista a responsabilidade por informações omitidas ou inexatas."</p>
-             <div class="form-group">{{ form4.assinatura.label }} {{ form4.assinatura(class="form-control") }}</div>
-             <div class="form-group">{{ form4.documento.label }} {{ form4.documento(class="form-control") }}</div>
-             <div class="form-group">{{ form4.data.label }} {{ form4.data(class="form-control") }}</div>
-         </fieldset>
- 
-         <div class="form-group">
-             {{ form4.enviar(class="btn-submit") }}
-         </div>
-     </form>
- </main>
- 
- {% include 'sig/_footer.html' %}
- 
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='icon/favicon.ico') }}" />
+    <title>{{ titulo }} - SIG Cre Bortoli</title>
+</head>
+<body>
+    {% include 'sig/_header.html' %}
+
+    <main class="container">
+        <h1>{{ titulo }}</h1>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flashes">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="form-container">
+            <form method="POST" action="">
+                {{ form.hidden_tag() }}
+                
+                <fieldset>
+                    <legend>Dados Pessoais</legend>
+                    <div class="form-group">{{ form.nome.label }} {{ form.nome(class="form-control") }}</div>
+                    <div class="form-group">{{ form.nascimento.label }} {{ form.nascimento(class="form-control") }}</div>
+                    <div class="form-group">{{ form.profissao.label }} {{ form.profissao(class="form-control") }}</div>
+                    <div class="form-group">{{ form.endereco.label }} {{ form.endereco(class="form-control") }}</div>
+                    <div class="form-group">{{ form.telefone.label }} {{ form.telefone(class="form-control") }}</div>
+                    <div class="form-group">{{ form.indicacao.label }} {{ form.indicacao(class="form-control") }}</div>
+                    <div class="form-group">{{ form.queixa_principal.label }} {{ form.queixa_principal(class="form-control") }}</div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Estado Clínico</legend>
+                    <div class="form-group">{{ form.alergia_medicamentos.label }} {{ form.alergia_medicamentos(class="form-control") }} {{ form.alergia_medicamentos_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.alergia_aspirina.label }} {{ form.alergia_aspirina(class="form-control") }} {{ form.alergia_aspirina_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.tratamentos_medicos.label }} {{ form.tratamentos_medicos(class="form-control") }} {{ form.tratamentos_medicos_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.cirurgias.label }} {{ form.cirurgias(class="form-control") }} {{ form.cirurgias_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.medicamentos.label }} {{ form.medicamentos(class="form-control") }} {{ form.medicamentos_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.proteses.label }} {{ form.proteses(class="form-control") }} {{ form.proteses_quais(class="form-control") }}</div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Histórico Familiar</legend>
+                    <div class="form-group">{{ form.gene.label }} {{ form.gene(class="form-control") }} {{ form.gene_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.diabetes.label }} {{ form.diabetes(class="form-control") }}</div>
+                    <div class="form-group">{{ form.pressao.label }} {{ form.pressao(class="form-control") }}</div>
+                    <div class="form-group">{{ form.doenca_renal.label }} {{ form.doenca_renal(class="form-control") }}</div>
+                    <div class="form-group">{{ form.epilepsia.label }} {{ form.epilepsia(class="form-control") }}</div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Hábitos e Estilo de Vida</legend>
+                    <div class="form-group">{{ form.menstruacao.label }} {{ form.menstruacao(class="form-control") }}</div>
+                    <div class="form-group">{{ form.gestante.label }} {{ form.gestante(class="form-control") }}</div>
+                    <div class="form-group">{{ form.tratamento_estetico.label }} {{ form.tratamento_estetico(class="form-control") }} {{ form.tratamento_estetico_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.cosmeticos.label }} {{ form.cosmeticos(class="form-control") }} {{ form.cosmeticos_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.filtro_solar.label }} {{ form.filtro_solar(class="form-control") }} {{ form.filtro_solar_quais(class="form-control") }}</div>
+                    <div class="form-group">{{ form.bronzeamento.label }} {{ form.bronzeamento(class="form-control") }} {{ form.bronzeamento_quais(class="form-control") }}</div>
+                </fieldset>
+
+                <fieldset>
+                    <legend>Finalização</legend>
+                    <div class="form-group">{{ form.obs.label }} {{ form.obs(class="form-control") }}</div>
+                    <div class="form-group">{{ form.assinatura.label }} {{ form.assinatura(class="form-control") }}</div>
+                    <div class="form-group">{{ form.documento.label }} {{ form.documento(class="form-control") }}</div>
+                    <div class="form-group">{{ form.data.label }} {{ form.data(class="form-control") }}</div>
+                </fieldset>
+
+                {{ form.enviar(class="btn btn-primary") }}
+            </form>
+        </div>
+    </main>
+</body>
+</html>
