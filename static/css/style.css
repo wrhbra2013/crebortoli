@@ -151,6 +151,25 @@ h1, h2, h3 {
     font-family: var(--fonte-personalizada);
        
 }
+
+/* Botão do Menu Sanduíche (Mobile) */
+.sandwich-button {
+    display: none; /* Escondido por padrão em telas grandes */
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    z-index: 1002; /* Garante que fique acima de outros elementos do header */
+}
+
+.sandwich-button span {
+    display: block;
+    width: 25px;
+    height: 3px;
+    background-color: var(--cor-texto);
+    margin: 5px 0;
+    transition: 0.3s;
+}
 /* ==========================================================================
    4. SEÇÕES E COMPONENTES GERAIS
    ========================================================================== */
@@ -478,402 +497,76 @@ h1, h2, h3 {
 
     .header {
         padding: 1rem;
+        /* Garante que o botão do menu fique no lugar certo e acima do overlay */
+        position: relative; 
+        z-index: 1002;
     }
 
+    /* Mostra o botão do menu sanduíche em telas pequenas */
     .sandwich-button {
-        display: block; /* Este botão deve estar no seu HTML para funcionar */
+        display: block;
     }
 
+    /* Esconde o menu de desktop e o prepara para o layout mobile */
     .main-nav {
+        display: block; /* Sobrescreve o 'display: flex' do desktop */
         position: fixed;
         top: 0;
         left: 0;
-        width: 70%;
-        height: 100%;
-        background-color: var(--cor-titulo);
-        padding-top: 60px;
-        z-index: 1000;
-        transform: translateX(-100%); /* MELHORADO: Mais performático */
+        width: 80%;
+        max-width: 300px;
+        height: 100vh;
+        background-color: #fff; /* Fundo branco para o menu lateral */
+        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+        padding-top: 80px; /* Espaço para o header não sobrepor o menu */
+        transform: translateX(-100%);
         transition: transform 0.3s ease-in-out;
+        z-index: 1000;
+        overflow-y: auto; /* Permite rolagem se o menu for grande */
     }
 
+    /* Mostra o menu quando a classe .is-active é adicionada via JS */
     .main-nav.is-active {
-        transform: translateX(0); /* MELHORADO */
+        transform: translateX(0);
     }
 
-    .main-nav ul {
-        flex-direction: row;
+    /* Ajusta a lista de links para o layout vertical */
+    .main-nav .menu {
+        flex-direction: column;
         align-items: flex-start;
-        padding: 0 1rem;
-    }
-
-    .main-nav ul li {
         width: 100%;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        color: black;
     }
 
-    .main-nav ul li:last-child {
-        border-bottom: none;
+    .main-nav .menu > .nav-item {
+        width: 100%;
     }
 
-    .main-nav ul a {
-        color: var(--cor-texto-escuro);
-        padding: 0.8rem 0.5rem;
-        display: inline;
+    .main-nav .menu > .nav-item > a {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--cor-borda);
     }
 
-    .main-nav ul a:hover {
-        background-color: rgba(255, 255, 255, 0.1);
-        text-decoration: none;
+    /* Ajusta o comportamento do dropdown no mobile para ser estático */
+    .main-nav .dropdown-menu {
+        position: static;
+        display: none; /* CORREÇÃO: Oculto por padrão no mobile. */
+        width: 100%;
+        border: none;
+        box-shadow: none;
+        background-color: #f7f2fa; /* Cor de fundo para diferenciar sub-itens */
+        padding-left: 2.5rem; /* Indentação para mostrar a hierarquia */
     }
-
-    /* ... resto dos seus estilos de menu mobile ... */
+    
+    /* SUGESTÃO: Use JavaScript para adicionar uma classe 'submenu-open' ao item pai (.nav-item) quando tocado, para mostrar o submenu. */
+    .main-nav .menu > .nav-item.submenu-open .dropdown-menu {
+        display: block;
+    }
 
     .footer {
         flex-direction: column;
         text-align: center;
     }
 }
-
- 
-     /* Estilos gerais para centralizar o conteúdo */
-     .login-container {
-         display: flex;
-         justify-content: center;
-         align-items: center;
-         min-height: 80vh; /* Ajusta a altura para ocupar a maior parte da tela */
-         background-color: #f4f7f6;
-         padding: 20px;
-         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-     }
- 
-     /* A caixa principal do formulário de login */
-     .login-box {
-         background-color: #ffffff;
-         padding: 2rem 2.5rem;
-         border-radius: 12px;
-         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
-         text-align: center;
-         max-width: 400px;
-         width: 100%;
-     }
- 
-     /* Cabeçalho dentro da caixa de login */
-     .login-box .header h1 {
-         font-size: 1.8rem;
-         color: #333;
-         margin-bottom: 0.5rem;
-     }
- 
-     .login-box h2 {
-         font-size: 1.2rem;
-         color: #555;
-         margin-top: 0;
-         margin-bottom: 0.5rem;
-         font-weight: 500;
-     }
- 
-     .login-box p {
-         color: #777;
-         margin-bottom: 1.5rem;
-     }
- 
-     /* Estilos para as mensagens de feedback (flash) */
-     .alert {
-         padding: 1rem;
-         margin-bottom: 1.5rem;
-         border: 1px solid transparent;
-         border-radius: 8px;
-         text-align: left;
-     }
- 
-     .alert-danger {
-         color: #a94442;
-         background-color: #f2dede;
-         border-color: #ebccd1;
-     }
- 
-     .alert-success {
-         color: #3c763d;
-         background-color: #dff0d8;
-         border-color: #d6e9c6;
-     }
- 
-     /* Estilo para a imagem do QR Code */
-     .qrcode .imagem {
-         max-width: 150px;
-         height: auto;
-         margin: 1rem auto;
-         display: block;
-     }
- 
-     /* Estilos para o formulário */
-     .login-form {
-         display: flex;
-         flex-direction: column;
-     }
- 
-     .form-group {
-         margin-bottom: 1.5rem;
-         text-align: left;
-     }
- 
-     .form-label {
-         display: block;
-         margin-bottom: 0.5rem;
-         font-weight: 600;
-         color: #444;
-     }
- 
-     .form-control {
-         width: 100%;
-         padding: 0.8rem 1rem;
-         border: 1px solid #ccc;
-         border-radius: 8px;
-         font-size: 1rem;
-         box-sizing: border-box; /* Garante que o padding não afete a largura total */
-         transition: border-color 0.2s, box-shadow 0.2s;
-     }
- 
-     .form-control:focus {
-         outline: none;
-         border-color: #007bff;
-         box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.2);
-     }
- 
-     .text-danger {
-         color: #dc3545;
-         font-size: 0.875em;
-         margin-top: 0.25rem;
-     }
- 
-     /* Estilo para o botão de envio */
-     .btn.btn-primary {
-         background-color: #007bff;
-         color: white;
-         padding: 0.8rem 1rem;
-         border: none;
-         border-radius: 8px;
-         font-size: 1rem;
-         font-weight: 600;
-         cursor: pointer;
-         transition: background-color 0.2s;
-     }
- 
-     .btn.btn-primary:hover {
-         background-color: #0056b3;
-     }
-
-     /* ==========================================================================
-        MENU SANDWICH (MOBILE)
-        ========================================================================== */
-     
-     /* Estilo do botão sandwich (as três linhas) */
-     .sandwich-button {
-         display: none; /* Escondido em telas grandes */
-         background: transparent;
-         border: none;
-         cursor: pointer;
-         padding: 10px;
-         z-index: 1001; /* Fica acima do menu */
-     }
-     
-     .sandwich-icon {
-         display: block;
-         position: relative;
-         width: 24px;
-         height: 2px;
-         background-color: var(--cor-titulo);
-         transition: all 0.2s ease-in-out;
-     }
-     
-     .sandwich-icon::before,
-     .sandwich-icon::after {
-         content: '';
-         position: absolute;
-         left: 0;
-         width: 100%;
-         height: 2px;
-         background-color: var(--cor-titulo);
-         transition: all 0.2s ease-in-out;
-     }
-     
-     .sandwich-icon::before {
-         top: -8px; /* Linha de cima */
-     }
-     
-     .sandwich-icon::after {
-         bottom: -8px; /* Linha de baixo */
-     }
-     
-     /* Animação do botão para virar um "X" quando ativo */
-     .sandwich-button.is-active .sandwich-icon {
-         background-color: transparent; /* Linha do meio some */
-     }
-     
-     .sandwich-button.is-active .sandwich-icon::before {
-         transform: translateY(8px) rotate(45deg);
-     }
-     
-     .sandwich-button.is-active .sandwich-icon::after {
-         transform: translateY(-8px) rotate(-45deg);
-     }
-     
-     
-     /* Media Query para telas menores (mobile) */
-     @media (max-width: 768px) {
-        .main-nav .menu { flex-direction: column; }
-         
-         /* Mostra o botão sandwich */
-         .sandwich-button {
-             display: block;
-         }
-     
-         /* Esconde o menu de navegação e o posiciona fora da tela */
-         .main-nav {
-             position: fixed;
-            top: 0;
-             left: 0;
-             width: 80%; /* Ocupa 80% da largura da tela */
-             max-width: 300px;
-             height: 100vh; /* Ocupa 100% da altura */
-             background-color: #fff;
-             box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-             padding-top: 80px; /* Espaço para o header */
-             transform: translateX(-100%); /* Começa escondido à esquerda */
-             transition: transform 0.3s ease-in-out;
-             z-index: 1000;
-             overflow-y: auto; /* Permite rolagem se o menu for grande */
-         }
-     
-         /* Classe que o JavaScript vai adicionar para mostrar o menu */
-         .main-nav.is-active {
-             transform: translateX(0); /* Traz o menu para a tela */
-         }
-     
-         /* Ajusta a lista de links para o layout vertical */
-         .main-nav .menu {
-             flex-direction: row;
-             align-items: flex-start;
-         }
-     
-         .main-nav .menu li {
-             width: 100%;
-         }
-     
-         .main-nav .menu a {
-             display: block;
-             padding: 1rem 1.5rem;
-             width: 100%;
-             border-bottom: 1px solid var(--cor-borda);
-         }
-     
-         /* Esconde submenus por padrão no mobile para não poluir */
-         .main-nav .menu ul {
-             display: none; /* Simplificação para mobile, pode ser melhorado com JS se precisar de submenus que abrem */
-         }
-     }
-     
-    /* In your CSS file (e.g., style.css or within a <style> tag in your template) */
-    .navbar {
-        background-color: #f8f9fa; /* Example background color */
-        color:#333;
-    }
-    
-    .navbar-brand {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #333;
-    }
-    
-    .navbar-nav {
-        list-style: none;
-        margin: 0;
-        padding: 10px;
-    }
-    
-    .navbar-brand {
-        font-weight: bold;
-    }
-    
-    .navbar-nav {
-        list-style: none;
-        margin: 0;
-        padding: 0;
-        display: flex;
-    }
-    
-    .nav-item {
-        margin-right: 15px;
-    }
-    
-    .nav-link {
-        text-decoration: none;
-        color: #333;
-    }
-    
-    .navbar-toggler {
-        display: none; /* Hide by default on larger screens */
-        cursor: pointer;
-    }
-    
-    .navbar-toggler-icon {
-        /* Style your hamburger icon here */
-        display: block;
-        width: 20px;
-        height: 2px;
-        background-color: #333;
-        position: relative;
-        transition: background-color 0.3s ease;
-    }
-    
-    .navbar-toggler-icon::before,
-    .navbar-toggler-icon::after {
-        content: "";
-        position: absolute;
-        left: 0;
-        width: 20px;
-        height: 2px;
-        background-color: #333;
-        transition: transform 0.3s ease;
-    }
-    
-    .navbar-toggler-icon::before {
-        top: -6px;
-    }
-    
-    .navbar-toggler-icon::after {
-        bottom: -6px;
-    }
-    
-    
-    /* Media query for smaller screens */
-    @media (max-width: 768px) {
-        .navbar-nav {
-            display: none; /* Hide menu items by default on small screens */
-            flex-direction: column;
-            width: 100%;
-        }
-    
-        .navbar-collapse {
-            width: 100%;
-        }
-    
-        .navbar-toggler {
-            display: block; /* Show the hamburger icon */
-        }
-    
-        .nav-item {
-            margin: 10px 0;
-            color:#0056b3;
-        }
-     
-        .navbar-nav.show {
-            display: flex; /* Show the menu when the "show" class is added */
-            
-        }
-    }
     /* ... existing styles ... */
     
     /* Styles for the contrast button */

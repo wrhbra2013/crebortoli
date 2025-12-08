@@ -133,6 +133,21 @@ def get_anamnese(search_term=""):
     sql = "SELECT id, nome, cpf, queixa_principal, TO_CHAR(nascimento, 'DD/MM/YYYY') as \"Nascimento\" FROM anaminese WHERE nome LIKE %s ORDER BY nome;"
     return db_fetch(sql, ('%' + search_term + '%',))
 
+def get_record_by_id(table_name, record_id):
+    """Função segura para buscar um registro de uma tabela permitida pelo ID."""
+    allowed_tables = {
+        'post', 'enquete', 'clientes', 'anaminese', 'compras',
+        'vendas_produtos', 'vendas_servicos', 'colaboradores', 'relatorioMEI',
+        'impostos', 'insumos', 'depreciacao', 'margem', 'markup'
+    }
+    if table_name not in allowed_tables:
+        raise ValueError(f"A visualização na tabela '{table_name}' não é permitida.")
+
+    # Esta função genérica assume uma coluna 'id' como chave primária.
+    sql = f"SELECT * FROM {table_name} WHERE id = %s;"
+    record, headers = db_fetch(sql, (record_id,), one=True)
+    return record, headers
+
 def delete_record_by_id(table_name, record_id):
     """Função segura para deletar um registro de uma tabela permitida."""
     allowed_tables = {
@@ -261,6 +276,42 @@ def view_table(table_name):
     except Exception as e:
         flash(f"Erro ao carregar dados da tabela '{table_name}': {e}", "danger")
         return redirect(url_for('sig.dashboard'))
+
+# ==============================================================================
+# ROTA DINÂMICA PARA VISUALIZAÇÃO DE UM REGISTRO (GET)
+# ==============================================================================
+@app_gestao.route('/visualizar/<string:table_name>/<int:record_id>')
+@login_required
+def view_record(table_name, record_id):
+    """Rota dinâmica para visualizar um único registro de qualquer tabela."""
+    
+    # A tabela 'agenda' não possui um 'id' numérico e não pode ser tratada por esta rota.
+    if table_name == 'agenda':
+        flash(f"A tabela '{table_name}' possui uma estrutura especial e requer uma página de visualização dedicada.", 'warning')
+        return redirect(url_for('sig.view_table', table_name=table_name))
+
+    try:
+        record, headers = get_record_by_id(table_name, record_id)
+        if not record:
+            flash('Registro não encontrado.', 'danger')
+            return redirect(url_for('sig.view_table', table_name=table_name))
+
+        # Converte o DictRow em um dicionário para facilitar o uso no template
+        record_dict = dict(zip(headers, record)) if record else {}
+
+        return render_template(
+            'sig/view_listas.html',
+            registro=record_dict,
+            titulo=f"Detalhes de {table_name.replace('_', ' ').title()}",
+            table_name=table_name,
+            record_id=record_id
+        )
+    except ValueError as e:
+        flash(str(e), 'danger')
+        return redirect(url_for('sig.dashboard'))
+    except Exception as e:
+        flash(f"Erro ao carregar o registro: {e}", "danger")
+        return redirect(url_for('sig.view_table', table_name=table_name))
 
 # ==============================================================================
 # ROTA PARA EXCLUSÃO (POST)

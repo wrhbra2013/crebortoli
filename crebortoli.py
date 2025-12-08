@@ -1,5 +1,6 @@
 #Carregamento de módulos
 from flask import Flask, render_template
+from init_db import create_database_if_not_exists, create_tables
 from sig.gestao import app_gestao
 from paginas.web import app_site
 from datetime import datetime # 1. Importe o módulo datetime
@@ -7,6 +8,14 @@ from markupsafe import Markup
 
 
 app = Flask(__name__)
+
+# --- Inicialização Automática do Banco de Dados ---
+# Garante que o banco de dados e as tabelas existam antes de o servidor iniciar.
+print("Verificando e inicializando o banco de dados...")
+create_database_if_not_exists()
+create_tables()
+print("Inicialização do banco de dados concluída. Servidor Flask iniciando...")
+# -----------------------------------------
 
 def nl2br(value):
     """
