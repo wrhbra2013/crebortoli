@@ -85,11 +85,38 @@
              </div>
  
              <div class="form-group">
+                 <label for="metodo_pagamento" class="form-label">Forma de Pagamento</label>
+                 <select name="metodo_pagamento" id="metodo_pagamento" class="form-control">
+                     <option value="local">Pagar no Local</option>
+                     <option value="stripe">Cartão de Crédito (Stripe)</option>
+                     <option value="mercadopago">Mercado Pago (Pix/Boleto/Cartão)</option>
+                 </select>
+                 <small class="text-muted">Pagamentos online garantem a reserva do horário.</small>
+             </div>
+
+             <div class="form-group">
                  {# O botão de submit não precisa de JavaScript inline #}
-                 {{ form.submit(class="btn btn-primary") }}
+                 {{ form.submit(class="btn-submit") }}
              </div>
          </form>
      </div>
+
+     <script>
+         document.addEventListener('DOMContentLoaded', function() {
+             var form = document.querySelector('.agenda-form');
+             var paymentSelect = document.getElementById('metodo_pagamento');
+
+             if (form && paymentSelect) {
+                 form.addEventListener('submit', function() {
+                     if (paymentSelect.value === 'stripe' || paymentSelect.value === 'mercadopago') {
+                         form.target = '_blank';
+                     } else {
+                         form.target = '_self';
+                     }
+                 });
+             }
+         });
+     </script>
  </div>
  {% endblock content %}
  

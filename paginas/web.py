@@ -2,10 +2,12 @@
 
 import os
 from flask import (
-    Blueprint, render_template, url_for, request, redirect, flash, current_app
+    Blueprint, render_template, url_for, request, redirect, flash, current_app, session
 )
 from werkzeug.utils import secure_filename
 import psycopg2
+import stripe
+import mercadopago
 from psycopg2.extras import DictCursor
 from .forms import AgendaForm
 from init_db import get_connection
@@ -22,6 +24,11 @@ app_site = Blueprint(
 # --- Constantes e Configurações ---
 # Centralizar configurações melhora a manutenção.
 ALLOWED_EXTENSIONS = {'jpeg', 'jpg', 'png', 'gif', 'pdf', 'docx', 'pptx', 'mp3', 'mp4'}
+
+# Configuração de Pagamentos (Substitua pelas suas chaves reais ou use variáveis de ambiente)
+stripe.api_key = "sk_test_SUA_CHAVE_STRIPE_AQUI"
+mp = mercadopago.SDK("SEU_ACCESS_TOKEN_MERCADO_PAGO")
+
 
 def is_allowed_file(filename):
     """Verifica se a extensão do arquivo é permitida."""
@@ -127,14 +134,96 @@ def agenda():
         dia_agendamento = form.data.data
         hora_agendamento = form.hora.data
         tipo_atendimento = form.servico.data
+        
+        # Obtém o método de pagamento do formulário (campo adicionado manualmente no HTML)
+        metodo_pagamento = request.form.get('metodo_pagamento')
+        
+        # Define um preço fixo para o exemplo (ou implemente uma lógica baseada no serviço)
+        preco_servico = 100.00  # R$ 100,00
 
-        create_cliente(nome_cliente, email_cliente, telefone_cliente)
-        create_agendamento(nome_cliente, dia_agendamento, hora_agendamento, tipo_atendimento)
+        # Se o pagamento for no local ou não especificado, segue o fluxo normal
+        if not metodo_pagamento or metodo_pagamento == 'local':
+            create_cliente(nome_cliente, email_cliente, telefone_cliente)
+            create_agendamento(nome_cliente, dia_agendamento, hora_agendamento, tipo_atendimento)
+            flash('Agendamento realizado com sucesso!', 'success')
+            return redirect(url_for('paginas.agenda'))
+        
+        # Se for pagamento online, salva os dados na sessão temporariamente
+        session['agendamento_pendente'] = {
+            'nome': nome_cliente, 'email': email_cliente, 'telefone': telefone_cliente,
+            'dia': dia_agendamento.strftime('%Y-%m-%d'), 'hora': hora_agendamento.strftime('%H:%M'),
+            'servico': tipo_atendimento
+        }
 
-        flash('Agendamento realizado com sucesso!', 'success')
-        return redirect(url_for('paginas.agenda'))
+        # Integração Stripe
+        if metodo_pagamento == 'stripe':
+            try:
+                checkout_session = stripe.checkout.Session.create(
+                    payment_method_types=['card'],
+                    line_items=[{
+                        'price_data': {
+                            'currency': 'brl',
+                            'product_data': {'name': f"Serviço: {tipo_atendimento}"},
+                            'unit_amount': int(preco_servico * 100), # Valor em centavos
+                        },
+                        'quantity': 1,
+                    }],
+                    mode='payment',
+                    success_url=url_for('paginas.payment_success', _external=True),
+                    cancel_url=url_for('paginas.agenda', _external=True),
+                )
+                return redirect(checkout_session.url, code=303)
+            except Exception as e:
+                flash(f'Erro ao iniciar pagamento Stripe: {e}', 'danger')
+                return redirect(url_for('paginas.agenda'))
+
+        # Integração Mercado Pago
+        elif metodo_pagamento == 'mercadopago':
+            try:
+                preference_data = {
+                    "items": [{
+                        "title": f"Serviço: {tipo_atendimento}",
+                        "quantity": 1,
+                        "unit_price": float(preco_servico),
+                        "currency_id": "BRL"
+                    }],
+                    "back_urls": {
+                        "success": url_for('paginas.payment_success', _external=True),
+                        "failure": url_for('paginas.agenda', _external=True),
+                        "pending": url_for('paginas.agenda', _external=True)
+                    },
+                    "auto_return": "approved"
+                }
+                preference_response = mp.preference().create(preference_data)
+                preference = preference_response["response"]
+                return redirect(preference["init_point"])
+            except Exception as e:
+                flash(f'Erro ao iniciar pagamento Mercado Pago: {e}', 'danger')
+                return redirect(url_for('paginas.agenda'))
 
     return render_template('paginas/agenda.html', form=form)
+
+@app_site.route('/payment_success')
+def payment_success():
+    """Rota de retorno após pagamento bem-sucedido."""
+    dados = session.get('agendamento_pendente')
+    
+    if not dados:
+        flash('Sessão de agendamento expirada ou inválida.', 'warning')
+        return redirect(url_for('paginas.agenda'))
+    
+    try:
+        # Confirma o agendamento no banco de dados
+        create_cliente(dados['nome'], dados['email'], dados['telefone'])
+        create_agendamento(dados['nome'], dados['dia'], dados['hora'], dados['servico'])
+        
+        # Limpa a sessão
+        session.pop('agendamento_pendente', None)
+        flash('Pagamento confirmado e agendamento realizado com sucesso!', 'success')
+    except Exception as e:
+        flash(f'Pagamento confirmado, mas houve um erro ao salvar o agendamento: {e}', 'danger')
+        
+    return redirect(url_for('paginas.agenda'))
 
 @app_site.route('/admin', methods=['GET', 'POST'])
 def admin():

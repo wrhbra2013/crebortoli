@@ -126,7 +126,7 @@ h1, h2, h3 {
     position: absolute;
     top: 100%;
     left: 0;
-    background-color: #fff;
+    background-color: #f3f1f1;
     border: 1px solid var(--cor-borda);
     border-radius: 0 0 8px 8px;
     box-shadow: var(--sombra-suave);
@@ -185,7 +185,7 @@ h1, h2, h3 {
 .mobile-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(10, 12, 20, 0.52);
+    background: rgba(19, 20, 20, 0.52);
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.25s ease, visibility 0.25s;
@@ -212,7 +212,8 @@ h1, h2, h3 {
     left: 0;
     width: 100%;
     height: 3px;
-    background-color: var(--cor-texto);
+    background-color: black;
+    background: #6C63FF;
     transition: transform 0.25s ease, opacity 0.25s ease;
 }
 .sandwich-button .sandwich-icon::before { top: -8px; }
@@ -559,12 +560,10 @@ h1, h2, h3 {
         z-index: 1002;
     }
 
-    /* Mostra o botão do menu sanduíche em telas pequenas */
     .sandwich-button {
         display: block; /* Exibe o botão em telas pequenas */
     }
 
-    /* Esconde o menu de desktop e o prepara para o layout mobile */
     .main-nav {
         display: none; /* Esconde o menu por padrão */
         position: fixed;
@@ -579,17 +578,15 @@ h1, h2, h3 {
         transition: transform 0.3s ease-in-out;
     }
 
-    /* Mostra o menu quando a classe .is-active é adicionada via JS */
     .main-nav.is-active {
-        display: block;
+        display: flex; /* Corrige para flex para alinhar os itens */
         transform: translateX(0);
     }
 
-    /* Ajusta a lista de links para o layout vertical */
     .main-nav .menu {
         flex-direction: column;
-        align-items: stretch;
-        width: 100%;
+        align-items: center;
+        justify-content: center;
     }
 
     .main-nav .menu > .nav-item {

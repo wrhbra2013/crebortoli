@@ -8,67 +8,71 @@
     <title>Sistema Integrado de Gestão</title>
 </head>
 <body>
-    <div class="header">
-        <!-- <h1 style.font.font-family="World Discovery Five PERSONAL">Cre Bortoli Depilação </h1> -->
-        <h1> Espaço Cre  Bortoli </h1>
-        
-    </div>
-    <nav>       
+    <header class="header">
+        <h1 class="header-title">Espaço Cre Bortoli</h1>
+        <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-navigation">
+            <span class="sandwich-icon"></span>
+        </button>
+    </header>
+
+    <nav id="main-navigation" class="main-nav">       
         <ul class="menu">
-        <li><a href="{{url_for('paginas.home')}}">Redes Sociais</a></li> 
+        <li class="nav-item"><a class="nav-link" href="{{url_for('paginas.home')}}">Redes Sociais</a></li> 
         <!-- Submenu -->
-        <li><a href="#" >Clientes</a> 
-        <ul>           
-        <li><a href="{{url_for('sig.postclientes')}}">Cadastro de Clientes</a></li>
-        <li><a href="{{url_for('sig.getclientes')}}">Busca de Clientes</a></li>
-        <li><a href="{{url_for('sig.anaminese')}}">Ficha de Anaminese</a></li>
-        </ul>
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Clientes</a> 
+            <ul class="dropdown-menu">           
+                <li><a class="dropdown-item" href="{{url_for('sig.postclientes')}}">Cadastro de Clientes</a></li>
+                <li><a class="dropdown-item" href="{{url_for('sig.getclientes')}}">Busca de Clientes</a></li>
+                <li><a class="dropdown-item" href="{{url_for('sig.anaminese')}}">Ficha de Anaminese</a></li>
+            </ul>
         </li>
         <!-- Fim submenu -->
         <!-- Submenu -->
-        <li><a href="#" >Vendas</a> 
-        <ul> 
-        <li><a href="{{url_for('sig.vendas_servicos')}}">Serviços</a></li>
-        <li><a href="{{url_for('sig.vendas_produtos')}}">Produtos</a></li>
-        </ul>
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Vendas</a> 
+            <ul class="dropdown-menu"> 
+                <li><a class="dropdown-item" href="{{url_for('sig.vendas_servicos')}}">Serviços</a></li>
+                <li><a class="dropdown-item" href="{{url_for('sig.vendas_produtos')}}">Produtos</a></li>
+            </ul>
         </li>
         <!-- Fim submenu -->
-        <li><a href="{{url_for('sig.compras')}}">Compras</a></li>
-        <li><a href="{{url_for('sig.estoque')}}">Estoque</a></li>
-        <li><a href="{{url_for('sig.pessoal')}}">Pessoal</a></li>
-        <li><a href="#">Financeiro</a>
-        <ul>              
-            <li><a href="{{url_for('sig.depreciacao')}}">Gestão de Depreciacao</a></li>
-            <li><a href="{{url_for('sig.insumos')}}">Gestão de Materiais</a></li>
-            <li><a href="{{url_for('sig.impostos')}}">Gestão de Impostos</a></li>
-            <li><a href="{{url_for('sig.margemlucro')}}">Gestão de Margem de Lucro</a></li>
-            <li><a href="{{url_for('sig.markup')}}">Gestão Markup</a></li>
-            <li><a href="{{url_for('sig.relatorioMEI')}}">Gestão MEI</a></li>
-            <li><a href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank">Gestão MEI - Acesso DASN-SIMEI</a></li>
-           
-           
+        <li class="nav-item"><a class="nav-link" href="{{url_for('sig.compras')}}">Compras</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{url_for('sig.estoque')}}">Estoque</a></li>
+        <li class="nav-item"><a class="nav-link" href="{{url_for('sig.pessoal')}}">Pessoal</a></li>
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Financeiro</a>
+        <ul class="dropdown-menu">              
+            <li><a class="dropdown-item" href="{{url_for('sig.depreciacao')}}">Gestão de Depreciacao</a></li>
+            <li><a class="dropdown-item" href="{{url_for('sig.insumos')}}">Gestão de Materiais</a></li>
+            <li><a class="dropdown-item" href="{{url_for('sig.impostos')}}">Gestão de Impostos</a></li>
+            <li><a class="dropdown-item" href="{{url_for('sig.margemlucro')}}">Gestão de Margem de Lucro</a></li>
+            <li><a class="dropdown-item" href="{{url_for('sig.markup')}}">Gestão Markup</a></li>
+            <li><a class="dropdown-item" href="{{url_for('sig.relatorioMEI')}}">Gestão MEI</a></li>
+            <li><a class="dropdown-item" href="https://www8.receita.fazenda.gov.br/SimplesNacional/Aplicacoes/ATSPO/dasnsimei.app/Identificacao" target="_blank">Gestão MEI - Acesso DASN-SIMEI</a></li>
         </ul>
         </li>
         
-        <li><a href="#">Fiscal</a> 
-            <ul>
-                <li><a href="{{url_for('sig.nota')}}">Emiissão de Notas</a></li>  
-                <li><a href="https://www.nfse.gov.br/EmissorNacional/Login?ReturnUrl=%2fEmissorNacional" target="_blank">NFS-e - Contribuinte</a></li>       
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">Fiscal</a> 
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="{{url_for('sig.nota')}}">Emiissão de Notas</a></li>  
+                <li><a class="dropdown-item" href="https://www.nfse.gov.br/EmissorNacional/Login?ReturnUrl=%2fEmissorNacional" target="_blank">NFS-e - Contribuinte</a></li>       
             </ul>
         </li>                                  
         </ul>       
     </nav>
-    <h1>Gestão de Estoque.</h1>
+    <h2 class="section-title">Gestão de Estoque</h2>
     <div class="container">
-            <form action="" method="POST" >
-    <div class="form">    
-    {{form7.pesquisa_estoque}}
-    {{form7.enviar_estoque}}
-     </div>
-    </form>
+        <form action="" method="POST" class="search-form">
+            <div class="form-group">
+                {{form7.pesquisa_estoque}}
+            </div>
+            {{form7.enviar_estoque}}
+        </form>
 
-    <div class="table">
-        <table>                  
+    <div class="table-responsive">
+        <table class="table">                  
             <!-- coluna   -->
             <thead>
                 <!-- Uma passada de for in range reformata a saida de sql. -->
@@ -96,5 +100,6 @@
         </table>
     </div> 
     </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
 </html>

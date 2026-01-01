@@ -1,12 +1,16 @@
 document.addEventListener('DOMContentLoaded', function () {
-    const sandwichButton = document.querySelector('.sandwich-button');
-    const mainNav = document.querySelector('.main-nav');
+    const sandwichButton = document.getElementById('menu-toggle') || document.querySelector('.sandwich-button');
+    const mainNav = document.getElementById('main-navigation') || document.querySelector('.main-nav');
 
     // 1. Toggle para o menu principal (sandwich)
     if (sandwichButton && mainNav) {
-        sandwichButton.addEventListener('click', () => {
-            sandwichButton.classList.toggle('is-active');
+        sandwichButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Previne propagação indesejada
+            const isActive = sandwichButton.classList.toggle('is-active');
             mainNav.classList.toggle('is-active');
+            
+            // Acessibilidade
+            sandwichButton.setAttribute('aria-expanded', isActive);
         });
     }
 
@@ -42,9 +46,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Opcional: Fechar o menu se clicar fora dele
     document.addEventListener('click', function(event) {
-        if (mainNav.classList.contains('is-active') && !mainNav.contains(event.target) && !sandwichButton.contains(event.target)) {
+        if (mainNav && mainNav.classList.contains('is-active') && !mainNav.contains(event.target) && !sandwichButton.contains(event.target)) {
             mainNav.classList.remove('is-active');
             sandwichButton.classList.remove('is-active');
+            sandwichButton.setAttribute('aria-expanded', 'false');
         }
     });
 });

@@ -1,4 +1,4 @@
- {% extends "sig/_base.html" %}
+{% extends "sig/_base.html" %}
  
  {% block title %}Espaço Cre Bortoli - Beleza e Bem-estar em Marília{% endblock %}
  
@@ -10,10 +10,10 @@
  {% block content %}
 <main class="main-content">
     <div class="container">
-        <!-- Hero Section: Reestilizada com classes do style.css -->
+        <!-- Hero Section -->
         <section class="intro-section">
-            <div class="hero-inner" style="text-align:center;">
-                <img class="post-image" src="{{ url_for('static', filename='css/image/crebortoli.png') }}" alt="Logo do Espaço Cre Bortoli" style="max-width:180px;border-radius:50%;">
+            <div class="hero-inner text-center">
+                <img class="post-image rounded" src="{{ url_for('static', filename='css/image/crebortoli.png') }}" alt="Logo do Espaço Cre Bortoli">
                 <h2>Bem-vinda ao Espaço Cre Bortoli</h2>
                 <p class="lead">Onde a sua beleza e o seu bem-estar se encontram.</p>
                 <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Olá!%20Gostaria%20de%20agendar%20um%20horário." class="btn btn-primary" target="_blank" rel="noopener noreferrer">Agende seu Horário</a>
@@ -26,18 +26,18 @@
             <p class="section-lead">No Espaço Cre Bortoli, nossa missão é realçar sua beleza natural e proporcionar momentos únicos de relaxamento e cuidado. Com uma equipe especializada e produtos de alta qualidade, oferecemos uma experiência personalizada para atender às suas necessidades e superar suas expectativas.</p>
         </section>
  
-        <!-- Services Section: Usando o layout de cards do style.css -->
+        <!-- Services Section -->
         <section id="services" class="section">
             <h3 class="section-title">Nossos Serviços</h3>
             <div class="post-list">
                 <div class="post-card">
-                    <div class="post-body" style="text-align: center;">
+                    <div class="post-body text-center">
                         <h4>Limpeza de Pele</h4>
                         <p>Tratamento profundo para remover impurezas, cravos e células mortas, deixando sua pele renovada, saudável e radiante.</p>
                     </div>
                 </div>
                 <div class="post-card">
-                    <div class="post-body" style="text-align: center;">
+                    <div class="post-body text-center">
                         <h4>Depilação</h4>
                         <p>Utilizamos técnicas e ceras de alta qualidade para garantir uma depilação eficaz, com menos dor e maior durabilidade, para uma pele lisa e macia.</p>
                     </div>
@@ -45,7 +45,7 @@
             </div>
         </section>
  
-        <!-- Testimonials Section: Adaptada para o estilo de comentários do style.css -->
+        <!-- Testimonials Section -->
         <section id="testimonials" class="section">
             <h3 class="section-title">O que nossas clientes dizem</h3>
             <div class="post-list">
@@ -64,14 +64,14 @@
             </div>
         </section>
  
-        <!-- Contact Section: Utilizando o estilo de formulário para destaque -->
+        <!-- Contact Section -->
         <section id="contact" class="comment-form-section">
             <h3 class="section-title">Entre em Contato</h3>
-            <div class="contact-grid" style="text-align:center;">
+            <div class="contact-grid text-center">
                 <p><strong>Endereço:</strong> Rua Francisco Martinelli, 492, Palmital, Marília - SP</p>
                 <p><strong>Telefone/WhatsApp:</strong> <a href="tel:+5514996638056">(14) 99663-8056</a></p>
-                <p><strong>Email:</strong> <a href="mailto:crebortoli@gmail.com">contato@crebortoli.com.br</a></p>
-                <div class="social-links" style="margin-top:1rem;">
+                <p><strong>Email:</strong> <a href="mailto:crebortoli@gmail.com">crebortoli@gmail.com</a></p>
+                <div class="social-links mt-1">
                     <a class="social-icon" href="https://www.instagram.com/crebortoli/?hl=pt" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
                         <img src="{{ url_for('static', filename='css/image/insta.png') }}" alt="Instagram">
                     </a>
