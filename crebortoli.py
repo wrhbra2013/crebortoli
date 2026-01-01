@@ -68,5 +68,5 @@ def index():
     # return render_template('sig/sig.html')
 
 #Mapa do site
-print('Mapa do site')
-print(app.url_map)
+#print('Mapa do site')
+#print(app.url_map)

@@ -4,7 +4,7 @@
  
  {# Substitui o header padrão do SIG pelo header público #}
  {% block header %}
-     {% include 'paginas/_home_header.html' %}
+     {% include 'includes/_header.html' %}
  {% endblock header %}
  
  {% block content %}
@@ -12,20 +12,22 @@
     <div class="container">
         <!-- Hero Section: Reestilizada com classes do style.css -->
         <section class="intro-section">
-            <img src="{{ url_for('static', filename='css/image/crebortoli.png') }}" alt="Logo do Espaço Cre Bortoli" style="max-width: 200px; margin-bottom: 1rem; border-radius: 50%;">
-            <h2>Bem-vinda ao Espaço Cre Bortoli</h2>
-            <p>Onde a sua beleza e o seu bem-estar se encontram.</p>
-            <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Olá!%20Gostaria%20de%20agendar%20um%20horário." class="btn-submit" target="_blank" rel="noopener noreferrer">Agende seu Horário</a>
+            <div class="hero-inner" style="text-align:center;">
+                <img class="post-image" src="{{ url_for('static', filename='css/image/crebortoli.png') }}" alt="Logo do Espaço Cre Bortoli" style="max-width:180px;border-radius:50%;">
+                <h2>Bem-vinda ao Espaço Cre Bortoli</h2>
+                <p class="lead">Onde a sua beleza e o seu bem-estar se encontram.</p>
+                <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Olá!%20Gostaria%20de%20agendar%20um%20horário." class="btn btn-primary" target="_blank" rel="noopener noreferrer">Agende seu Horário</a>
+            </div>
         </section>
  
         <!-- About Us Section -->
-        <section id="about" style="margin-bottom: 3rem;">
+        <section id="about" class="section" >
             <h3 class="section-title">Sobre Nós</h3>
-            <p style="text-align: center;">No Espaço Cre Bortoli, nossa missão é realçar sua beleza natural e proporcionar momentos únicos de relaxamento e cuidado. Com uma equipe especializada e produtos de alta qualidade, oferecemos uma experiência personalizada para atender às suas necessidades e superar suas expectativas.</p>
+            <p class="section-lead">No Espaço Cre Bortoli, nossa missão é realçar sua beleza natural e proporcionar momentos únicos de relaxamento e cuidado. Com uma equipe especializada e produtos de alta qualidade, oferecemos uma experiência personalizada para atender às suas necessidades e superar suas expectativas.</p>
         </section>
  
         <!-- Services Section: Usando o layout de cards do style.css -->
-        <section id="services" style="margin-bottom: 3rem;">
+        <section id="services" class="section">
             <h3 class="section-title">Nossos Serviços</h3>
             <div class="post-list">
                 <div class="post-card">
@@ -44,7 +46,7 @@
         </section>
  
         <!-- Testimonials Section: Adaptada para o estilo de comentários do style.css -->
-        <section id="testimonials" style="margin-bottom: 3rem;">
+        <section id="testimonials" class="section">
             <h3 class="section-title">O que nossas clientes dizem</h3>
             <div class="post-list">
                 <div class="post-card">
@@ -65,17 +67,16 @@
         <!-- Contact Section: Utilizando o estilo de formulário para destaque -->
         <section id="contact" class="comment-form-section">
             <h3 class="section-title">Entre em Contato</h3>
-            <div style="text-align: center;">
+            <div class="contact-grid" style="text-align:center;">
                 <p><strong>Endereço:</strong> Rua Francisco Martinelli, 492, Palmital, Marília - SP</p>
                 <p><strong>Telefone/WhatsApp:</strong> <a href="tel:+5514996638056">(14) 99663-8056</a></p>
-                <p><strong>Email:</strong> <a href="mailto:contato@crebortoli.com.br">contato@crebortoli.com.br</a></p>
-                <div style="margin-top: 1.5rem;">
-                    <p>Siga-nos nas redes sociais:</p>
-                    <a href="https://www.instagram.com/crebortoli/?hl=pt" target="_blank" rel="noopener noreferrer" aria-label="Instagram" style="margin-right: 1rem;">
-                        <img src="{{ url_for('static', filename='css/image/insta.png') }}" alt="Instagram" style="width: 32px; height: 32px;">
+                <p><strong>Email:</strong> <a href="mailto:crebortoli@gmail.com">contato@crebortoli.com.br</a></p>
+                <div class="social-links" style="margin-top:1rem;">
+                    <a class="social-icon" href="https://www.instagram.com/crebortoli/?hl=pt" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+                        <img src="{{ url_for('static', filename='css/image/insta.png') }}" alt="Instagram">
                     </a>
-                    <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Cre%20Bortoli" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
-                        <img src="{{ url_for('static', filename='css/image/whats.png') }}" alt="WhatsApp" style="width: 32px; height: 32px;">
+                    <a class="social-icon" href="https://api.whatsapp.com/send?phone=5514996638056&text=Cre%20Bortoli" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">
+                        <img src="{{ url_for('static', filename='css/image/whats.png') }}" alt="WhatsApp">
                     </a>
                 </div>
             </div>
@@ -83,9 +84,7 @@
     </div>
 </main>
  {% endblock content %}
- 
- <!-- {# Substitui o footer padrão do SIG pelo footer público #}
- {% block footer %}
-     {% include 'paginas/_home_footer.html' %}
- {% endblock footer %}
-  -->
+
+{% block footer %}
+    {% include 'includes/_footer.html' %}
+{% endblock footer %}

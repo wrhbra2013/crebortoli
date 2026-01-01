@@ -5,16 +5,15 @@
    ========================================================================== */
 
 :root {
-    --cor-principal: #8a4baf; /* Um tom de roxo elegante */
-    --cor-principal-escura: #6a1b9a;
-    --cor-titulo: #4a148c; /* Um roxo mais escuro para títulos */
-    --cor-texto: #333;
-    --cor-texto-claro: #f8f9fa;
-    --cor-fundo: #fdfcff;
-    --cor-borda: #e0e0e0;
-    --sombra-suave: 0 4px 12px rgba(12, 11, 11, 0.08);
-    --fonte-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    --fonte-personalizada: 'World of Water', cursive, red;
+    --cor-principal: #6C63FF; /* modern indigo */
+    --cor-accent: #00BFA6; /* teal accent */
+    --cor-titulo: #2a254b; /* deep indigo for headings */
+    --cor-texto: #0f1724; /* slate-900 */
+    --cor-texto-claro: #ffffff;
+    --cor-fundo: #f7f8fc; /* very light */
+    --cor-borda: #e6e9f2;
+    --sombra-suave: 0 6px 18px rgba(15, 20, 32, 0.06);
+    --fonte-principal: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
 }
 
 @font-face {
@@ -22,7 +21,6 @@
     src: url('../fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('truetype');
     font-weight: normal;
     font-style: normal;
-    color: red;
 }
 
 
@@ -116,10 +114,11 @@ h1, h2, h3 {
     font-weight: 500;
 }
 
-.main-nav .menu > .nav-item > a:hover {
-    background-color: #f7f2fa;
-    text-decoration: none;
-}
+ .main-nav .menu > .nav-item > a:hover {
+     background-color: rgba(108,99,255,0.08);
+     color: var(--cor-principal);
+     text-decoration: none;
+ }
 
 /* Estilos do Submenu (Dropdown) */
 .dropdown-menu {
@@ -169,6 +168,64 @@ h1, h2, h3 {
     background-color: var(--cor-texto);
     margin: 5px 0;
     transition: 0.3s;
+}
+
+/* sandwich active (X) */
+.sandwich-button.is-active span:nth-child(1) {
+    transform: translateY(8px) rotate(45deg);
+}
+.sandwich-button.is-active span:nth-child(2) {
+    opacity: 0;
+}
+.sandwich-button.is-active span:nth-child(3) {
+    transform: translateY(-8px) rotate(-45deg);
+}
+
+/* Mobile overlay for off-canvas menu */
+.mobile-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 12, 20, 0.52);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s;
+    z-index: 999;
+}
+.mobile-overlay.is-active {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Support single .sandwich-icon element (uses pseudo elements) */
+.sandwich-button .sandwich-icon {
+    display: block;
+    width: 24px;
+    height: 3px;
+    background-color: var(--cor-texto);
+    position: relative;
+    transition: background-color 0.25s ease, transform 0.25s ease;
+}
+.sandwich-button .sandwich-icon::before,
+.sandwich-button .sandwich-icon::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background-color: var(--cor-texto);
+    transition: transform 0.25s ease, opacity 0.25s ease;
+}
+.sandwich-button .sandwich-icon::before { top: -8px; }
+.sandwich-button .sandwich-icon::after { bottom: -8px; }
+
+.sandwich-button.is-active .sandwich-icon {
+    background-color: transparent;
+}
+.sandwich-button.is-active .sandwich-icon::before {
+    transform: translateY(8px) rotate(45deg);
+}
+.sandwich-button.is-active .sandwich-icon::after {
+    transform: translateY(-8px) rotate(-45deg);
 }
 /* ==========================================================================
    4. SEÇÕES E COMPONENTES GERAIS
@@ -504,36 +561,34 @@ h1, h2, h3 {
 
     /* Mostra o botão do menu sanduíche em telas pequenas */
     .sandwich-button {
-        display: block;
+        display: block; /* Exibe o botão em telas pequenas */
     }
 
     /* Esconde o menu de desktop e o prepara para o layout mobile */
     .main-nav {
-        display: block; /* Sobrescreve o 'display: flex' do desktop */
+        display: none; /* Esconde o menu por padrão */
         position: fixed;
         top: 0;
-        left: 0;
-        width: 80%;
-        max-width: 300px;
-        height: 100vh;
-        background-color: #fff; /* Fundo branco para o menu lateral */
-        box-shadow: 2px 0 10px rgba(0,0,0,0.1);
-        padding-top: 80px; /* Espaço para o header não sobrepor o menu */
-        transform: translateX(-100%);
+        right: 0;
+        width: 75%;
+        height: 100%;
+        background-color: var(--cor-fundo);
+        box-shadow: var(--sombra-suave);
+        z-index: 1001;
+        transform: translateX(100%);
         transition: transform 0.3s ease-in-out;
-        z-index: 1000;
-        overflow-y: auto; /* Permite rolagem se o menu for grande */
     }
 
     /* Mostra o menu quando a classe .is-active é adicionada via JS */
     .main-nav.is-active {
+        display: block;
         transform: translateX(0);
     }
 
     /* Ajusta a lista de links para o layout vertical */
     .main-nav .menu {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         width: 100%;
     }
 
@@ -543,17 +598,18 @@ h1, h2, h3 {
 
     .main-nav .menu > .nav-item > a {
         padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--cor-borda);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        color: var(--cor-texto-claro);
     }
 
     /* Ajusta o comportamento do dropdown no mobile para ser estático */
     .main-nav .dropdown-menu {
         position: static;
-        display: none; /* CORREÇÃO: Oculto por padrão no mobile. */
+        display: none; /* Oculto por padrão no mobile. */
         width: 100%;
         border: none;
         box-shadow: none;
-        background-color: #f7f2fa; /* Cor de fundo para diferenciar sub-itens */
+        background-color: transparent; /* keep transparent on indigo background */
         padding-left: 2.5rem; /* Indentação para mostrar a hierarquia */
     }
     
@@ -636,5 +692,4 @@ h1, h2, h3 {
 .text-danger {
     color: #dc3545 !important; /* Vermelho para perigo/prejuízo */
 }
-    
-    
+

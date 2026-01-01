@@ -1,19 +1,27 @@
- <!-- /home/wander/crebortoli/paginas/templates/paginas/_home_header.html -->
- <header class="header">
-     <h1>Espaço Cre Bortoli</h1>
- 
-     <!-- This button will be controlled by JavaScript -->
-     <button class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
-         <span class="sandwich-icon"></span>
-     </button>
- 
-     <!-- This menu will be controlled by JavaScript and CSS -->
-     <nav class="main-nav">
-         <ul class="menu">
-             <li><a href="{{ url_for('paginas.home') }}">Home</a></li>
-             <li><a href="{{ url_for('paginas.agenda') }}">Agenda</a></li>
-             <li><a href="{{ url_for('sig.login') }}">Intranet</a></li>
-         </ul>
-     </nav>
- </header>
- 
+<!-- Public header include for paginas - matches style.css and home layout -->
+<header class="header" role="banner" style="font-family: 'World of Water', sans-serif;">
+    <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
+        <a href="{{ url_for('paginas.index') }}" class="header-title" aria-label="Página inicial - Espaço Cre Bortoli">
+            <img src="{{ url_for('static', filename='css/image/crebortoli.png') }}" alt="Espaço Cre Bortoli" style="height:44px;vertical-align:middle;margin-right:8px;border-radius:6px;"> Espaço Cre Bortoli
+        </a>
+
+        <div class="header-controls" style="display:flex;align-items:center;gap:8px;">
+            <button id="menu-toggle" class="menu-toggle" aria-label="Abrir Menu" aria-expanded="false">
+                <span class="menu-icon"></span>
+            </button>
+            <button class="sandwich-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-navigation">
+                <span class="sandwich-icon"></span>
+            </button>
+        </div>
+    </div>
+
+    <nav id="main-navigation" class="main-nav" role="navigation" aria-label="Menu principal">
+        <ul class="menu">
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.index') }}">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.agenda') }}">Agenda</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.enquete') }}">Enquete</a></li>
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.login') }}">Intranet</a></li>
+        </ul>
+    </nav>
+</header>
+

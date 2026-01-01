@@ -1,0 +1,12 @@
+{% extends 'templates/includes/_base.html' %}
+
+{% block content %}
+<section class="enquete">
+    <h1>Enquete</h1>
+    <form method="POST" action="{{ url_for('paginas.enquete') }}">
+        <label for="enquete">Qual sua opinião?</label>
+        <textarea id="enquete" name="enquete" required></textarea>
+        <button type="submit">Enviar</button>
+    </form>
+</section>
+{% endblock %}
