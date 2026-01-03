@@ -4,6 +4,7 @@ from functools import wraps
 import psycopg2
 from psycopg2.extras import DictCursor
 from init_db import get_connection
+from flask_wtf.csrf import generate_csrf
 
 # Importa todos os formulários padronizados do form.py
 from .form import *
@@ -238,7 +239,7 @@ def dashboard():
 def view_table(table_name):
     """Rota dinâmica que substitui múltiplas rotas de visualização."""
     table_map = {
-        'clientes': {'get_func': get_clientes, 'template': 'view_table.html', 'title': 'Clientes'},
+        'clientes': {'get_func': get_clientes, 'template': 'getclientes.html', 'title': 'Clientes'},
         'compras': {'get_func': get_compras, 'template': 'view_table.html', 'title': 'Histórico de Compras'},
         'vendas_servicos': {'get_func': get_vendas_servicos, 'template': 'view_table.html', 'title': 'Vendas de Serviços'},
         'vendas_produtos': {'get_func': get_vendas_produtos, 'template': 'view_table.html', 'title': 'Vendas de Produtos'},
@@ -257,6 +258,7 @@ def view_table(table_name):
         abort(404)
 
     form_pesquisa = SearchForm()
+    delete_form = DeleteForm()
     search_term = request.args.get('query', '')
 
     if form_pesquisa.validate_on_submit():
@@ -271,7 +273,9 @@ def view_table(table_name):
             cabecalho=cabecalho,
             titulo=config['title'],
             form_pesquisa=form_pesquisa,
-            table_name=table_name
+            delete_form=delete_form,
+            table_name=table_name,
+            csrf_token=generate_csrf
         )
     except Exception as e:
         flash(f"Erro ao carregar dados da tabela '{table_name}': {e}", "danger")

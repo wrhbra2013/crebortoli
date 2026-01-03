@@ -1,56 +1,57 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ titulo }}</title>
-   
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-    <div class="container">
-        <h1>{{ titulo }}</h1>
+{% extends "sig/_base.html" %}
 
-        <form method="GET" class="search-form">
-            <div class="input-group">
-                {{ form_pesquisa.query(class="form-control", placeholder="Pesquisar...") }}
-                <div class="input-group-append">
-                    <button class="btn btn-primary" type="submit">Pesquisar</button>
-                </div>
-            </div>
-        </form>
+{% block title %}{{ titulo }}{% endblock %}
 
-        <div class="table-responsive">
-            <table class="table table-bordered table-striped">
-                <thead>
-                    <tr>
-                        {% for header in cabecalho %}
-                            <th>{{ header }}</th>
-                        {% endfor %}
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for row in dados %}
-                        <tr>
-                            {% for item in row %}
-                                <td>{{ item }}</td>
-                            {% endfor %}
-                            <td>
-                                <form method="POST" action="{{ url_for('sig.delete_record', table_name=table_name, record_id=row[0]) }}" onsubmit="return confirm('Tem certeza que deseja excluir este registro?')">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                    <button type="submit" class="btn btn-danger btn-sm">Excluir</button>
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+{% block content %}
+<div class="container">
+    <section class="page-header">
+        <h2>{{ titulo }}</h2>
+    </section>
+
+    <form class="form search-form" method="POST">
+        {{ form_pesquisa.hidden_tag() }}
+        <div class="form-group">
+            <label for="query">Pesquisar:</label>
+            {{ form_pesquisa.query(class="form-control", placeholder="Digite para buscar...") }}
         </div>
+        <button type="submit" class="btn-submit">Pesquisar</button>
+    </form>
 
-        <a href="{{ url_for('sig.dashboard') }}" class="btn btn-secondary">Voltar ao Dashboard</a>
+    <div class="table-container table-responsive">
+        <table class="table">
+            <thead>
+                <tr>
+                    {% for col in cabecalho %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dados %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                    <td class="actions-cell">
+                        <a href="{{ url_for('sig.view_record', table_name=table_name, record_id=row[0]) }}" class="btn-action" title="Visualizar">
+                            <img src="{{ url_for('static', filename='icon/view.png') }}" alt="Ver">
+                        </a>
+                        <form action="{{ url_for('sig.delete_record', table_name=table_name, record_id=row[0]) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este registro?');" style="display:inline;">
+                            {{ delete_form.hidden_tag() }}
+                            <button type="submit" class="btn-action btn-delete" title="Excluir">
+                                <img src="{{ url_for('static', filename='icon/delete.png') }}" alt="Excluir">
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="{{ cabecalho|length + 1 }}">Nenhum registro encontrado.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
-
-  
-</body>
-</html>
+</div>
+{% endblock %}

@@ -1,39 +1,22 @@
-<header class="header" role="banner" style="font-family: 'World of Water', sans-serif;">
-  <div class="container" style="display:flex;align-items:center;justify-content:space-between;">
-    <a href="{{ url_for('paginas.home') }}" class="header-title" aria-label="Página inicial - Espaço Cre Bortoli">
+<header class="header" role="banner">
+  <div class="container header-container" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+    <a href="{{ url_for('paginas.home') }}" class="header-title" aria-label="Página inicial - Espaço Cre Bortoli" style="font-family: 'World of Water', sans-serif;">
       <img src="{{ url_for('static', filename='css/image/crebortoli.png') }}" alt="Espaço Cre Bortoli" style="height:48px;vertical-align:middle;margin-right:8px;border-radius:6px;"> Espaço Cre Bortoli
     </a>
 
-    <div class="header-controls" style="display:flex;align-items:center;gap:8px;">
-      <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-navigation">
-        <span class="sandwich-icon"></span>
-      </button>
-    </div>
+    <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-navigation">
+      <span class="sandwich-icon"></span>
+    </button>
   </div>
 
   <nav id="main-navigation" class="main-nav" role="navigation" aria-label="Menu principal">
     <ul class="menu">
-      {% if request.blueprint == 'paginas' or request.path.startswith('/paginas') %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.home') }}">Home</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.servicos') }}">Serviços</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.agenda') }}">Agenda</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.sobre') }}">Sobre</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.contato') }}">Contato</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.admin') }}">Admin</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.login') }}">Intranet</a></li>
-      {% elif request.blueprint == 'sig' or request.path.startswith('/sig') %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.dashboard') }}">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='clientes') }}">Clientes</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='compras') }}">Compras</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='vendas_servicos') }}">Vendas (Serviços)</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.view_table', table_name='vendas_produtos') }}">Vendas (Produtos)</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.logout') }}">Sair</a></li>
-      {% else %}
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.home') }}">Home</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.agenda') }}">Agenda</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.contato') }}">Contato</a></li>
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.login') }}">Intranet</a></li>
-      {% endif %}
+      <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.home') }}">Home</a></li>
+      <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.servicos') }}">Serviços</a></li>
+      <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.agenda') }}">Agenda</a></li>
+      <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.sobre') }}">Sobre</a></li>
+      <li class="nav-item"><a class="nav-link" href="{{ url_for('paginas.contato') }}">Contato</a></li>
+      <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.login') }}">Intranet</a></li>
     </ul>
   </nav>
 </header>

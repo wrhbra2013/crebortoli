@@ -1,57 +1,51 @@
- 
- 
-     <!-- Incluindo o menu de navegação reutilizável -->
-     {% include 'sig/_header.html' %}
- 
-     <main class="container">
-         <section class="page-header">
-             <h2>Busca de Clientes</h2>
-             <p>Encontre clientes cadastrados pelo nome ou CPF.</p>
-         </section>
- 
-         <!-- Formulário de busca com estrutura aprimorada -->
-         <form class="form search-form" action="" method="POST">
-             <div class="form-group">
-                 <label for="pesquisa_clientes">Pesquisar:</label>
-                 <!-- Renderiza o campo de pesquisa do WTForms -->
-                 {{ form2.pesquisa_clientes(id="pesquisa_clientes", placeholder="Digite o nome ou CPF...") }}
-             </div>
-             <!-- Renderiza o botão de envio do WTForms -->
-             {{ form2.enviar_clientes(class="btn-submit") }}
-         </form>
- 
-         <!-- Container para a tabela, permitindo rolagem em telas pequenas -->
-         <div class="table-container">
-             <table class="table">
-                 <thead>
-                     <tr>
-                         <!-- Loop simplificado para os cabeçalhos -->
-                         {% for header in get[1] %}
-                             <th>{{ header[0] }}</th>
-                         {% endfor %}
-                         <th>Ações</th> <!-- Coluna extra para ações como deletar/editar -->
-                     </tr>
-                 </thead>
-                 <tbody>
-                     <!-- Loop robusto para as linhas de dados -->
-                     {% for row in get[0] %}
-                     <tr>
-                         <!-- Itera sobre cada célula da linha, sem hardcoding -->
-                         {% for cell in row %}
-                             <td>{{ cell }}</td>
-                         {% endfor %}
-                         <td class="actions-cell">
-                             <!-- Botão de deletar mais acessível e estilizado -->
-                             <a href="{{ url_for('sig.delete', tabela=tab, id=row[0]) }}" class="btn-action btn-delete" title="Excluir Cliente">
-                                 <img src="{{ url_for('static', filename='icon/delete.png') }}" alt="Excluir">
-                             </a>
-                         </td>
-                     </tr>
-                     {% endfor %}
-                 </tbody>
-             </table>
-         </div>
-     </main>
-  {% include 'sig/_footer.html' %}
-     
- 
+{% extends "sig/_base.html" %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block content %}
+<div class="container">
+    <section class="page-header">
+        <h2>{{ titulo }}</h2>
+        <p>Gerencie os clientes cadastrados no sistema.</p>
+    </section>
+
+    <form class="form search-form" method="POST">
+        {{ form_pesquisa.hidden_tag() }}
+        <div class="form-group">
+            <label for="query">Pesquisar:</label>
+            {{ form_pesquisa.query(class="form-control", placeholder="Digite o nome...") }}
+        </div>
+        <button type="submit" class="btn-submit">Pesquisar</button>
+    </form>
+
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    {% for col in cabecalho %}
+                        <th>{{ col }}</th>
+                    {% endfor %}
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in dados %}
+                <tr>
+                    {% for cell in row %}
+                        <td>{{ cell }}</td>
+                    {% endfor %}
+                    <td class="actions-cell">
+                        <form action="{{ url_for('sig.delete_record', table_name=table_name, record_id=row[0]) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja excluir este cliente?');" style="display:inline;">
+                            {{ delete_form.hidden_tag() }}
+                            <button type="submit" class="btn-action btn-delete" title="Excluir">
+                                <img src="{{ url_for('static', filename='icon/delete.png') }}" alt="Excluir">
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,55 +1,47 @@
 <header class="header">
-    <h1 class="header-title">Espaço Cre Bortoli</h1>
-    
-    <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-navigation">
-        <span class="sandwich-icon"></span>
-    </button>
+    <div class="container header-container" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+        <h1 class="header-title" style="margin:0;font-size:1.5rem;font-family: 'World of Water', sans-serif;">Espaço Cre Bortoli</h1>
+        
+        <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-navigation">
+            <span class="sandwich-icon"></span>
+        </button>
+    </div>
+
+    <nav id="main-navigation" class="main-nav">
+        <ul class="menu">
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.dashboard') }}">Dashboard</a></li>
+            
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" aria-expanded="false">Cadastros</a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_cliente') }}">Cliente</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_compra') }}">Compra</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_venda_servico') }}">Venda Serviço</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_venda_produto') }}">Venda Produto</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_colaborador') }}">Colaborador</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_anamnese') }}">Anamnese</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_relatorio_mei') }}">Relatório MEI</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_custos_fixos') }}">Custos Fixos</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_insumo') }}">Insumo</a></li>
+                </ul>
+            </li>
+
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" aria-expanded="false">Listagens</a>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='clientes') }}">Clientes</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='compras') }}">Compras</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='vendas_servicos') }}">Vendas Serviços</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='vendas_produtos') }}">Vendas Produtos</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='relatorioMEI') }}">Relatórios MEI</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='colaboradores') }}">Colaboradores</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='anaminese') }}">Anamnese</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='impostos') }}">Custos Fixos</a></li>
+                    <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='insumos') }}">Insumos</a></li>
+                </ul>
+            </li>
+            
+            <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.logout') }}">Sair</a></li>
+        </ul>
+    </nav>
 </header>
-
-<nav id="main-navigation" class="main-nav">
-    <ul class="menu">
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.dashboard') }}">Dashboard</a></li>
-        
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Cadastros
-            </a>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_cliente') }}">Cadastrar Cliente</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_compra') }}">Registrar Compra</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_venda_servico') }}">Registrar Venda de Serviço</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_venda_produto') }}">Registrar Venda de Produto</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_colaborador') }}">Cadastrar Colaborador</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_anamnese') }}">Cadastrar Anamnese</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_relatorio_mei') }}">Cadastrar Relatório MEI</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_custos_fixos') }}">Cadastrar Custos Fixos</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_insumo') }}">Cadastrar Insumo</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_depreciacao') }}">Cadastrar Depreciação</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_margem') }}">Cadastrar Margem</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.cadastrar_markup') }}">Cadastrar Markup</a></li>
-            </ul>
-        </li>
-
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                Listagens
-            </a>
-            <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='clientes') }}">Listar Clientes</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='compras') }}">Listar Compras</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='vendas_servicos') }}">Listar Vendas de Serviços</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='vendas_produtos') }}">Listar Vendas de Produtos</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='relatorioMEI') }}">Listar Relatórios MEI</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='colaboradores') }}">Listar Colaboradores</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='anaminese') }}">Listar Fichas de Anamnese</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='impostos') }}">Listar Custos Fixos</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='insumos') }}">Listar Insumos</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='depreciacao') }}">Listar Depreciação</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='margem') }}">Listar Margem de Contribuição</a></li>
-                <li><a class="dropdown-item" href="{{ url_for('sig.view_table', table_name='markup') }}">Listar Markup</a></li>
-            </ul>
-        </li>
-        
-        <li class="nav-item"><a class="nav-link" href="{{ url_for('sig.logout') }}">Sair</a></li>
-    </ul>
-</nav>

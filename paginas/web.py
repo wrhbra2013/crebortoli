@@ -114,13 +114,9 @@ def buscar_agendamentos():
 # ROTAS (VIEWS)
 # ==============================================================================
 
-@app_site.route('/home', methods=['GET', 'POST'])  # Removida a rota duplicada '/'
-def home():
-    posts = buscar_todos_posts()
-    return render_template('paginas/home.html', posts=posts)
-
 @app_site.route('/', methods=['GET', 'POST'])
-def index():
+@app_site.route('/home', methods=['GET', 'POST'])
+def home():
     posts = buscar_todos_posts()
     return render_template('paginas/home.html', posts=posts)
 
@@ -195,8 +191,14 @@ def agenda():
                     "auto_return": "approved"
                 }
                 preference_response = mp.preference().create(preference_data)
-                preference = preference_response["response"]
-                return redirect(preference["init_point"])
+                preference = preference_response.get("response", {})
+
+                if "init_point" in preference:
+                    return redirect(preference["init_point"])
+                else:
+                    print(f"Erro Mercado Pago: {preference_response}")
+                    flash('Erro na integração com Mercado Pago. Verifique as credenciais.', 'danger')
+                    return redirect(url_for('paginas.agenda'))
             except Exception as e:
                 flash(f'Erro ao iniciar pagamento Mercado Pago: {e}', 'danger')
                 return redirect(url_for('paginas.agenda'))

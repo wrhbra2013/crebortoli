@@ -79,7 +79,7 @@ h1, h2, h3 {
 
 .header {
     display: flex;
-    font-family: var(--fonte-personalizada);
+    font-family: var(--fonte-personalizada); 
     justify-content: space-between;
     align-items: center;
     padding: 1rem 2rem;
@@ -94,6 +94,13 @@ h1, h2, h3 {
 .main-nav {
     display: flex;
     align-items: center;
+    width: 5%;
+    height: 100%;
+    background-color: #fff;    
+    box-shadow: var(--sombra-suave);
+    position: sticky;
+    top: 0;
+    z-index: 100;
 }
 
 .main-nav .menu {
@@ -109,16 +116,36 @@ h1, h2, h3 {
 
 .main-nav .menu > .nav-item > a {
     display: block;
-    padding: 1rem 1.5rem;
+    background-color: violet;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 100%;
+    width: 0px auto;
+    padding: 0.75rem 1.5rem;
     color: var(--cor-texto);
-    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
 }
 
+.main-nav .menu {
+    display: flex;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0;
+    z-index: 100;
+    text-align: center;
+    font-size: large;
+
+}
  .main-nav .menu > .nav-item > a:hover {
      background-color: rgba(108,99,255,0.08);
      color: var(--cor-principal);
      text-decoration: none;
- }
+     font-weight: 600;
+     }
 
 /* Estilos do Submenu (Dropdown) */
 .dropdown-menu {
@@ -126,8 +153,8 @@ h1, h2, h3 {
     position: absolute;
     top: 100%;
     left: 0;
-    background-color: #f3f1f1;
-    border: 1px solid var(--cor-borda);
+    background-color: #e55a5a;
+    border: 1px solid var(--cor-borda);    
     border-radius: 0 0 8px 8px;
     box-shadow: var(--sombra-suave);
     list-style: none;
@@ -139,6 +166,7 @@ h1, h2, h3 {
 
 .nav-item.dropdown:hover .dropdown-menu {
     display: block; /* Mostra no hover em telas grandes */
+    
 }
 
 .header h1 {
@@ -153,7 +181,9 @@ h1, h2, h3 {
 
 /* Botão do Menu Sanduíche (Mobile) */
 .sandwich-button {
-    display: none; /* Escondido por padrão em telas grandes */
+    display: flex;
+    align-items: center;
+    position: relative; /* Escondido por padrão em telas grandes */
     background: none;
     border: none;
     cursor: pointer;
@@ -212,7 +242,6 @@ h1, h2, h3 {
     left: 0;
     width: 100%;
     height: 3px;
-    background-color: black;
     background: #6C63FF;
     transition: transform 0.25s ease, opacity 0.25s ease;
 }
@@ -463,7 +492,10 @@ h1, h2, h3 {
   border: 1px solid var(--cor-borda);
   padding: 0.75rem;
   text-align: left;
-  word-break: break-word;
+  /* word-break: break-word; */
+  white-space: nowrap;
+  /* overflow: hidden;
+  text-overflow: ellipsis; */
 }
 
 .table th {
