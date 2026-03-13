@@ -92,7 +92,14 @@ document.addEventListener("DOMContentLoaded", function() {
     document.getElementById('header-placeholder').innerHTML = header;
     document.getElementById('footer-placeholder').innerHTML = footerHTML(basePath);
     
-    const mainScript = document.createElement('script');
-    mainScript.src = basePath + 'static/js/main.js';
-    document.body.appendChild(mainScript);
+    if (typeof initMenu === 'function') {
+        initMenu();
+    } else {
+        const mainScript = document.createElement('script');
+        mainScript.src = basePath + 'static/js/main.js';
+        mainScript.onload = function() {
+            initMenu();
+        };
+        document.body.appendChild(mainScript);
+    }
 });

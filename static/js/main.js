@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function () {
+function initMenu() {
     const sandwichButton = document.getElementById('menu-toggle') || document.querySelector('.sandwich-button');
     const mainNav = document.getElementById('main-navigation') || document.querySelector('.main-nav');
 
@@ -52,4 +52,6 @@ document.addEventListener('DOMContentLoaded', function () {
             sandwichButton.setAttribute('aria-expanded', 'false');
         }
     });
-});
+}
+
+document.addEventListener('DOMContentLoaded', initMenu);
