@@ -14,6 +14,7 @@
     --cor-borda: #e6e9f2;
     --sombra-suave: 0 6px 18px rgba(15, 20, 32, 0.06);
     --fonte-principal: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+    --fonte-titulo: 'World of Water', cursive;
 }
 
 @font-face {
@@ -79,10 +80,10 @@ h1, h2, h3 {
 
 .header {
     display: flex;
-    font-family: var(--fonte-personalizada); 
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem 2rem;
+    padding: 0.75rem 2rem;
     background-color: #fff;
     border-bottom: 1px solid var(--cor-borda);
     box-shadow: var(--sombra-suave);
@@ -91,16 +92,31 @@ h1, h2, h3 {
     z-index: 100;
 }
 
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.header-title {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+    color: var(--cor-titulo);
+}
+
+.site-title {
+    font-family: var(--fonte-titulo);
+    font-size: 1.5rem;
+    color: var(--cor-principal);
+}
+
 .main-nav {
     display: flex;
     align-items: center;
-    width: 5%;
-    height: 100%;
-    background-color: #fff;    
-    box-shadow: var(--sombra-suave);
-    position: sticky;
-    top: 0;
-    z-index: 100;
+    flex: 1;
+    justify-content: flex-end;
 }
 
 .main-nav .menu {
@@ -108,87 +124,78 @@ h1, h2, h3 {
     list-style: none;
     margin: 0;
     padding: 0;
+    gap: 0.5rem;
 }
 
 .main-nav .menu > .nav-item {
-    position: relative; /* Essencial para o posicionamento do submenu */
+    position: relative;
 }
 
 .main-nav .menu > .nav-item > a {
     display: block;
-    background-color: violet;
     text-decoration: none;
     border-radius: 8px;
-    font-weight: 100%;
-    width: 0px auto;
-    padding: 0.75rem 1.5rem;
+    padding: 0.5rem 1rem;
     color: var(--cor-texto);
     transition: background-color 0.2s, color 0.2s;
+    font-weight: 500;
 }
 
-.main-nav .menu {
-    display: flex;
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    position: absolute;
-    top: 0;
-    z-index: 100;
-    text-align: center;
-    font-size: large;
-
+.main-nav .menu > .nav-item > a:hover {
+    background-color: rgba(108,99,255,0.1);
+    color: var(--cor-principal);
+    text-decoration: none;
 }
- .main-nav .menu > .nav-item > a:hover {
-     background-color: rgba(108,99,255,0.08);
-     color: var(--cor-principal);
-     text-decoration: none;
-     font-weight: 600;
-     }
 
 /* Estilos do Submenu (Dropdown) */
 .dropdown-menu {
-    display: none; /* Escondido por padrão */
+    display: none;
     position: absolute;
     top: 100%;
     left: 0;
-    background-color: #e55a5a;
+    background-color: #fff;
     border: 1px solid var(--cor-borda);    
     border-radius: 0 0 8px 8px;
     box-shadow: var(--sombra-suave);
     list-style: none;
     padding: 0.5rem 0;
     margin: 0;
-    min-width: 220px; /* Largura mínima do dropdown */
+    min-width: 200px;
     z-index: 1001;
 }
 
 .nav-item.dropdown:hover .dropdown-menu {
-    display: block; /* Mostra no hover em telas grandes */
-    
+    display: block;
 }
 
-.header h1 {
-    margin: 0;
-    font-size: 1.5rem;
+.dropdown-menu .dropdown-item {
+    display: block;
+    padding: 0.5rem 1rem;
+    color: var(--cor-texto);
+    text-decoration: none;
+    transition: background-color 0.2s;
 }
 
-.header-title {
-    font-family: var(--fonte-personalizada);
-       
+.dropdown-menu .dropdown-item:hover {
+    background-color: rgba(108,99,255,0.1);
+    color: var(--cor-principal);
 }
 
-/* Botão do Menu Sanduíche (Mobile) */
+.dropdown-toggle::after {
+    content: ' ▼';
+    font-size: 0.7rem;
+}
+
+/* Botão do Menu Sanduíche (Mobile) - Escondido por padrão em telas grandes */
 .sandwich-button {
-    display: flex;
+    display: none;
     align-items: center;
-    position: relative; /* Escondido por padrão em telas grandes */
+    position: relative;
     background: none;
     border: none;
     cursor: pointer;
     padding: 0.5rem;
-    z-index: 1002; /* Garante que fique acima de outros elementos do header */
+    z-index: 1002;
 }
 
 .sandwich-button span {
@@ -586,14 +593,21 @@ h1, h2, h3 {
     }
 
     .header {
-        padding: 1rem;
-        /* Garante que o botão do menu fique no lugar certo e acima do overlay */
+        padding: 0.75rem 1rem;
         position: relative; 
         z-index: 1002;
     }
+    
+    .header-container {
+        flex-wrap: wrap;
+    }
 
     .sandwich-button {
-        display: block; /* Exibe o botão em telas pequenas */
+        display: flex; /* Exibe o botão em telas pequenas */
+    }
+
+    .site-title {
+        font-size: 1.2rem;
     }
 
     .main-nav {
@@ -602,8 +616,9 @@ h1, h2, h3 {
         top: 0;
         right: 0;
         width: 75%;
+        max-width: 300px;
         height: 100%;
-        background-color: var(--cor-fundo);
+        background-color: #fff;
         box-shadow: var(--sombra-suave);
         z-index: 1001;
         transform: translateX(100%);
@@ -611,14 +626,15 @@ h1, h2, h3 {
     }
 
     .main-nav.is-active {
-        display: flex; /* Corrige para flex para alinhar os itens */
+        display: flex;
         transform: translateX(0);
     }
 
     .main-nav .menu {
         flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        align-items: stretch;
+        justify-content: flex-start;
+        padding-top: 1rem;
     }
 
     .main-nav .menu > .nav-item {
@@ -627,8 +643,8 @@ h1, h2, h3 {
 
     .main-nav .menu > .nav-item > a {
         padding: 1rem 1.5rem;
-        border-bottom: 1px solid rgba(255,255,255,0.06);
-        color: var(--cor-texto-claro);
+        border-bottom: 1px solid var(--cor-borda);
+        color: var(--cor-texto);
     }
 
     /* Ajusta o comportamento do dropdown no mobile para ser estático */

@@ -12,12 +12,14 @@ function isPublicPage() {
 
 const headerSIG = (basePath) => `
 <header class="header">
-    <div class="container header-container" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+    <div class="header-container">
         <a href="${basePath}sig/index.html" class="header-title" aria-label="Página inicial">
-            <img src="${basePath}static/css/image/crebortoli.png" alt="Espaço Cre Bortoli" style="height:44px;vertical-align:middle;margin-right:8px;border-radius:6px;"> Espaço Cre Bortoli - SIG
+            <img src="${basePath}static/css/image/crebortoli.png" alt="Espaço Cre Bortoli" style="height:44px;vertical-align:middle;margin-right:8px;border-radius:6px;"> <span class="site-title">Espaço Cre Bortoli - SIG</span>
         </a>
         <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-navigation">
-            <span class="sandwich-icon"></span>
+            <span></span>
+            <span></span>
+            <span></span>
         </button>
     </div>
     <nav id="main-navigation" class="main-nav">
@@ -59,12 +61,14 @@ const headerSIG = (basePath) => `
 
 const headerPublic = (basePath) => `
 <header class="header" role="banner">
-    <div class="container header-container" style="display:flex;align-items:center;justify-content:space-between;width:100%;">
+    <div class="header-container">
         <a href="${basePath}index.html" class="header-title" aria-label="Página inicial - Espaço Cre Bortoli">
-            <img src="${basePath}static/css/image/crebortoli.png" alt="Espaço Cre Bortoli" style="height:44px;vertical-align:middle;margin-right:8px;border-radius:6px;"> Espaço Cre Bortoli
+            <img src="${basePath}static/css/image/crebortoli.png" alt="Espaço Cre Bortoli" style="height:44px;vertical-align:middle;margin-right:8px;border-radius:6px;"> <span class="site-title">Espaço Cre Bortoli</span>
         </a>
         <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false" aria-controls="main-navigation">
-            <span class="sandwich-icon"></span>
+            <span></span>
+            <span></span>
+            <span></span>
         </button>
     </div>
     <nav id="main-navigation" class="main-nav" role="navigation" aria-label="Menu principal">
@@ -84,6 +88,7 @@ const footerHTML = (basePath) => `
 <footer class="footer">
     <p>&copy; 2026 Cre Bortoli. Todos os direitos reservados.</p>
 </footer>
+<div class="mobile-overlay" id="mobile-overlay"></div>
 `;
 
 document.addEventListener("DOMContentLoaded", function() {
