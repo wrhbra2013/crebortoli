@@ -74,27 +74,5 @@
     </main>
 
     <div id="footer-placeholder"></div>
-
-    <script src="../static/js/contrast.js"></script>
-    <script src="../static/js/menu.js"></script>
-    <script>
-        document.getElementById('agenda-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const nome = document.getElementById('nome').value;
-            const email = document.getElementById('email').value;
-            const telefone = document.getElementById('telefone').value;
-            const data = document.getElementById('data').value;
-            const hora = document.getElementById('hora').value;
-            const servico = document.getElementById('servico').value;
-            const observacoes = document.getElementById('observacoes').value;
-            
-            const mensagem = `Olá! Gostaria de agendar um horário:%0A%0A*Nome:* ${encodeURIComponent(nome)}%0A*Email:* ${encodeURIComponent(email)}%0A*Telefone:* ${encodeURIComponent(telefone)}%0A*Data:* ${encodeURIComponent(data)}%0A*Horário:* ${encodeURIComponent(hora)}%0A*Serviço:* ${encodeURIComponent(servico)}${observacoes ? '%0A*Observações:* ' + encodeURIComponent(observacoes) : ''}`;
-            
-            const url = `https://api.whatsapp.com/send?phone=5514996638056&text=${mensagem}`;
-            window.open(url, '_blank');
-        });
-    </script>
-<script src="../static/js/components.js"></script>
-</body>
+<script src="../static/js/components.js"></script></body>
 </html>

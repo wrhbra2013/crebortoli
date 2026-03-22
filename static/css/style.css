@@ -12,6 +12,7 @@
     --cor-texto-claro: #ffffff;
     --cor-fundo: #f7f8fc; /* very light */
     --cor-borda: #e6e9f2;
+    --cor-header-footer: #6C63FF; /* violeta */
     --sombra-suave: 0 6px 18px rgba(15, 20, 32, 0.06);
     --fonte-principal: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
     --fonte-titulo: 'World of Water', cursive;
@@ -84,9 +85,8 @@ h1, h2, h3 {
     justify-content: space-between;
     align-items: center;
     padding: 0.75rem 2rem;
-    background-color: #fff;
-    border-bottom: 1px solid var(--cor-borda);
-    box-shadow: var(--sombra-suave);
+    background-color: var(--cor-header-footer);
+    color: var(--cor-texto-claro);
     position: sticky;
     top: 0;
     z-index: 100;
@@ -103,13 +103,13 @@ h1, h2, h3 {
     display: flex;
     align-items: center;
     text-decoration: none;
-    color: var(--cor-titulo);
+    color: var(--cor-texto-claro);
 }
 
 .site-title {
     font-family: var(--fonte-titulo);
     font-size: 1.5rem;
-    color: var(--cor-principal);
+    color: var(--cor-texto-claro);
 }
 
 .main-nav {
@@ -136,14 +136,13 @@ h1, h2, h3 {
     text-decoration: none;
     border-radius: 8px;
     padding: 0.5rem 1rem;
-    color: var(--cor-texto);
+    color: var(--cor-texto-claro);
     transition: background-color 0.2s, color 0.2s;
     font-weight: 500;
 }
 
 .main-nav .menu > .nav-item > a:hover {
-    background-color: rgba(108,99,255,0.1);
-    color: var(--cor-principal);
+    background-color: rgba(255,255,255,0.2);
     text-decoration: none;
 }
 
@@ -168,17 +167,20 @@ h1, h2, h3 {
     display: block;
 }
 
+.dropdown-menu {
+    background-color: var(--cor-header-footer);
+}
+
 .dropdown-menu .dropdown-item {
     display: block;
     padding: 0.5rem 1rem;
-    color: var(--cor-texto);
+    color: var(--cor-texto-claro);
     text-decoration: none;
     transition: background-color 0.2s;
 }
 
 .dropdown-menu .dropdown-item:hover {
-    background-color: rgba(108,99,255,0.1);
-    color: var(--cor-principal);
+    background-color: rgba(255,255,255,0.2);
 }
 
 .dropdown-toggle::after {
@@ -189,30 +191,46 @@ h1, h2, h3 {
 /* Botão do Menu Sanduíche (Mobile) - Escondido por padrão em telas grandes */
 .sandwich-button {
     display: none;
+    flex-direction: column;
+    justify-content: center;
     align-items: center;
     position: relative;
-    background: none;
-    border: none;
+    background: rgba(255,255,255,0.1);
+    border: 2px solid rgba(255,255,255,0.3);
     cursor: pointer;
-    padding: 0.5rem;
+    padding: 10px;
     z-index: 1002;
+    border-radius: 8px;
+    width: 48px;
+    height: 48px;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.sandwich-button:hover {
+    background: rgba(255,255,255,0.2);
+    border-color: rgba(255,255,255,0.5);
 }
 
 .sandwich-button span {
     display: block;
-    width: 25px;
+    width: 22px;
     height: 3px;
-    background-color: var(--cor-texto);
+    background-color: var(--cor-texto-claro);
     margin: 5px 0;
     transition: 0.3s;
+    border-radius: 2px;
 }
 
 /* sandwich active (X) */
+.sandwich-button.is-active {
+    background: rgba(255,255,255,0.3);
+}
 .sandwich-button.is-active span:nth-child(1) {
     transform: translateY(8px) rotate(45deg);
 }
 .sandwich-button.is-active span:nth-child(2) {
     opacity: 0;
+    transform: scaleX(0);
 }
 .sandwich-button.is-active span:nth-child(3) {
     transform: translateY(-8px) rotate(-45deg);
@@ -277,6 +295,20 @@ h1, h2, h3 {
 
 .intro-section {
     border-bottom: 1px solid var(--cor-borda);
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.intro-section .hero-banner {
+    width: 100%;
+    max-height: 400px;
+    object-fit: cover;
+    display: block;
+}
+
+.intro-section .hero-inner {
+    padding: 2rem;
+    background-color: var(--cor-fundo);
 }
 
 .intro-section h2, .page-header h2 {
@@ -561,7 +593,7 @@ h1, h2, h3 {
     gap: 1rem;
     padding: 2rem;
     margin-top: 2rem;
-    background-color: #333;
+    background-color: var(--cor-header-footer);
     color: var(--cor-texto-claro);
 }
 
@@ -618,7 +650,7 @@ h1, h2, h3 {
         width: 75%;
         max-width: 300px;
         height: 100%;
-        background-color: #fff;
+        background-color: var(--cor-header-footer);
         box-shadow: var(--sombra-suave);
         z-index: 1001;
         transform: translateX(100%);
@@ -643,8 +675,16 @@ h1, h2, h3 {
 
     .main-nav .menu > .nav-item > a {
         padding: 1rem 1.5rem;
-        border-bottom: 1px solid var(--cor-borda);
-        color: var(--cor-texto);
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        color: var(--cor-texto-claro);
+    }
+
+    .sandwich-button {
+        display: flex;
+    }
+
+    .sandwich-button span {
+        background-color: var(--cor-texto-claro);
     }
 
     /* Ajusta o comportamento do dropdown no mobile para ser estático */
@@ -654,7 +694,7 @@ h1, h2, h3 {
         width: 100%;
         border: none;
         box-shadow: none;
-        background-color: transparent; /* keep transparent on indigo background */
+        background-color: rgba(0,0,0,0.2);
         padding-left: 2.5rem; /* Indentação para mostrar a hierarquia */
     }
     
@@ -736,5 +776,25 @@ h1, h2, h3 {
 
 .text-danger {
     color: #dc3545 !important; /* Vermelho para perigo/prejuízo */
+}
+
+/* ==========================================================================
+   2. LAYOUT PRINCIPAL E CONTAINER
+   ========================================================================== */
+.iframe-header,
+.iframe-footer {
+    width: 100%;
+    border: none;
+    display: block;
+}
+
+.iframe-header {
+    height: auto;
+    min-height: 70px;
+}
+
+.iframe-footer {
+    height: auto;
+    min-height: 60px;
 }
 
