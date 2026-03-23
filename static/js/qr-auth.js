@@ -16,29 +16,6 @@ function getSessionToken() {
     return token;
 }
 
-async function loadQRCode() {
-    const container = document.getElementById('qrcode-container');
-    const statusEl = document.getElementById('auth-status');
-    const sessionToken = getSessionToken();
-    
-    const baseUrl = window.location.protocol + '//' + window.location.host;
-    const authUrl = `${baseUrl}${getSigPath()}aprovar.html#auth=${sessionToken}`;
-    
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(authUrl)}`;
-    
-    container.innerHTML = `
-        <div class="qr-pending">
-            <img src="${qrApiUrl}" alt="QR Code" id="qr-image">
-            <p id="auth-instructions">Escaneie o QR code com seu celular para aprobar o login</p>
-            <div class="session-info">
-                <small>Código da sessão: <code>${sessionToken.substring(0, 8)}...</code></small>
-            </div>
-        </div>
-    `;
-    
-    pollForApproval(sessionToken);
-}
-
 function getBasePath() {
     const path = window.location.pathname;
     const pathWithoutFile = path.replace(/\/[^/]*$/, '');
@@ -50,6 +27,30 @@ function getSigPath() {
     return getBasePath() + 'sig/';
 }
 
+async function loadQRCode() {
+    const container = document.getElementById('qrcode-container');
+    if (!container) return;
+    
+    const sessionToken = getSessionToken();
+    
+    const baseUrl = window.location.protocol + '//' + window.location.host;
+    const authUrl = `${baseUrl}${getSigPath()}aprovar.html#auth=${sessionToken}`;
+    
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(authUrl)}`;
+    
+    container.innerHTML = `
+        <div class="qrcode-container">
+            <img src="${qrApiUrl}" alt="QR Code" id="qr-image" style="border: 4px solid #fff; border-radius: 8px;">
+            <p id="auth-instructions">Escaneie o QR code com seu celular para aprobar o login</p>
+            <div class="session-info">
+                <small>Código da sessão: <code>${sessionToken.substring(0, 8)}...</code></small>
+            </div>
+        </div>
+    `;
+    
+    pollForApproval(sessionToken);
+}
+
 function pollForApproval(token) {
     const checkApproval = () => {
         const approved = localStorage.getItem(`sig_approved_${token}`);
@@ -57,27 +58,6 @@ function pollForApproval(token) {
             localStorage.setItem('sig_authenticated', 'true');
             localStorage.removeItem(`sig_approved_${token}`);
             window.location.href = getSigPath() + 'index.html';
-            return;
-        }
-        setTimeout(checkApproval, 2000);
-    };
-    checkApproval();
-}
-
-function checkAuth() {
-    if (localStorage.getItem('sig_authenticated') === 'true') {
-        localStorage.removeItem('sig_authenticated');
-        window.location.href = getSigPath() + 'index.html';
-    }
-}
-
-function pollForApproval(token) {
-    const checkApproval = () => {
-        const approved = localStorage.getItem(`sig_approved_${token}`);
-        if (approved === 'true') {
-            localStorage.setItem('sig_authenticated', 'true');
-            localStorage.removeItem(`sig_approved_${token}`);
-            window.location.href = getBasePath() + 'sig/index.html';
             return;
         }
         setTimeout(checkApproval, 2000);
@@ -100,15 +80,24 @@ function approveLogin() {
 function checkAuth() {
     if (localStorage.getItem('sig_authenticated') === 'true') {
         localStorage.removeItem('sig_authenticated');
-        window.location.href = getBasePath() + 'sig/index.html';
+        window.location.href = getSigPath() + 'index.html';
     }
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-    if (document.getElementById('qrcode-container')) {
+function initQRLogin() {
+    const container = document.getElementById('qrcode-container');
+    const authStatus = document.getElementById('auth-status');
+    
+    if (container) {
         loadQRCode();
     }
-    if (document.getElementById('auth-status')) {
+    if (authStatus) {
         checkAuth();
     }
-});
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initQRLogin);
+} else {
+    initQRLogin();
+}
