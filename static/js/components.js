@@ -3,8 +3,9 @@ function getRelativePath(depth) {
 }
 
 function getPathDepth(pathname) {
-    const segments = pathname.split('/').filter(s => s && !s.endsWith('.html'));
-    return segments.length;
+    const pathWithoutFile = pathname.replace(/\/[^/]*$/, '');
+    const slashCount = (pathWithoutFile.match(/\//g) || []).length;
+    return Math.max(0, slashCount - 1);
 }
 
 const pageDepth = getPathDepth(window.location.pathname);
