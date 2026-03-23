@@ -21,8 +21,8 @@ async function loadQRCode() {
     const statusEl = document.getElementById('auth-status');
     const sessionToken = getSessionToken();
     
-    const currentUrl = window.location.href.split('#')[0];
-    const authUrl = `${currentUrl.replace('login.html', 'aprovar.html')}#auth=${sessionToken}`;
+    const baseUrl = window.location.protocol + '//' + window.location.host;
+    const authUrl = `${baseUrl}${getSigPath()}aprovar.html#auth=${sessionToken}`;
     
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(authUrl)}`;
     
@@ -41,10 +41,34 @@ async function loadQRCode() {
 
 function getBasePath() {
     const path = window.location.pathname;
-    let depth = (path.match(/\//g) || []).length;
-    if (path.endsWith('/')) depth--;
-    depth = Math.max(0, depth - 1);
-    return '../'.repeat(depth);
+    const pathWithoutFile = path.replace(/\/[^/]*$/, '');
+    const depth = pathWithoutFile.split('/').filter(p => p).length;
+    return depth > 0 ? '../'.repeat(depth) : './';
+}
+
+function getSigPath() {
+    return getBasePath() + 'sig/';
+}
+
+function pollForApproval(token) {
+    const checkApproval = () => {
+        const approved = localStorage.getItem(`sig_approved_${token}`);
+        if (approved === 'true') {
+            localStorage.setItem('sig_authenticated', 'true');
+            localStorage.removeItem(`sig_approved_${token}`);
+            window.location.href = getSigPath() + 'index.html';
+            return;
+        }
+        setTimeout(checkApproval, 2000);
+    };
+    checkApproval();
+}
+
+function checkAuth() {
+    if (localStorage.getItem('sig_authenticated') === 'true') {
+        localStorage.removeItem('sig_authenticated');
+        window.location.href = getSigPath() + 'index.html';
+    }
 }
 
 function pollForApproval(token) {
