@@ -1,20 +1,6 @@
-function getRelativePath(depth) {
-    return '../'.repeat(depth);
-}
-
-function getPathDepth(pathname) {
-    const pathWithoutFile = pathname.replace(/\/[^/]*$/, '');
-    const slashCount = (pathWithoutFile.match(/\//g) || []).length;
-    return Math.max(0, slashCount - 1);
-}
-
-const pageDepth = getPathDepth(window.location.pathname);
-const ROOT_PATH = getRelativePath(pageDepth);
-const SIG_PATH = pageDepth > 0 ? ROOT_PATH + 'sig/' : 'sig/';
-
 const HEADER_HTML = `<header class="header">
     <div class="header-container">
-        <a href="${ROOT_PATH}index.html" class="header-title">
+        <a href="/paginas/" class="header-title">
             <span class="site-title">Espaço Cre Bortoli</span>
         </a>
         <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
@@ -25,12 +11,12 @@ const HEADER_HTML = `<header class="header">
     </div>
     <nav id="main-navigation" class="main-nav">
         <ul class="menu">
-            <li class="nav-item"><a class="nav-link" href="${ROOT_PATH}index.html">Home</a></li>
-            <li class="nav-item"><a class="nav-link" href="${ROOT_PATH}paginas/servicos.html">Serviços</a></li>
-            <li class="nav-item"><a class="nav-link" href="${ROOT_PATH}paginas/agenda.html">Agenda</a></li>
-            <li class="nav-item"><a class="nav-link" href="${ROOT_PATH}paginas/sobre.html">Sobre</a></li>
-            <li class="nav-item"><a class="nav-link" href="${ROOT_PATH}paginas/contato.html">Contato</a></li>
-            <li class="nav-item"><a class="nav-link" href="${ROOT_PATH}sig/login.html">Intranet</a></li>
+            <li class="nav-item"><a class="nav-link" href="/paginas/">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="/paginas/servicos.html">Serviços</a></li>
+            <li class="nav-item"><a class="nav-link" href="/paginas/agenda.html">Agenda</a></li>
+            <li class="nav-item"><a class="nav-link" href="/paginas/sobre.html">Sobre</a></li>
+            <li class="nav-item"><a class="nav-link" href="/paginas/contato.html">Contato</a></li>
+            <li class="nav-item"><a class="nav-link" href="/sig/login.html">Intranet</a></li>
         </ul>
     </nav>
 </header>
@@ -42,7 +28,7 @@ const FOOTER_HTML = `<footer class="footer">
 
 const HEADER_SIG_HTML = `<header class="header">
     <div class="header-container">
-        <a href="${SIG_PATH}index.html" class="header-title">
+        <a href="/sig/index.html" class="header-title">
             <span class="site-title">Espaço Cre Bortoli - SIG</span>
         </a>
         <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
@@ -53,36 +39,38 @@ const HEADER_SIG_HTML = `<header class="header">
     </div>
     <nav id="main-navigation" class="main-nav">
         <ul class="menu">
-            <li class="nav-item"><a class="nav-link" href="${SIG_PATH}index.html">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="/sig/index.html">Dashboard</a></li>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#">Cadastros</a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_cliente.html">Cliente</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_compra.html">Compra</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_venda_servico.html">Venda Serviço</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_venda_produto.html">Venda Produto</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_colaborador.html">Colaborador</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_anamnese.html">Anamnese</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_relatorio_mei.html">Relatório MEI</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_custos_fixos.html">Custos Fixos</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}cadastro_insumo.html">Insumo</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_cliente.html">Cliente</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_compra.html">Compra</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_venda_servico.html">Venda Serviço</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_venda_produto.html">Venda Produto</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_colaborador.html">Colaborador</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_anamnese.html">Anamnese</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_relatorio_mei.html">Relatório MEI</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_custos_fixos.html">Custos Fixos</a></li>
+                    <li><a class="dropdown-item" href="/sig/cadastro_insumo.html">Insumo</a></li>
                 </ul>
             </li>
             <li class="nav-item dropdown">
                 <a class="nav-link dropdown-toggle" href="#">Listagens</a>
                 <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_clientes.html">Clientes</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_compras.html">Compras</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_vendas_servicos.html">Vendas Serviços</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_vendas_produtos.html">Vendas Produtos</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_relatorios_mei.html">Relatórios MEI</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_colaboradores.html">Colaboradores</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_anaminese.html">Anamnese</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_custos_fixos.html">Custos Fixos</a></li>
-                    <li><a class="dropdown-item" href="${SIG_PATH}lista_insumos.html">Insumos</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_agendamentos.html">Agendamentos</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_mensagens.html">Mensagens</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_clientes.html">Clientes</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_compras.html">Compras</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_vendas_servicos.html">Vendas Serviços</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_vendas_produtos.html">Vendas Produtos</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_relatorios_mei.html">Relatórios MEI</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_colaboradores.html">Colaboradores</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_anaminese.html">Anamnese</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_custos_fixos.html">Custos Fixos</a></li>
+                    <li><a class="dropdown-item" href="/sig/lista_insumos.html">Insumos</a></li>
                 </ul>
             </li>
-            <li class="nav-item"><a class="nav-link" href="${ROOT_PATH}index.html">Sair</a></li>
+            <li class="nav-item"><a class="nav-link" href="/paginas/">Sair</a></li>
         </ul>
     </nav>
 </header>

@@ -196,6 +196,86 @@ const PreferencesStore = {
 };
 
 // Histórico de navegação
+const AgendamentoStore = {
+    KEY: 'agendamentos',
+
+    getAll() {
+        return DataStore.load(this.KEY) || [];
+    },
+
+    save(agendamento) {
+        const agendamentos = this.getAll();
+        agendamento.id = Date.now().toString();
+        agendamento.criadoEm = new Date().toISOString();
+        agendamento.status = 'PENDENTE';
+        agendamentos.push(agendamento);
+        DataStore.save(this.KEY, agendamentos);
+        return agendamento;
+    },
+
+    delete(id) {
+        const agendamentos = this.getAll().filter(a => a.id !== id);
+        return DataStore.save(this.KEY, agendamentos);
+    },
+
+    update(id, dados) {
+        const agendamentos = this.getAll();
+        const index = agendamentos.findIndex(a => a.id === id);
+        if (index !== -1) {
+            agendamentos[index] = { ...agendamentos[index], ...dados, atualizadoEm: new Date().toISOString() };
+            DataStore.save(this.KEY, agendamentos);
+            return agendamentos[index];
+        }
+        return null;
+    },
+
+    getByStatus(status) {
+        return this.getAll().filter(a => a.status === status);
+    }
+};
+
+const ContatoStore = {
+    KEY: 'mensagens',
+
+    getAll() {
+        return DataStore.load(this.KEY) || [];
+    },
+
+    save(mensagem) {
+        const mensagens = this.getAll();
+        mensagem.id = Date.now().toString();
+        mensagem.criadoEm = new Date().toISOString();
+        mensagem.lida = false;
+        mensagens.push(mensagem);
+        DataStore.save(this.KEY, mensagens);
+        return mensagem;
+    },
+
+    delete(id) {
+        const mensagens = this.getAll().filter(m => m.id !== id);
+        return DataStore.save(this.KEY, mensagens);
+    },
+
+    markAsRead(id) {
+        return this.update(id, { lida: true });
+    },
+
+    update(id, dados) {
+        const mensagens = this.getAll();
+        const index = mensagens.findIndex(m => m.id === id);
+        if (index !== -1) {
+            mensagens[index] = { ...mensagens[index], ...dados };
+            DataStore.save(this.KEY, mensagens);
+            return mensagens[index];
+        }
+        return null;
+    },
+
+    getUnreadCount() {
+        return this.getAll().filter(m => !m.lida).length;
+    }
+};
+
 const NavigationStore = {
     KEY: 'navigation_history',
     MAX_ITEMS: 20,

@@ -4,8 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agendamento - Espaço Cre Bortoli</title>
-    <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
-    <link rel="stylesheet" href="../static/css/style.css">
+    <link rel="icon" type="image/png" href="/static/icon/favicon.ico">
+    <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div id="header-placeholder"></div>
@@ -17,7 +17,7 @@
 
             <div class="agenda-container">
                 <div class="agenda-image">
-                    <img src="../static/css/image/hora.png" alt="Ilustração de um relógio e calendário">
+                    <img src="/static/css/image/hora.png" alt="Ilustração de um relógio e calendário">
                 </div>
 
                 <form id="agenda-form" class="agenda-form">
@@ -33,7 +33,7 @@
 
                     <div class="form-group">
                         <label for="telefone" class="form-label">Telefone</label>
-                        <input type="tel" id="telefone" name="telefone" class="form-control" placeholder="(xx) xxxxx-xxxx" required>
+                        <input type="tel" id="telefone" name="telefone" placeholder="(xx) xxxxx-xxxx" required>
                     </div>
 
                     <div class="form-group">
@@ -69,10 +69,49 @@
                         <button type="submit" class="btn-submit">Agendar via WhatsApp</button>
                     </div>
                 </form>
+
+                <div id="success-message" style="display:none; margin-top: 1rem; padding: 1rem; background: #d4edda; border-radius: 4px; text-align: center;">
+                    <strong>Agendamento salvo!</strong> Você será redirecionado para o WhatsApp.
+                </div>
             </div>
         </div>
     </main>
 
     <div id="footer-placeholder"></div>
-<script src="../static/js/components.js"></script></body>
+<script src="/static/js/storage.js"></script>
+<script src="/static/js/components.js"></script>
+<script>
+document.getElementById('agenda-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const formData = {
+        nome: document.getElementById('nome').value,
+        email: document.getElementById('email').value,
+        telefone: document.getElementById('telefone').value,
+        data: document.getElementById('data').value,
+        hora: document.getElementById('hora').value,
+        servico: document.getElementById('servico').value,
+        observacoes: document.getElementById('observacoes').value
+    };
+    
+    AgendamentoStore.save(formData);
+    
+    document.getElementById('agenda-form').style.display = 'none';
+    document.getElementById('success-message').style.display = 'block';
+    
+    const mensagem = `Olá! Gostaria de agendar um horário.
+
+*Nome:* ${formData.nome}
+*Serviço:* ${formData.servico}
+*Data:* ${formData.data}
+*Horário:* ${formData.hora}
+${formData.observacoes ? `*Observações:* ${formData.observacoes}` : ''}`;
+    
+    const whatsappUrl = `https://api.whatsapp.com/send?phone=5514996638056&text=${encodeURIComponent(mensagem)}`;
+    
+    setTimeout(() => {
+        window.open(whatsappUrl, '_blank');
+    }, 1500);
+});
+</script></body>
 </html>
