@@ -39,13 +39,21 @@ async function loadQRCode() {
     pollForApproval(sessionToken);
 }
 
+function getBasePath() {
+    const path = window.location.pathname;
+    let depth = (path.match(/\//g) || []).length;
+    if (path.endsWith('/')) depth--;
+    depth = Math.max(0, depth - 1);
+    return '../'.repeat(depth);
+}
+
 function pollForApproval(token) {
     const checkApproval = () => {
         const approved = localStorage.getItem(`sig_approved_${token}`);
         if (approved === 'true') {
             localStorage.setItem('sig_authenticated', 'true');
             localStorage.removeItem(`sig_approved_${token}`);
-            window.location.href = 'sig/index.html';
+            window.location.href = getBasePath() + 'sig/index.html';
             return;
         }
         setTimeout(checkApproval, 2000);
@@ -68,7 +76,7 @@ function approveLogin() {
 function checkAuth() {
     if (localStorage.getItem('sig_authenticated') === 'true') {
         localStorage.removeItem('sig_authenticated');
-        window.location.href = 'sig/index.html';
+        window.location.href = getBasePath() + 'sig/index.html';
     }
 }
 
