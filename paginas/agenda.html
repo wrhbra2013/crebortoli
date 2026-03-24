@@ -469,33 +469,23 @@
                     }
                 }
                 
-                html += '<div class="dia-cell ' + (isToday ? 'today' : '') + ' ' + (isPast ? 'outro-mes' : '') + '">' +
-                        '<div class="dia-numero">' + dia + '</div>';
-                
-                if (!isPast) {
+                if (isPast) {
+                    html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia + '</div></div>';
+                } else {
+                    html += '<div class="dia-cell ' + (isToday ? 'today' : '') + '" onclick="selecionarDia(\'' + dataStr + '\')">' +
+                            '<div class="dia-numero">' + dia + '</div>';
+                    
                     if (agendamentosDoDia.length > 0) {
                         html += '<span class="agendamento-badge ' + badgeClass + '">' + badgeText + '</span>';
                     } else {
                         html += '<span style="font-size:0.75rem; color:#999;">Disponível</span>';
                     }
+                    
+                    html += '</div>';
                 }
-                
-                html += '</div>';
             }
             
             grid.innerHTML = html;
-            
-            const cells = document.querySelectorAll('.dia-cell:not(.outro-mes)');
-            cells.forEach(function(cell, index) {
-                const diaReal = index - new Date(ano, mes, 1).getDay() + 1;
-                if (diaReal > 0 && diaReal <= ultimoDia.getDate()) {
-                    const dataStr = new Date(ano, mes, diaReal).toISOString().split('T')[0];
-                    const isPast = new Date(ano, mes, diaReal) < new Date().setHours(0,0,0,0);
-                    if (!isPast) {
-                        cell.onclick = function() { selecionarDia(dataStr); };
-                    }
-                }
-            });
         }
 
         function navegarMes(direcao) {
