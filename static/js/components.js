@@ -30,7 +30,7 @@ function initComponents() {
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/agenda.html">Agenda</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/sobre.html">Sobre</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/contato.html">Contato</a></li>
-            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/login.html">Intranet</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/index.html">Admin</a></li>
         </ul>
     </nav>
 </header>
@@ -50,37 +50,10 @@ function initComponents() {
     <nav id="main-navigation" class="main-nav">
         <ul class="menu">
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/index.html">Dashboard</a></li>
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#">Cadastros</a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_cliente.html">Cliente</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_compra.html">Compra</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_venda_servico.html">Venda Serviço</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_venda_produto.html">Venda Produto</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_colaborador.html">Colaborador</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_anamnese.html">Anamnese</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_relatorio_mei.html">Relatório MEI</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_custos_fixos.html">Custos Fixos</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/cadastro_insumo.html">Insumo</a></li>
-                </ul>
-            </li>
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#">Listagens</a>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_agendamentos.html">Agendamentos</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_mensagens.html">Mensagens</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_clientes.html">Clientes</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_compras.html">Compras</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_vendas_servicos.html">Vendas Serviços</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_vendas_produtos.html">Vendas Produtos</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_relatorios_mei.html">Relatórios MEI</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_colaboradores.html">Colaboradores</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_anaminese.html">Anamnese</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_custos_fixos.html">Custos Fixos</a></li>
-                    <li><a class="dropdown-item" href="${getBasePath()}sig/lista_insumos.html">Insumos</a></li>
-                </ul>
-            </li>
-            <li class="nav-item"><a class="nav-link" href="${getBasePath()}index.html">Sair</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/agenda.html">Agenda</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/tabela_precos.html">Tabela de Preços</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/pagamento.html">Pagamentos</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getBasePath()}index.html">Ver Site</a></li>
         </ul>
     </nav>
 </header>

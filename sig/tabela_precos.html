@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tabela de Preços - SIG Cre Bortoli</title>
+    <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
+    <link rel="stylesheet" href="../static/css/style.css">
+    <style>
+        .precos-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .precos-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .precos-header h1 {
+            color: #e91e63;
+            margin-bottom: 0.5rem;
+        }
+        .tabela-precos {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .tabela-precos th {
+            background: #e91e63;
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+        .tabela-precos td {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .tabela-precos tr:last-child td {
+            border-bottom: none;
+        }
+        .tabela-precos tr:hover {
+            background: #fce4ec;
+        }
+        .preco {
+            font-weight: bold;
+            color: #2e7d32;
+            font-size: 1.1rem;
+        }
+        .desconto {
+            color: #e65100;
+            font-size: 0.9rem;
+        }
+        .categoria {
+            background: #f8bbd0;
+            color: #880e4f;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-bottom: 0.3rem;
+        }
+        .info-pagamento {
+            background: #e3f2fd;
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .info-pagamento h3 {
+            color: #1565c0;
+            margin-top: 0;
+        }
+        .info-pagamento ul {
+            margin: 0.5rem 0;
+            padding-left: 1.5rem;
+        }
+        .info-pagamento li {
+            margin: 0.5rem 0;
+        }
+        .btn-pagamento {
+            display: inline-block;
+            background: #2196f3;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            text-decoration: none;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .btn-pagamento:hover {
+            background: #1976d2;
+        }
+        .btn-editar {
+            background: #ff9800;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-size: 0.9rem;
+        }
+        .btn-editar:hover { background: #f57c00; }
+        .btn-salvar { background: #4caf50; margin-left: 0.5rem; }
+        .btn-salvar:hover { background: #388e3c; }
+        .btn-cancelar { background: #666; margin-left: 0.5rem; }
+        .btn-cancelar:hover { background: #555; }
+        .btn-adicionar {
+            background: #2196f3;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+        }
+        .btn-adicionar:hover { background: #1976d2; }
+        .editing .preco-input {
+            width: 80px;
+            padding: 0.3rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .editing .nome-input {
+            width: 100%;
+            padding: 0.3rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        .editing .categoria-select {
+            padding: 0.3rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .btn-excluir {
+            background: #f44336;
+            border: none;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        .btn-excluir:hover { background: #d32f2f; }
+        .sync-info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 1rem;
+            padding: 0.8rem;
+            background: #f5f5f5;
+            border-radius: 4px;
+        }
+        .btn-sync {
+            background: #9c27b0;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            color: white;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+        .btn-sync:hover { background: #7b1fa2; }
+    </style>
+</head>
+<body>
+    <div id="header-placeholder"></div>
+
+    <main>
+        <div class="precos-container">
+            <div class="precos-header">
+                <h1>Tabela de Preços</h1>
+                <p>Serviços disponíveis no Espaço Cre Bortoli</p>
+            </div>
+
+            <button class="btn-adicionar" onclick="adicionarServico()">+ Novo Serviço</button>
+            <button class="btn-editar" id="btn-modo-edicao" onclick="toggleEdicao()">&#9998; Editar Preços</button>
+            <button class="btn-sync" onclick="ServicosStore.downloadJson()" title="Baixar JSON para atualizar no servidor">&#8595; Exportar JSON</button>
+            <button class="btn-sync" onclick="document.getElementById('import-file').click()" title="Importar JSON do servidor">&#8593; Importar JSON</button>
+            <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarJson(this)">
+            
+            <table class="tabela-precos">
+                <thead>
+                    <tr>
+                        <th>Procedimento</th>
+                        <th>Preço</th>
+                        <th class="acoes-col" style="display:none;">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-corpo">
+                </tbody>
+            </table>
+
+            <div class="info-pagamento">
+                <h3>Informações de Pagamento</h3>
+                <ul>
+                    <li><strong>Pix:</strong> Pagamento instantâneo via chave CPF</li>
+                    <li><strong>À vista:</strong> Desconto especial em pacotes mensais</li>
+                    <li><strong>Horário:</strong> Agende com antecedência para garantir seu horário</li>
+                </ul>
+                <a href="agenda.html" class="btn-pagamento">Agendar Serviço</a>
+                <a href="pagamento.html" class="btn-pagamento" style="background: #4caf50; margin-left: 1rem;">Ver Dados para Pagamento</a>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script src="../static/js/components.js"></script>
+    <script src="../static/js/storage.js"></script>
+    <script>
+        async function init() {
+            await ServicosStore.init();
+            renderTabela();
+        }
+        
+        const ServicosStore = {
+            KEY: 'servicos',
+            getAll() {
+                const saved = DataStore.load(this.KEY);
+                if (saved) return saved;
+                return [
+                    { id: 'dep_perna', nome: 'Depilação Perna', preco: 25, categoria: 'Depilação' },
+                    { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: 50, categoria: 'Depilação' },
+                    { id: 'dep_buco', nome: 'Depilação Buço', preco: 15, categoria: 'Depilação' },
+                    { id: 'dep_axilas', nome: 'Depilação Axilas', preco: 20, categoria: 'Depilação' },
+                    { id: 'dep_pacote', nome: 'Pacote Mensal Depilação', preco: 90, categoria: 'Depilação', desconto: 'De R$110 por R$90' },
+                    { id: 'barreira_cutanea', nome: 'Reparação de Barreira Cutânea', preco: 50, categoria: 'Tratamento' },
+                    { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: 100, categoria: 'Tratamento' },
+                    { id: 'massagem', nome: 'Massagem Relaxante', preco: 50, categoria: 'Massagem' }
+                ];
+            },
+            saveAll(servicos) {
+                DataStore.save(this.KEY, servicos);
+            },
+            add(servico) {
+                const servicos = this.getAll();
+                servico.id = 'serv_' + Date.now();
+                servicos.push(servico);
+                this.saveAll(servicos);
+            },
+            update(id, dados) {
+                const servicos = this.getAll();
+                const index = servicos.findIndex(s => s.id === id);
+                if (index !== -1) {
+                    servicos[index] = { ...servicos[index], ...dados };
+                    this.saveAll(servicos);
+                }
+            },
+            delete(id) {
+                const servicos = this.getAll().filter(s => s.id !== id);
+                this.saveAll(servicos);
+            }
+        };
+
+        let modoEdicao = false;
+
+        function renderTabela() {
+            const servicos = ServicosStore.getAll();
+            const tbody = document.getElementById('tabela-corpo');
+            tbody.classList.toggle('editing', modoEdicao);
+            
+            if (modoEdicao) {
+                tbody.innerHTML = servicos.map(s => `
+                    <tr>
+                        <td>
+                            <select class="categoria-select" data-id="${s.id}" data-campo="categoria">
+                                <option value="Depilação" ${s.categoria === 'Depilação' ? 'selected' : ''}>Depilação</option>
+                                <option value="Tratamento" ${s.categoria === 'Tratamento' ? 'selected' : ''}>Tratamento</option>
+                                <option value="Massagem" ${s.categoria === 'Massagem' ? 'selected' : ''}>Massagem</option>
+                            </select>
+                            <input type="text" class="nome-input" data-id="${s.id}" data-campo="nome" value="${s.nome}">
+                        </td>
+                        <td>
+                            <input type="number" class="preco-input" data-id="${s.id}" data-campo="preco" value="${s.preco}" step="0.01" min="0">
+                        </td>
+                        <td class="acoes-col">
+                            <button class="btn-excluir" onclick="excluirServico('${s.id}')">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+                document.querySelectorAll('.acoes-col').forEach(el => el.style.display = '');
+            } else {
+                tbody.innerHTML = servicos.map(s => `
+                    <tr>
+                        <td>
+                            <span class="categoria">${s.categoria}</span><br>
+                            ${s.nome}
+                            ${s.desconto ? `<br><span class="desconto">${s.desconto}</span>` : ''}
+                        </td>
+                        <td class="preco">R$ ${s.preco.toFixed(2).replace('.', ',')}</td>
+                    </tr>
+                `).join('');
+                document.querySelectorAll('.acoes-col').forEach(el => el.style.display = 'none');
+            }
+        }
+
+        function toggleEdicao() {
+            if (modoEdicao) {
+                salvarAlteracoes();
+            }
+            modoEdicao = !modoEdicao;
+            document.getElementById('btn-modo-edicao').textContent = modoEdicao ? '💾 Salvar Alterações' : '✎ Editar Preços';
+            renderTabela();
+        }
+
+        function salvarAlteracoes() {
+            const inputs = document.querySelectorAll('.editing input, .editing select');
+            inputs.forEach(input => {
+                const id = input.dataset.id;
+                const campo = input.dataset.campo;
+                let valor = input.value;
+                if (campo === 'preco') valor = parseFloat(valor);
+                ServicosStore.update(id, { [campo]: valor });
+            });
+            alert('Preços salvos com sucesso!');
+        }
+
+        function adicionarServico() {
+            const nome = prompt('Nome do serviço:');
+            if (!nome) return;
+            const preco = parseFloat(prompt('Preço (R$):') || '0');
+            const categoria = prompt('Categoria (Depilação/Tratamento/Massagem):') || 'Depilação';
+            ServicosStore.add({ nome, preco, categoria });
+            renderTabela();
+        }
+
+        function excluirServico(id) {
+            if (confirm('Excluir este serviço?')) {
+                ServicosStore.delete(id);
+                renderTabela();
+            }
+        }
+
+        function importarJson(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                ServicosStore.importJson(e.target.result);
+                renderTabela();
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
+        init();
+    </script>
+</body>
+</html>

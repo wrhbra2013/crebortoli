@@ -234,6 +234,127 @@ const AgendamentoStore = {
     }
 };
 
+const SyncService = {
+    JSON_URL: 'servicos.json',
+    cache: null,
+    
+    async fetchServicos() {
+        try {
+            const response = await fetch(this.JSON_URL);
+            const data = await response.json();
+            this.cache = data.servicos;
+            return data.servicos;
+        } catch (e) {
+            console.warn('Erro ao buscar servicos.json, usando localStorage:', e);
+            return null;
+        }
+    },
+    
+    getCached() {
+        return this.cache;
+    },
+    
+    getJsonUrl() {
+        return this.JSON_URL;
+    }
+};
+
+const ServicosStore = {
+    KEY: 'servicos',
+    _cachedRemote: null,
+    
+    async init() {
+        const remote = await SyncService.fetchServicos();
+        if (remote) {
+            this._cachedRemote = remote;
+            DataStore.save(this.KEY, remote);
+        }
+    },
+    
+    getAll() {
+        const local = DataStore.load(this.KEY);
+        if (local && local.length > 0) return local;
+        return this._cachedRemote || [
+            { id: 'dep_perna', nome: 'Depilação Perna', preco: 25, categoria: 'Depilação' },
+            { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: 50, categoria: 'Depilação' },
+            { id: 'dep_buco', nome: 'Depilação Buço', preco: 15, categoria: 'Depilação' },
+            { id: 'dep_axilas', nome: 'Depilação Axilas', preco: 20, categoria: 'Depilação' },
+            { id: 'dep_pacote', nome: 'Pacote Mensal Depilação', preco: 90, categoria: 'Depilação', desconto: 'De R$110 por R$90' },
+            { id: 'barreira_cutanea', nome: 'Reparação de Barreira Cutânea', preco: 50, categoria: 'Tratamento' },
+            { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: 100, categoria: 'Tratamento' },
+            { id: 'massagem', nome: 'Massagem Relaxante', preco: 50, categoria: 'Massagem' }
+        ];
+    },
+    
+    getById(id) {
+        return this.getAll().find(s => s.id === id);
+    },
+    
+    getByCategoria(categoria) {
+        return this.getAll().filter(s => s.categoria === categoria);
+    },
+    
+    saveAll(servicos) {
+        DataStore.save(this.KEY, servicos);
+    },
+    
+    add(servico) {
+        const servicos = this.getAll();
+        servico.id = 'serv_' + Date.now();
+        servicos.push(servico);
+        this.saveAll(servicos);
+    },
+    
+    update(id, dados) {
+        const servicos = this.getAll();
+        const index = servicos.findIndex(s => s.id === id);
+        if (index !== -1) {
+            servicos[index] = { ...servicos[index], ...dados };
+            this.saveAll(servicos);
+        }
+    },
+    
+    delete(id) {
+        const servicos = this.getAll().filter(s => s.id !== id);
+        this.saveAll(servicos);
+    },
+    
+    getJsonUrl() {
+        return SyncService.getJsonUrl();
+    },
+    
+    exportJson() {
+        const servicos = this.getAll();
+        const data = { servicos, ultimaAtualizacao: new Date().toISOString().split('T')[0] };
+        return JSON.stringify(data, null, 2);
+    },
+    
+    downloadJson() {
+        const json = this.exportJson();
+        const blob = new Blob([json], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'servicos.json';
+        a.click();
+        URL.revokeObjectURL(url);
+    },
+    
+    importJson(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            if (data.servicos && Array.isArray(data.servicos)) {
+                this.saveAll(data.servicos);
+                alert('Importado com sucesso! Baixe o arquivo e atualize no servidor.');
+                return true;
+            }
+        } catch (e) {
+            alert('Erro ao importar: ' + e.message);
+        }
+        return false;
+    }
+};
+
 const ContatoStore = {
     KEY: 'mensagens',
 
@@ -298,3 +419,50 @@ const NavigationStore = {
         return DataStore.remove(this.KEY);
     }
 };
+
+// Store Genérico para CRUD
+function createStore(name) {
+    return {
+        KEY: name,
+        
+        getAll() {
+            return DataStore.load(this.KEY) || [];
+        },
+        
+        save(item) {
+            const items = this.getAll();
+            if (item.id) {
+                const index = items.findIndex(i => i.id === item.id);
+                if (index !== -1) {
+                    items[index] = { ...items[index], ...item, updatedAt: Date.now() };
+                } else {
+                    items.push({ ...item, updatedAt: Date.now() });
+                }
+            } else {
+                item.id = Date.now().toString();
+                item.createdAt = Date.now();
+                items.push(item);
+            }
+            return DataStore.save(this.KEY, items);
+        },
+        
+        delete(id) {
+            const items = this.getAll().filter(i => i.id !== id);
+            return DataStore.save(this.KEY, items);
+        },
+        
+        getById(id) {
+            return this.getAll().find(i => i.id === id) || null;
+        }
+    };
+}
+
+// Stores específicos
+const ColaboradorStore = createStore('colaboradores');
+const CompraStore = createStore('compras');
+const VendaServicoStore = createStore('vendas_servicos');
+const VendaProdutoStore = createStore('vendas_produtos');
+const InsumoStore = createStore('insumos');
+const CustosFixosStore = createStore('custos_fixos');
+const RelatorioMeiStore = createStore('relatorios_mei');
+const AnamneseStore = createStore('anamnese');

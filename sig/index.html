@@ -4,48 +4,71 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - SIG Cre Bortoli</title>
-    <link rel="icon" type="image/png" href/static/icon/favicon.ico">
-    <link rel="stylesheet" href/static/css/style.css">
+    <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
+    <link rel="stylesheet" href="../static/css/style.css">
     <style>
         .dashboard-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
             gap: 1.5rem;
             padding: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
         }
         .dashboard-card {
             background: #fff;
-            padding: 1.5rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
             text-align: center;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+        .dashboard-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        .dashboard-card.agenda {
+            border-color: #e91e63;
+            background: linear-gradient(135deg, #fce4ec 0%, #fff 100%);
+        }
+        .dashboard-card.precos {
+            border-color: #4caf50;
+            background: linear-gradient(135deg, #e8f5e9 0%, #fff 100%);
+        }
+        .dashboard-card.pagamento {
+            border-color: #2196f3;
+            background: linear-gradient(135deg, #e3f2fd 0%, #fff 100%);
         }
         .dashboard-card h3 {
-            margin: 0 0 1rem 0;
+            margin: 0 0 0.5rem 0;
             color: #333;
+            font-size: 1.3rem;
         }
         .dashboard-card p {
             color: #666;
             margin-bottom: 1rem;
+            font-size: 0.95rem;
         }
         .dashboard-card a {
             display: inline-block;
-            padding: 0.5rem 1rem;
+            padding: 0.8rem 1.5rem;
             background: #e91e63;
             color: white;
             text-decoration: none;
-            border-radius: 4px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: background 0.3s ease;
         }
+        .dashboard-card.agenda a { background: #e91e63; }
+        .dashboard-card.precos a { background: #4caf50; }
+        .dashboard-card.pagamento a { background: #2196f3; }
         .dashboard-card a:hover {
-            background: #c2185b;
+            filter: brightness(0.9);
         }
-        .alert {
-            padding: 1rem;
-            background: #fff3cd;
-            border: 1px solid #ffc107;
-            border-radius: 4px;
-            margin: 1rem 2rem;
-            color: #856404;
+        .dashboard-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
         }
     </style>
 </head>
@@ -53,57 +76,33 @@
     <div id="header-placeholder"></div>
 
     <main>
-        <div class="alert">
-            <strong>Aviso:</strong> Esta é uma versão estática do site. As funcionalidades administrativas (cadastros, listagens, relatórios) requerem o backend Flask para funcionar corretamente.
-        </div>
-
-        <h1 style="padding: 1rem 2rem;">Dashboard</h1>
+        <h1 style="text-align: center; padding: 2rem; color: #e91e63;">Painel de Controle</h1>
         
         <div class="dashboard-grid">
-            <div class="dashboard-card">
-                <h3>Clientes</h3>
-                <p>Gerenciar cadastro de clientes</p>
-                <a href="../sig/cadastro_cliente.html">Cadastrar</a>
-                <a href="../sig/lista_clientes.html" style="margin-left: 0.5rem; background: #666;">Listar</a>
+            <div class="dashboard-card agenda">
+                <div class="dashboard-icon">&#128197;</div>
+                <h3>Agenda</h3>
+                <p>Gerenciar agendamentos de serviços</p>
+                <a href="agenda.html">Abrir Agenda</a>
             </div>
             
-            <div class="dashboard-card">
-                <h3>Vendas</h3>
-                <p>Registrar vendas de serviços e produtos</p>
-                <a href="../sig/cadastro_venda_servico.html">Serviço</a>
-                <a href="../sig/cadastro_venda_produto.html" style="margin-left: 0.5rem; background: #666;">Produto</a>
+            <div class="dashboard-card preco">
+                <div class="dashboard-icon">&#128202;</div>
+                <h3>Tabela de Preços</h3>
+                <p>Ver valores dos serviços oferecidos</p>
+                <a href="tabela_precos.html">Ver Preços</a>
             </div>
             
-            <div class="dashboard-card">
-                <h3>Compras</h3>
-                <p>Registrar compras de insumos</p>
-                <a href="../sig/cadastro_compra.html">Cadastrar</a>
-                <a href="../sig/lista_compras.html" style="margin-left: 0.5rem; background: #666;">Listar</a>
-            </div>
-            
-            <div class="dashboard-card">
-                <h3>Estoque</h3>
-                <p>Gerenciar insumos e produtos</p>
-                <a href="../sig/cadastro_insumo.html">Cadastrar</a>
-                <a href="../sig/lista_insumos.html" style="margin-left: 0.5rem; background: #666;">Listar</a>
-            </div>
-            
-            <div class="dashboard-card">
-                <h3>Colaboradores</h3>
-                <p>Gerenciar equipe</p>
-                <a href="../sig/cadastro_colaborador.html">Cadastrar</a>
-                <a href="../sig/lista_colaboradores.html" style="margin-left: 0.5rem; background: #666;">Listar</a>
-            </div>
-            
-            <div class="dashboard-card">
-                <h3>Relatórios</h3>
-                <p>Relatórios MEI e custos</p>
-                <a href="../sig/cadastro_relatorio_mei.html">Novo</a>
-                <a href="../sig/lista_relatorios_mei.html" style="margin-left: 0.5rem; background: #666;">Listar</a>
+            <div class="dashboard-card pagamento">
+                <div class="dashboard-icon">&#128179;</div>
+                <h3>Pagamento PIX</h3>
+                <p>Gerenciar pagamentos via PIX</p>
+                <a href="pagamento.html">Acessar</a>
             </div>
         </div>
     </main>
 
     <div id="footer-placeholder"></div>
-<script src/static/js/components.js"></script></body>
+    <script src="../static/js/components.js"></script>
+</body>
 </html>

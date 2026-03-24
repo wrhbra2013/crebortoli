@@ -1,0 +1,13 @@
+{
+    "servicos": [
+        { "id": "dep_perna", "nome": "Depilação Perna", "preco": 25, "categoria": "Depilação" },
+        { "id": "dep_virilha", "nome": "Depilação Virilha Completa", "preco": 50, "categoria": "Depilação" },
+        { "id": "dep_buco", "nome": "Depilação Buço", "preco": 15, "categoria": "Depilação" },
+        { "id": "dep_axilas", "nome": "Depilação Axilas", "preco": 20, "categoria": "Depilação" },
+        { "id": "dep_pacote", "nome": "Pacote Mensal Depilação", "preco": 90, "categoria": "Depilação", "desconto": "De R$110 por R$90" },
+        { "id": "barreira_cutanea", "nome": "Reparação de Barreira Cutânea", "preco": 50, "categoria": "Tratamento" },
+        { "id": "limpeza_pele", "nome": "Limpeza de Pele", "preco": 100, "categoria": "Tratamento" },
+        { "id": "massagem", "nome": "Massagem Relaxante", "preco": 50, "categoria": "Massagem" }
+    ],
+    "ultimaAtualizacao": "2026-03-23"
+}

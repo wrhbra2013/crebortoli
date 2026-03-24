@@ -3,43 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Serviços - Espaço Cre Bortoli</title>
+    <title>Tabela de Preços - Espaço Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <link rel="stylesheet" href="../static/css/style.css">
+    <style>
+        .precos-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .precos-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .precos-header h1 {
+            color: #e91e63;
+            margin-bottom: 0.5rem;
+        }
+        .tabela-precos {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        .tabela-precos th {
+            background: #e91e63;
+            color: white;
+            padding: 1rem;
+            text-align: left;
+        }
+        .tabela-precos td {
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+        .tabela-precos tr:last-child td {
+            border-bottom: none;
+        }
+        .tabela-precos tr:hover {
+            background: #fce4ec;
+        }
+        .preco {
+            font-weight: bold;
+            color: #2e7d32;
+            font-size: 1.1rem;
+        }
+        .desconto {
+            color: #e65100;
+            font-size: 0.9rem;
+        }
+        .categoria-tag {
+            background: #f8bbd0;
+            color: #880e4f;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-bottom: 0.3rem;
+        }
+        .info-pagamento {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-top: 2rem;
+        }
+        .info-pagamento h3 {
+            color: #1565c0;
+            margin-top: 0;
+        }
+        .btn-agendar {
+            display: inline-block;
+            background: #e91e63;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-top: 1rem;
+            font-weight: 500;
+        }
+        .btn-agendar:hover {
+            background: #c2185b;
+        }
+        .btn-whatsapp {
+            display: inline-block;
+            background: #25d366;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            margin-top: 1rem;
+            margin-left: 0.5rem;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
     <div id="header-placeholder"></div>
 
-    <main class="main-content">
-        <div class="container">
-            <section class="section">
-                <h1 class="section-title">Nossos Serviços</h1>
-                <p style="text-align: center; margin-bottom: 2rem;">Conheça todos os serviços que oferecemos para cuidar da sua beleza e bem-estar.</p>
-                
-                <div class="post-list">
-                    <div class="post-card">
-                        <div class="post-body">
-                            <h3>Limpeza de Pele</h3>
-                            <p>Tratamento profundo para remover impurezas, cravos e células mortas, deixando sua pele renovada, saudável e radiante.</p>
-                        </div>
-                    </div>
-                    <div class="post-card">
-                        <div class="post-body">
-                            <h3>Depilação</h3>
-                            <p>Utilizamos técnicas e ceras de alta qualidade para garantir uma depilação eficaz, com menos dor e maior durabilidade.</p>
-                        </div>
-                    </div>
-                   
-                    
-                </div>
+    <main>
+        <div class="precos-container">
+            <div class="precos-header">
+                <h1>Tabela de Preços</h1>
+                <p>Serviços disponíveis no Espaço Cre Bortoli</p>
+            </div>
 
-                <div style="text-align: center; margin-top: 2rem;">
-                    <a href="agenda.html" class="btn-submit">Agende seu Horário</a>
-                </div>
-            </section>
+            <table class="tabela-precos">
+                <thead>
+                    <tr>
+                        <th>Serviço</th>
+                        <th>Valor</th>
+                    </tr>
+                </thead>
+                <tbody id="tabela-corpo"></tbody>
+            </table>
+
+            <div class="info-pagamento">
+                <h3>Pagamento</h3>
+                <p>Aceitamos <strong>pagamento via PIX</strong>. Chave: <strong>14996638056</strong> (CPF)</p>
+                <p>Pacote mensal com <strong>desconto especial</strong> para clientes frequentes!</p>
+                <a href="agenda.html" class="btn-agendar">Agendar Serviço</a>
+                <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20os%20serviços." 
+                   class="btn-whatsapp" target="_blank">
+                    &#128222; WhatsApp
+                </a>
+            </div>
         </div>
     </main>
 
     <div id="footer-placeholder"></div>
-<script src="../static/js/components.js"></script></body>
+    <script src="../static/js/components.js"></script>
+    <script src="../static/js/storage.js"></script>
+    <script>
+        function renderTabela() {
+            const servicos = ServicosStore.getAll();
+            const tbody = document.getElementById('tabela-corpo');
+            let html = '';
+            servicos.forEach(function(s) {
+                html += '<tr>' +
+                         '<td><span class="categoria-tag">' + s.categoria + '</span><br>' + s.nome +
+                         (s.desconto ? '<br><span class="desconto">' + s.desconto + '</span>' : '') +
+                         '</td>' +
+                         '<td class="preco">R$ ' + s.preco.toFixed(2).replace('.', ',') + '</td>' +
+                         '</tr>';
+            });
+            tbody.innerHTML = html;
+        }
+        ServicosStore.init().then(renderTabela);
+    </script>
+</body>
 </html>
