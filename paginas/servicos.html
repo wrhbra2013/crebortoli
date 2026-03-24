@@ -96,6 +96,23 @@
             margin-left: 0.5rem;
             font-weight: 500;
         }
+        .btn-agendar-servico {
+            background: #e91e63;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            margin-top: 0.5rem;
+        }
+        .btn-agendar-servico:hover {
+            background: #c2185b;
+        }
+        .tabela-precos td:last-child {
+            text-align: right;
+            white-space: nowrap;
+        }
     </style>
 </head>
 <body>
@@ -113,6 +130,7 @@
                     <tr>
                         <th>Serviço</th>
                         <th>Valor</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody id="tabela-corpo"></tbody>
@@ -145,10 +163,18 @@
                          (s.desconto ? '<br><span class="desconto">' + s.desconto + '</span>' : '') +
                          '</td>' +
                          '<td class="preco">R$ ' + s.preco.toFixed(2).replace('.', ',') + '</td>' +
+                         '<td><button class="btn-agendar-servico" onclick="agendarServico(\'' + s.id + '\')">Agendar</button></td>' +
                          '</tr>';
             });
             tbody.innerHTML = html;
         }
+        
+        function agendarServico(servicoId) {
+            const hoje = new Date();
+            const dataStr = hoje.toISOString().split('T')[0];
+            window.location.href = 'agenda.html?servico=' + encodeURIComponent(servicoId) + '&data=' + dataStr;
+        }
+        
         ServicosStore.init().then(renderTabela);
     </script>
 </body>

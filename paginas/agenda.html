@@ -615,12 +615,36 @@
             popularServicos();
             renderizarCalendario();
             renderizarMeusAgendamentos();
+            verificarParametroURL();
         }).catch(function(err) {
             console.error('Erro ao carregar servicos:', err);
             popularServicos();
             renderizarCalendario();
             renderizarMeusAgendamentos();
         });
+        
+        function verificarParametroURL() {
+            const params = new URLSearchParams(window.location.search);
+            const servicoId = params.get('servico');
+            const data = params.get('data');
+            
+            if (data) {
+                document.getElementById('data-selecao').value = data;
+                document.getElementById('modal-agendamento').classList.add('active');
+                document.getElementById('data-selecionada').textContent = formatarData(data);
+            }
+            
+            if (servicoId) {
+                const select = document.getElementById('servico');
+                for (var i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === servicoId) {
+                        select.selectedIndex = i;
+                        atualizarPreco();
+                        break;
+                    }
+                }
+            }
+        }
     </script>
 </body>
 </html>
