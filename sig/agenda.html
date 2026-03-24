@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agenda - SIG Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
-    <link rel="stylesheet" href="../static/css/style.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <script>var v='1.0.0';document.write('<link rel="stylesheet" href="../static/css/style.css?v='+v+'">');</script>
     <style>
         .agenda-container {
             max-width: 1200px;
@@ -204,6 +206,12 @@
             cursor: pointer;
             margin-left: 0.5rem;
         }
+        .btn-excluir {
+            background: #d32f2f;
+        }
+        .btn-excluir:hover {
+            background: #b71c1c;
+        }
         .btn-fechar {
             float: right;
             background: none;
@@ -347,13 +355,13 @@
                 
                 <button type="submit" class="btn-submit">Confirmar Agendamento</button>
                 <button type="button" class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+                <button type="button" id="btn-excluir" class="btn-excluir" onclick="excluirAgendamento()" style="display:none; background:#d32f2f; color:white; border:none; padding:0.8rem 1.5rem; border-radius:4px; cursor:pointer; margin-left:0.5rem;">Excluir Agendamento</button>
             </form>
         </div>
     </div>
 
     <div id="footer-placeholder"></div>
-    <script src="../static/js/components.js"></script>
-    <script src="../static/js/storage.js"></script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         function getServicos() {
             return ServicosStore.getAll();
@@ -501,6 +509,7 @@
             document.getElementById('form-agendamento').reset();
             document.getElementById('agenda-id').value = '';
             document.getElementById('resumo-servicos').style.display = 'none';
+            document.getElementById('btn-excluir').style.display = 'none';
             renderizarHorarios(data);
             popularServicos();
         }
@@ -529,6 +538,18 @@
             document.getElementById('total-servico').textContent = servico ? servico.preco.toFixed(2).replace('.', ',') : '0,00';
             
             renderizarHorarios(agendamento.data, agendamento.hora);
+            document.getElementById('btn-excluir').style.display = 'inline-block';
+        }
+
+        function excluirAgendamento() {
+            const id = document.getElementById('agenda-id').value;
+            if (!id) return;
+            
+            if (confirm('Tem certeza que deseja excluir este agendamento?')) {
+                AgendamentoStore.delete(id);
+                fecharModal();
+                renderizarCalendario();
+            }
         }
 
         function renderizarHorarios(data, horaSelecionada = null) {

@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tabela de Preços - SIG Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
-    <link rel="stylesheet" href="../static/css/style.css">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <script>var v='1.0.0';document.write('<link rel="stylesheet" href="../static/css/style.css?v='+v+'">');</script>
     <style>
         .precos-container {
             max-width: 800px;
@@ -200,21 +202,20 @@
             </table>
 
             <div class="info-pagamento">
-                <h3>Informações de Pagamento</h3>
+                <h3>Informações</h3>
                 <ul>
                     <li><strong>Pix:</strong> Pagamento instantâneo via chave CPF</li>
                     <li><strong>À vista:</strong> Desconto especial em pacotes mensais</li>
                     <li><strong>Horário:</strong> Agende com antecedência para garantir seu horário</li>
                 </ul>
-                <a href="agenda.html" class="btn-pagamento">Agendar Serviço</a>
-                <a href="pagamento.html" class="btn-pagamento" style="background: #4caf50; margin-left: 1rem;">Ver Dados para Pagamento</a>
+                <a href="agenda.html" class="btn-pagamento">Ir para Agenda</a>
+                <a href="../paginas/pagamento.html" class="btn-pagamento" style="background: #4caf50; margin-left: 1rem;">Ver Pagamentos (Público)</a>
             </div>
         </div>
     </main>
 
     <div id="footer-placeholder"></div>
-    <script src="../static/js/components.js"></script>
-    <script src="../static/js/storage.js"></script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         async function init() {
             await ServicosStore.init();

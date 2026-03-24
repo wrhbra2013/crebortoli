@@ -28,6 +28,7 @@ function initComponents() {
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}index.html">Home</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/servicos.html">Serviços</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/agenda.html">Agenda</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/pagamento.html">Pagamento</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/sobre.html">Sobre</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/contato.html">Contato</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/index.html">Admin</a></li>
@@ -52,8 +53,9 @@ function initComponents() {
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/index.html">Dashboard</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/agenda.html">Agenda</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/tabela_precos.html">Tabela de Preços</a></li>
-            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/pagamento.html">Pagamentos</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/relatorios.html">Relatórios</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}index.html">Ver Site</a></li>
+            <li class="nav-item"><a class="nav-link" href="javascript:logout()" style="color:#e91e63;">Sair</a></li>
         </ul>
     </nav>
 </header>

@@ -15,11 +15,13 @@ function checkAuth(required = true) {
         return false;
     }
     
-    if (isAuthenticated) {
-        localStorage.removeItem('sig_authenticated');
-    }
-    
     return true;
+}
+
+function logout() {
+    localStorage.removeItem('sig_authenticated');
+    localStorage.removeItem('sig_session_token');
+    window.location.href = getBasePath() + 'sig/login.html';
 }
 
 document.addEventListener("DOMContentLoaded", function() {
