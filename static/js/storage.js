@@ -235,27 +235,33 @@ const AgendamentoStore = {
 };
 
 const SyncService = {
-    JSON_URL: 'servicos.json',
     cache: null,
+    
+    getJsonUrl() {
+        var path = window.location.pathname;
+        if (path.indexOf('/paginas/') !== -1 || path.indexOf('/sig/') !== -1) {
+            return '../servicos.json';
+        }
+        return 'servicos.json';
+    },
     
     async fetchServicos() {
         try {
-            const response = await fetch(this.JSON_URL);
-            const data = await response.json();
+            var url = this.getJsonUrl();
+            var response = await fetch(url);
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            var data = await response.json();
             this.cache = data.servicos;
+            console.log('Servicos carregados do JSON:', url, data.servicos);
             return data.servicos;
         } catch (e) {
-            console.warn('Erro ao buscar servicos.json, usando localStorage:', e);
+            console.warn('Erro ao buscar servicos.json:', e);
             return null;
         }
     },
     
     getCached() {
         return this.cache;
-    },
-    
-    getJsonUrl() {
-        return this.JSON_URL;
     }
 };
 
@@ -272,9 +278,13 @@ const ServicosStore = {
     },
     
     getAll() {
+        if (this._cachedRemote && this._cachedRemote.length > 0) {
+            DataStore.save(this.KEY, this._cachedRemote);
+            return this._cachedRemote;
+        }
         const local = DataStore.load(this.KEY);
         if (local && local.length > 0) return local;
-        return this._cachedRemote || [
+        return [
             { id: 'dep_perna', nome: 'Depilação Perna', preco: 25, categoria: 'Depilação' },
             { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: 50, categoria: 'Depilação' },
             { id: 'dep_buco', nome: 'Depilação Buço', preco: 15, categoria: 'Depilação' },
@@ -321,6 +331,17 @@ const ServicosStore = {
     
     getJsonUrl() {
         return SyncService.getJsonUrl();
+    },
+    
+    refreshFromServer() {
+        var self = this;
+        return SyncService.fetchServicos().then(function(data) {
+            if (data) {
+                self._cachedRemote = data;
+                DataStore.save(self.KEY, data);
+            }
+            return data;
+        });
     },
     
     exportJson() {

@@ -66,7 +66,7 @@
         }
         .dia-cell {
             background: white;
-            min-height: 80px;
+            min-height: 90px;
             padding: 0.5rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -87,6 +87,27 @@
         }
         .dia-cell.today .dia-numero {
             color: #e65100;
+        }
+        .agendamento-badge {
+            display: block;
+            padding: 0.25rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            margin-bottom: 0.2rem;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .agendamento-badge.nao-pago {
+            background: #ffcdd2;
+            color: #c62828;
+            border-left: 3px solid #c62828;
+        }
+        .agendamento-badge.pago {
+            background: #c8e6c9;
+            color: #2e7d32;
+            border-left: 3px solid #2e7d32;
         }
         .modal {
             display: none;
@@ -152,33 +173,6 @@
             cursor: pointer;
             color: #666;
         }
-        .info-pagamento {
-            background: #e3f2fd;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-top: 2rem;
-        }
-        .info-pagamento h3 {
-            color: #1565c0;
-            margin-top: 0;
-        }
-        .info-pagamento p {
-            margin: 0.5rem 0;
-            color: #333;
-        }
-        .btn-whatsapp {
-            display: inline-block;
-            background: #25d366;
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 6px;
-            text-decoration: none;
-            margin-top: 1rem;
-            font-weight: 500;
-        }
-        .btn-whatsapp:hover {
-            background: #128c7e;
-        }
         .total-box {
             background: #fce4ec;
             padding: 1rem;
@@ -191,9 +185,107 @@
             font-weight: bold;
             color: #e91e63;
         }
+        .btn-pix {
+            background: #25d366;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+        .btn-pix:hover {
+            background: #128c7e;
+        }
+        .info-meus-agendamentos {
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .info-meus-agendamentos h3 {
+            color: #e91e63;
+            margin-top: 0;
+        }
+        .meus-agendamentos {
+            display: grid;
+            gap: 1rem;
+        }
+        .meu-agendamento {
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .meu-agendamento.nao-pago {
+            border-left: 4px solid #c62828;
+            background: #fff8f8;
+        }
+        .meu-agendamento.pago {
+            border-left: 4px solid #2e7d32;
+            background: #f8fff8;
+        }
+        .info-agendamento {
+            flex: 1;
+        }
+        .info-agendamento .servico {
+            font-weight: bold;
+            color: #333;
+        }
+        .info-agendamento .data {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .info-agendamento .valor {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        .badge-pago {
+            background: #2e7d32;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .badge-nao-pago {
+            background: #c62828;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+        .btn-copiar-pix {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        .btn-copiar-pix:hover {
+            background: #1976d2;
+        }
+        .sem-agendamentos {
+            text-align: center;
+            color: #999;
+            padding: 2rem;
+        }
         @media (max-width: 600px) {
             .calendario-grid {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            .meu-agendamento {
+                flex-direction: column;
+                align-items: flex-start;
             }
         }
     </style>
@@ -206,6 +298,11 @@
             <div class="agenda-header">
                 <h1>Agende seu Horário</h1>
                 <p>Escolha o dia para o seu atendimento</p>
+            </div>
+
+            <div class="info-meus-agendamentos">
+                <h3>Meus Agendamentos</h3>
+                <div id="lista-meus-agendamentos" class="meus-agendamentos"></div>
             </div>
 
             <div class="calendario">
@@ -224,17 +321,6 @@
                     <div class="dia-semana-nome">Sáb</div>
                 </div>
                 <div class="calendario-grid" id="calendario-grid"></div>
-            </div>
-
-            <div class="info-pagamento">
-                <h3>Como funciona o pagamento?</h3>
-                <p><strong>1.</strong> Faça seu agendamento</p>
-                <p><strong>2.</strong> Efetue o pagamento via PIX após o atendimento</p>
-                <p><strong>3.</strong> Chave PIX: <strong>14996638056</strong> (CPF)</p>
-                <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Olá!%20Gostaria%20de%20agendar%20um%20horário." 
-                   class="btn-whatsapp" target="_blank">
-                    &#128222; Agendar via WhatsApp
-                </a>
             </div>
         </div>
     </main>
@@ -275,6 +361,28 @@
         </div>
     </div>
 
+    <div id="modal-pagamento" class="modal">
+        <div class="modal-content">
+            <button class="btn-fechar" onclick="fecharModalPagamento()">&times;</button>
+            <h2>Pagamento via PIX</h2>
+            
+            <div id="info-pagamento-selecionado"></div>
+            
+            <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0;">
+                <p style="margin: 0; color: #2e7d32; font-weight: bold;">Chave PIX (CPF)</p>
+                <p style="font-size: 1.3rem; font-weight: bold; margin: 0.5rem 0; color: #1b5e20;">14996638056</p>
+                <button class="btn-copiar-pix" onclick="copiarChavePix()">Copiar Chave</button>
+            </div>
+            
+            <p style="color: #666; font-size: 0.9rem; text-align: center;">
+                Após realizar o pagamento, clique em "Já fiz o pagamento" para confirmar.
+            </p>
+            
+            <button class="btn-pix" onclick="confirmarPagamento()">&#10004; Já fiz o pagamento</button>
+            <button class="btn-agendar" style="background: #666; margin-top: 0.5rem;" onclick="fecharModalPagamento()">Fechar</button>
+        </div>
+    </div>
+
     <div id="footer-placeholder"></div>
     <script src="../static/js/components.js"></script>
     <script src="../static/js/storage.js"></script>
@@ -283,9 +391,37 @@
                            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         
         let dataAtual = new Date();
+        let agendamentoSelecionado = null;
 
         function getAgendamentos() {
             return AgendamentoStore.getAll();
+        }
+
+        function renderizarMeusAgendamentos() {
+            const lista = document.getElementById('lista-meus-agendamentos');
+            const agendamentos = getAgendamentos().sort(function(a, b) {
+                return new Date(b.data) - new Date(a.data);
+            });
+            
+            if (agendamentos.length === 0) {
+                lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
+                return;
+            }
+            
+            lista.innerHTML = agendamentos.map(function(a) {
+                return '<div class="meu-agendamento ' + (a.pago ? 'pago' : 'nao-pago') + '">' +
+                       '<div class="info-agendamento">' +
+                       '<div class="servico">' + a.servicoNome + '</div>' +
+                       '<div class="data">' + formatarData(a.data) + '</div>' +
+                       '<div class="valor">R$ ' + a.valor.toFixed(2).replace('.', ',') + '</div>' +
+                       '</div>' +
+                       '<div>' +
+                       (a.pago ? 
+                        '<span class="badge-pago">&#10004; Pago</span>' : 
+                        '<button class="btn-pix" onclick="abrirModalPagamento(\'' + a.id + '\')">Pagar PIX</button>') +
+                       '</div>' +
+                       '</div>';
+            }).join('');
         }
 
         function renderizarCalendario() {
@@ -303,27 +439,63 @@
             
             let html = '';
             
-            for (let i = 0; i < inicioSemana; i++) {
+            for (var i = 0; i < inicioSemana; i++) {
                 const dia = new Date(ano, mes, -inicioSemana + i + 1);
                 html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia.getDate() + '</div></div>';
             }
             
-            for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
+            for (var dia = 1; dia <= ultimoDia.getDate(); dia++) {
                 const data = new Date(ano, mes, dia);
                 const dataStr = data.toISOString().split('T')[0];
                 const isToday = data.toDateString() === new Date().toDateString();
                 const isPast = data < new Date().setHours(0,0,0,0);
                 
-                const agendamentosDoDia = getAgendamentos().filter(a => a.data === dataStr);
+                const agendamentosDoDia = getAgendamentos().filter(function(a) { return a.data === dataStr; });
                 
-                html += '<div class="dia-cell ' + (isToday ? 'today' : '') + ' ' + (isPast ? 'outro-mes' : '') + '" ' +
-                        'onclick="' + (!isPast ? "selecionarDia('" + dataStr + "')" : '') + '">' +
-                        '<div class="dia-numero">' + dia + '</div>' +
-                        (!isPast ? '<div style="font-size:0.8rem; color:#666;">' + agendamentosDoDia.length + ' agendado(s)</div>' : '') +
-                        '</div>';
+                var badgeClass = '';
+                var badgeText = '';
+                if (agendamentosDoDia.length > 0) {
+                    const temNaoPago = agendamentosDoDia.some(function(a) { return !a.pago; });
+                    const temPago = agendamentosDoDia.some(function(a) { return a.pago; });
+                    if (temNaoPago && temPago) {
+                        badgeClass = 'nao-pago';
+                        badgeText = 'Agendado(s)';
+                    } else if (temNaoPago) {
+                        badgeClass = 'nao-pago';
+                        badgeText = agendamentosDoDia.length + ' agendado(s)';
+                    } else {
+                        badgeClass = 'pago';
+                        badgeText = 'Pago(s)';
+                    }
+                }
+                
+                html += '<div class="dia-cell ' + (isToday ? 'today' : '') + ' ' + (isPast ? 'outro-mes' : '') + '">' +
+                        '<div class="dia-numero">' + dia + '</div>';
+                
+                if (!isPast) {
+                    if (agendamentosDoDia.length > 0) {
+                        html += '<span class="agendamento-badge ' + badgeClass + '">' + badgeText + '</span>';
+                    } else {
+                        html += '<span style="font-size:0.75rem; color:#999;">Disponível</span>';
+                    }
+                }
+                
+                html += '</div>';
             }
             
             grid.innerHTML = html;
+            
+            const cells = document.querySelectorAll('.dia-cell:not(.outro-mes)');
+            cells.forEach(function(cell, index) {
+                const diaReal = index - new Date(ano, mes, 1).getDay() + 1;
+                if (diaReal > 0 && diaReal <= ultimoDia.getDate()) {
+                    const dataStr = new Date(ano, mes, diaReal).toISOString().split('T')[0];
+                    const isPast = new Date(ano, mes, diaReal) < new Date().setHours(0,0,0,0);
+                    if (!isPast) {
+                        cell.onclick = function() { selecionarDia(dataStr); };
+                    }
+                }
+            });
         }
 
         function navegarMes(direcao) {
@@ -397,14 +569,67 @@
             
             fecharModal();
             renderizarCalendario();
+            renderizarMeusAgendamentos();
             
-            alert('Agendamento realizado! Entraremos em contato via WhatsApp para confirmar.');
+            alert('Agendamento realizado com sucesso!');
             
             window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + whatsappMsg, '_blank');
         });
 
-        ServicosStore.init().then(function() {
+        function abrirModalPagamento(id) {
+            agendamentoSelecionado = getAgendamentos().find(function(a) { return a.id === id; });
+            if (!agendamentoSelecionado) return;
+            
+            document.getElementById('info-pagamento-selecionado').innerHTML = 
+                '<p><strong>Serviço:</strong> ' + agendamentoSelecionado.servicoNome + '</p>' +
+                '<p><strong>Data:</strong> ' + formatarData(agendamentoSelecionado.data) + '</p>' +
+                '<p><strong>Valor:</strong> <span style="font-size:1.3rem; color:#2e7d32; font-weight:bold;">R$ ' + 
+                agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '</span></p>';
+            
+            document.getElementById('modal-pagamento').classList.add('active');
+        }
+
+        function fecharModalPagamento() {
+            document.getElementById('modal-pagamento').classList.remove('active');
+            agendamentoSelecionado = null;
+        }
+
+        function copiarChavePix() {
+            navigator.clipboard.writeText('14996638056').then(function() {
+                alert('Chave PIX copiada!');
+            });
+        }
+
+        function confirmarPagamento() {
+            if (!agendamentoSelecionado) return;
+            
+            AgendamentoStore.update(agendamentoSelecionado.id, { pago: true });
+            
+            const whatsappMsg = encodeURIComponent(
+                'Olá! Já fiz o pagamento do meu agendamento:\n\n' +
+                '📅 Data: ' + formatarData(agendamentoSelecionado.data) + '\n' +
+                '💇 Serviço: ' + agendamentoSelecionado.servicoNome + '\n' +
+                '💰 Valor: R$ ' + agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '\n\n' +
+                'Por favor, confirmem o recebimento!'
+            );
+            
+            fecharModalPagamento();
             renderizarCalendario();
+            renderizarMeusAgendamentos();
+            
+            alert('Pagamento registrado! Entraremos em contato para confirmar.');
+            window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + whatsappMsg, '_blank');
+        }
+
+        ServicosStore.init().then(function() {
+            popularServicos();
+            renderizarCalendario();
+            renderizarMeusAgendamentos();
+        }).catch(function(err) {
+            console.error('Erro ao carregar servicos:', err);
+            popularServicos();
+            renderizarCalendario();
+            renderizarMeusAgendamentos();
         });
     </script>
 </body>
