@@ -6,121 +6,14 @@
     <title>Tabela de Preços - Espaço Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <link rel="stylesheet" href="../static/css/style.css">
-    <style>
-        .precos-container {
-            max-width: 800px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        .precos-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .precos-header h1 {
-            color: #e91e63;
-            margin-bottom: 0.5rem;
-        }
-        .tabela-precos {
-            width: 100%;
-            border-collapse: collapse;
-            background: #fff;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-radius: 8px;
-            overflow: hidden;
-        }
-        .tabela-precos th {
-            background: #e91e63;
-            color: white;
-            padding: 1rem;
-            text-align: left;
-        }
-        .tabela-precos td {
-            padding: 1rem;
-            border-bottom: 1px solid #eee;
-        }
-        .tabela-precos tr:last-child td {
-            border-bottom: none;
-        }
-        .tabela-precos tr:hover {
-            background: #fce4ec;
-        }
-        .preco {
-            font-weight: bold;
-            color: #2e7d32;
-            font-size: 1.1rem;
-        }
-        .desconto {
-            color: #e65100;
-            font-size: 0.9rem;
-        }
-        .categoria-tag {
-            background: #f8bbd0;
-            color: #880e4f;
-            padding: 0.3rem 0.8rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            display: inline-block;
-            margin-bottom: 0.3rem;
-        }
-        .info-pagamento {
-            background: #e3f2fd;
-            border-radius: 8px;
-            padding: 1.5rem;
-            margin-top: 2rem;
-        }
-        .info-pagamento h3 {
-            color: #1565c0;
-            margin-top: 0;
-        }
-        .btn-agendar {
-            display: inline-block;
-            background: #e91e63;
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 6px;
-            text-decoration: none;
-            margin-top: 1rem;
-            font-weight: 500;
-        }
-        .btn-agendar:hover {
-            background: #c2185b;
-        }
-        .btn-whatsapp {
-            display: inline-block;
-            background: #25d366;
-            color: white;
-            padding: 0.8rem 1.5rem;
-            border-radius: 6px;
-            text-decoration: none;
-            margin-top: 1rem;
-            margin-left: 0.5rem;
-            font-weight: 500;
-        }
-        .btn-agendar-servico {
-            background: #e91e63;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            margin-top: 0.5rem;
-        }
-        .btn-agendar-servico:hover {
-            background: #c2185b;
-        }
-        .tabela-precos td:last-child {
-            text-align: right;
-            white-space: nowrap;
-        }
-    </style>
+    <link rel="stylesheet" href="../static/css/paginas.css">
 </head>
 <body>
     <div id="header-placeholder"></div>
 
     <main>
-        <div class="precos-container">
-            <div class="precos-header">
+        <div class="paginas-container">
+            <div class="paginas-header">
                 <h1>Tabela de Preços</h1>
                 <p>Serviços disponíveis no Espaço Cre Bortoli</p>
             </div>
@@ -140,7 +33,7 @@
                 <h3>Pagamento</h3>
                 <p>Aceitamos <strong>pagamento via PIX</strong>. Chave: <strong>14996638056</strong> (celular)</p>
                 <p>Pacote mensal com <strong>desconto especial</strong> para clientes frequentes!</p>
-                <a href="agenda.html" class="btn-agendar">Agendar Serviço</a>
+                <a href="agenda.html" class="btn-agendar" style="display: inline-block; text-decoration: none;">Agendar Serviço</a>
                 <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Olá!%20Gostaria%20de%20saber%20mais%20sobre%20os%20serviços." 
                    class="btn-whatsapp" target="_blank">
                     &#128222; WhatsApp
@@ -152,30 +45,6 @@
     <div id="footer-placeholder"></div>
     <script src="../static/js/components.js"></script>
     <script src="../static/js/storage.js"></script>
-    <script>
-        function renderTabela() {
-            const servicos = ServicosStore.getAll();
-            const tbody = document.getElementById('tabela-corpo');
-            let html = '';
-            servicos.forEach(function(s) {
-                html += '<tr>' +
-                         '<td><span class="categoria-tag">' + s.categoria + '</span><br>' + s.nome +
-                         (s.desconto ? '<br><span class="desconto">' + s.desconto + '</span>' : '') +
-                         '</td>' +
-                         '<td class="preco">R$ ' + s.preco.toFixed(2).replace('.', ',') + '</td>' +
-                         '<td><button class="btn-agendar-servico" onclick="agendarServico(\'' + s.id + '\')">Agendar</button></td>' +
-                         '</tr>';
-            });
-            tbody.innerHTML = html;
-        }
-        
-        function agendarServico(servicoId) {
-            const hoje = new Date();
-            const dataStr = hoje.toISOString().split('T')[0];
-            window.location.href = 'agenda.html?servico=' + encodeURIComponent(servicoId) + '&data=' + dataStr;
-        }
-        
-        ServicosStore.init().then(renderTabela);
-    </script>
+    <script src="../static/js/servicos.js"></script>
 </body>
 </html>

@@ -6,296 +6,14 @@
     <title>Agende seu Horário - Espaço Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <link rel="stylesheet" href="../static/css/style.css">
-    <style>
-        .agenda-container {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 0 1rem;
-        }
-        .agenda-header {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-        .agenda-header h1 {
-            color: #e91e63;
-            margin-bottom: 0.5rem;
-        }
-        .calendario {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            overflow: hidden;
-            margin-bottom: 2rem;
-        }
-        .calendario-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #e91e63;
-            color: white;
-            padding: 1rem;
-        }
-        .calendario-nav button {
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .calendario-nav button:hover {
-            background: rgba(255,255,255,0.3);
-        }
-        .dias-semana {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            background: #f8bbd0;
-            padding: 0.5rem 0;
-        }
-        .dia-semana-nome {
-            text-align: center;
-            font-weight: bold;
-            color: #880e4f;
-            font-size: 0.85rem;
-        }
-        .calendario-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: 1px;
-            background: #eee;
-        }
-        .dia-cell {
-            background: white;
-            min-height: 90px;
-            padding: 0.5rem;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .dia-cell:hover {
-            background: #fce4ec;
-        }
-        .dia-cell.outro-mes {
-            background: #f5f5f5;
-            color: #aaa;
-        }
-        .dia-cell.today {
-            background: #fff3e0;
-        }
-        .dia-cell .dia-numero {
-            font-weight: bold;
-            margin-bottom: 0.3rem;
-        }
-        .dia-cell.today .dia-numero {
-            color: #e65100;
-        }
-        .agendamento-badge {
-            display: block;
-            padding: 0.25rem 0.4rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            margin-bottom: 0.2rem;
-            cursor: pointer;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .agendamento-badge.nao-pago {
-            background: #ffcdd2;
-            color: #c62828;
-            border-left: 3px solid #c62828;
-        }
-        .agendamento-badge.pago {
-            background: #c8e6c9;
-            color: #2e7d32;
-            border-left: 3px solid #2e7d32;
-        }
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-        .modal.active {
-            display: flex;
-        }
-        .modal-content {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            max-width: 500px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-        }
-        .modal h2 {
-            color: #e91e63;
-            margin-top: 0;
-        }
-        .form-group {
-            margin-bottom: 1rem;
-        }
-        .form-group label {
-            display: block;
-            margin-bottom: 0.3rem;
-            font-weight: 500;
-        }
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 1rem;
-        }
-        .btn-agendar {
-            width: 100%;
-            background: #e91e63;
-            color: white;
-            border: none;
-            padding: 1rem;
-            border-radius: 6px;
-            font-size: 1.1rem;
-            cursor: pointer;
-        }
-        .btn-agendar:hover {
-            background: #c2185b;
-        }
-        .btn-fechar {
-            float: right;
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-        }
-        .total-box {
-            background: #fce4ec;
-            padding: 1rem;
-            border-radius: 6px;
-            margin-top: 1rem;
-            text-align: right;
-        }
-        .total-box .valor {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #e91e63;
-        }
-        .btn-pix {
-            background: #25d366;
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 6px;
-            font-size: 1rem;
-            cursor: pointer;
-            margin-top: 0.5rem;
-            width: 100%;
-        }
-        .btn-pix:hover {
-            background: #128c7e;
-        }
-        .info-meus-agendamentos {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .info-meus-agendamentos h3 {
-            color: #e91e63;
-            margin-top: 0;
-        }
-        .meus-agendamentos {
-            display: grid;
-            gap: 1rem;
-        }
-        .meu-agendamento {
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 1rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-        .meu-agendamento.nao-pago {
-            border-left: 4px solid #c62828;
-            background: #fff8f8;
-        }
-        .meu-agendamento.pago {
-            border-left: 4px solid #2e7d32;
-            background: #f8fff8;
-        }
-        .info-agendamento {
-            flex: 1;
-        }
-        .info-agendamento .servico {
-            font-weight: bold;
-            color: #333;
-        }
-        .info-agendamento .data {
-            color: #666;
-            font-size: 0.9rem;
-        }
-        .info-agendamento .valor {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #2e7d32;
-        }
-        .badge-pago {
-            background: #2e7d32;
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-        .badge-nao-pago {
-            background: #c62828;
-            color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
-        .btn-copiar-pix {
-            background: #2196f3;
-            color: white;
-            border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 0.85rem;
-        }
-        .btn-copiar-pix:hover {
-            background: #1976d2;
-        }
-        .sem-agendamentos {
-            text-align: center;
-            color: #999;
-            padding: 2rem;
-        }
-        @media (max-width: 600px) {
-            .calendario-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            .meu-agendamento {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="../static/css/paginas.css">
 </head>
 <body>
     <div id="header-placeholder"></div>
 
     <main>
-        <div class="agenda-container">
-            <div class="agenda-header">
+        <div class="paginas-container">
+            <div class="paginas-header">
                 <h1>Agende seu Horário</h1>
                 <p>Escolha o dia para o seu atendimento</p>
             </div>
@@ -307,9 +25,9 @@
 
             <div class="calendario">
                 <div class="calendario-nav">
-                    <button onclick="navegarMes(-1)">&#8592; Anterior</button>
+                    <button onclick="AgendaPagina.navegarMes(-1)">&#8592; Anterior</button>
                     <span id="mes-ano"></span>
-                    <button onclick="navegarMes(1)">Próximo &#8594;</button>
+                    <button onclick="AgendaPagina.navegarMes(1)">Próximo &#8594;</button>
                 </div>
                 <div class="dias-semana">
                     <div class="dia-semana-nome">Dom</div>
@@ -327,12 +45,17 @@
 
     <div id="modal-agendamento" class="modal">
         <div class="modal-content">
-            <button class="btn-fechar" onclick="fecharModal()">&times;</button>
+            <button class="btn-fechar" onclick="AgendaPagina.fecharModal()">&times;</button>
             <h2>Confirmar Agendamento</h2>
             <p id="data-selecionada"></p>
             
             <form id="form-agendamento">
                 <input type="hidden" id="data-selecao">
+                
+                <div class="form-group">
+                    <label for="data-input">Data do Agendamento</label>
+                    <input type="date" id="data-input" required>
+                </div>
                 
                 <div class="form-group">
                     <label for="nome">Seu Nome</label>
@@ -341,12 +64,12 @@
                 
                 <div class="form-group">
                     <label for="telefone">WhatsApp</label>
-                    <input type="tel" id="telefone" required placeholder="14999999999">
+                    <input type="tel" id="telefone" required placeholder="(14) 99999-9999">
                 </div>
                 
                 <div class="form-group">
                     <label for="servico">Serviço</label>
-                    <select id="servico" required onchange="atualizarPreco()">
+                    <select id="servico" required onchange="AgendaPagina.atualizarPreco()">
                         <option value="">Selecione...</option>
                     </select>
                 </div>
@@ -356,6 +79,16 @@
                     <div class="valor">R$ <span id="preco-total">0,00</span></div>
                 </div>
                 
+                <div class="form-group" style="background: #e8f5e9; padding: 1rem; border-radius: 8px; margin-top: 1rem;">
+                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal;">
+                        <input type="checkbox" id="pagar-agora" style="width: 20px; height: 20px;">
+                        <span>💳 Vou pagar agora via PIX</span>
+                    </label>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem; color: #666;">
+                        Chave PIX: <strong>14996638056</strong>
+                    </p>
+                </div>
+                
                 <button type="submit" class="btn-agendar">Confirmar Agendamento</button>
             </form>
         </div>
@@ -363,7 +96,7 @@
 
     <div id="modal-pagamento" class="modal">
         <div class="modal-content">
-            <button class="btn-fechar" onclick="fecharModalPagamento()">&times;</button>
+            <button class="btn-fechar" onclick="AgendaPagina.fecharModalPagamento()">&times;</button>
             <h2>Pagamento via PIX</h2>
             
             <div id="info-pagamento-selecionado"></div>
@@ -371,280 +104,21 @@
             <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0;">
                 <p style="margin: 0; color: #2e7d32; font-weight: bold;">Chave PIX (CPF)</p>
                 <p style="font-size: 1.3rem; font-weight: bold; margin: 0.5rem 0; color: #1b5e20;">14996638056</p>
-                <button class="btn-copiar-pix" onclick="copiarChavePix()">Copiar Chave</button>
+                <button class="btn-copiar-pix" onclick="AgendaPagina.copiarChavePix()">Copiar Chave</button>
             </div>
             
             <p style="color: #666; font-size: 0.9rem; text-align: center;">
                 Após realizar o pagamento, clique em "Já fiz o pagamento" para confirmar.
             </p>
             
-            <button class="btn-pix" onclick="confirmarPagamento()">&#10004; Já fiz o pagamento</button>
-            <button class="btn-agendar" style="background: #666; margin-top: 0.5rem;" onclick="fecharModalPagamento()">Fechar</button>
+            <button class="btn-pix" onclick="AgendaPagina.confirmarPagamento()">&#10004; Já fiz o pagamento</button>
+            <button class="btn-agendar" style="background: #666; margin-top: 0.5rem;" onclick="AgendaPagina.fecharModalPagamento()">Fechar</button>
         </div>
     </div>
 
     <div id="footer-placeholder"></div>
     <script src="../static/js/components.js"></script>
     <script src="../static/js/storage.js"></script>
-    <script>
-        const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
-                           'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
-        
-        let dataAtual = new Date();
-        let agendamentoSelecionado = null;
-
-        function getAgendamentos() {
-            return AgendamentoStore.getAll();
-        }
-
-        function renderizarMeusAgendamentos() {
-            const lista = document.getElementById('lista-meus-agendamentos');
-            const agendamentos = getAgendamentos().sort(function(a, b) {
-                return new Date(b.data) - new Date(a.data);
-            });
-            
-            if (agendamentos.length === 0) {
-                lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
-                return;
-            }
-            
-            lista.innerHTML = agendamentos.map(function(a) {
-                return '<div class="meu-agendamento ' + (a.pago ? 'pago' : 'nao-pago') + '">' +
-                       '<div class="info-agendamento">' +
-                       '<div class="servico">' + a.servicoNome + '</div>' +
-                       '<div class="data">' + formatarData(a.data) + '</div>' +
-                       '<div class="valor">R$ ' + a.valor.toFixed(2).replace('.', ',') + '</div>' +
-                       '</div>' +
-                       '<div>' +
-                       (a.pago ? 
-                        '<span class="badge-pago">&#10004; Pago</span>' : 
-                        '<button class="btn-pix" onclick="abrirModalPagamento(\'' + a.id + '\')">Pagar PIX</button>') +
-                       '</div>' +
-                       '</div>';
-            }).join('');
-        }
-
-        function renderizarCalendario() {
-            const grid = document.getElementById('calendario-grid');
-            const mesAno = document.getElementById('mes-ano');
-            
-            const ano = dataAtual.getFullYear();
-            const mes = dataAtual.getMonth();
-            
-            mesAno.textContent = nomesMeses[mes] + ' ' + ano;
-            
-            const primeiroDia = new Date(ano, mes, 1);
-            const ultimoDia = new Date(ano, mes + 1, 0);
-            const inicioSemana = primeiroDia.getDay();
-            
-            let html = '';
-            
-            for (var i = 0; i < inicioSemana; i++) {
-                const dia = new Date(ano, mes, -inicioSemana + i + 1);
-                html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia.getDate() + '</div></div>';
-            }
-            
-            for (var dia = 1; dia <= ultimoDia.getDate(); dia++) {
-                const data = new Date(ano, mes, dia);
-                const dataStr = data.toISOString().split('T')[0];
-                const isToday = data.toDateString() === new Date().toDateString();
-                const isPast = data < new Date().setHours(0,0,0,0);
-                
-                const agendamentosDoDia = getAgendamentos().filter(function(a) { return a.data === dataStr; });
-                
-                var badgeClass = '';
-                var badgeText = '';
-                if (agendamentosDoDia.length > 0) {
-                    const temNaoPago = agendamentosDoDia.some(function(a) { return !a.pago; });
-                    const temPago = agendamentosDoDia.some(function(a) { return a.pago; });
-                    if (temNaoPago && temPago) {
-                        badgeClass = 'nao-pago';
-                        badgeText = 'Agendado(s)';
-                    } else if (temNaoPago) {
-                        badgeClass = 'nao-pago';
-                        badgeText = agendamentosDoDia.length + ' agendado(s)';
-                    } else {
-                        badgeClass = 'pago';
-                        badgeText = 'Pago(s)';
-                    }
-                }
-                
-                if (isPast) {
-                    html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia + '</div></div>';
-                } else {
-                    html += '<div class="dia-cell ' + (isToday ? 'today' : '') + '" onclick="selecionarDia(\'' + dataStr + '\')">' +
-                            '<div class="dia-numero">' + dia + '</div>';
-                    
-                    if (agendamentosDoDia.length > 0) {
-                        html += '<span class="agendamento-badge ' + badgeClass + '">' + badgeText + '</span>';
-                    } else {
-                        html += '<span style="font-size:0.75rem; color:#999;">Disponível</span>';
-                    }
-                    
-                    html += '</div>';
-                }
-            }
-            
-            grid.innerHTML = html;
-        }
-
-        function navegarMes(direcao) {
-            dataAtual.setMonth(dataAtual.getMonth() + direcao);
-            renderizarCalendario();
-        }
-
-        function selecionarDia(data) {
-            document.getElementById('data-selecao').value = data;
-            document.getElementById('modal-agendamento').classList.add('active');
-            document.getElementById('data-selecionada').textContent = formatarData(data);
-            popularServicos();
-        }
-
-        function fecharModal() {
-            document.getElementById('modal-agendamento').classList.remove('active');
-            document.getElementById('form-agendamento').reset();
-            document.getElementById('preco-total').textContent = '0,00';
-        }
-
-        function popularServicos() {
-            const servicos = ServicosStore.getAll();
-            const select = document.getElementById('servico');
-            let options = '<option value="">Selecione...</option>';
-            servicos.forEach(function(s) {
-                options += '<option value="' + s.id + '" data-preco="' + s.preco + '">' + s.nome + ' - R$ ' + s.preco.toFixed(2).replace('.', ',') + '</option>';
-            });
-            select.innerHTML = options;
-        }
-
-        function atualizarPreco() {
-            const select = document.getElementById('servico');
-            const option = select.options[select.selectedIndex];
-            if (option && option.dataset.preco) {
-                document.getElementById('preco-total').textContent = parseFloat(option.dataset.preco).toFixed(2).replace('.', ',');
-            }
-        }
-
-        function formatarData(dataStr) {
-            const data = new Date(dataStr + 'T00:00:00');
-            return data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-        }
-
-        document.getElementById('form-agendamento').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            const servicoId = document.getElementById('servico').value;
-            const servico = ServicosStore.getById(servicoId);
-            
-            const agendamento = {
-                data: document.getElementById('data-selecao').value,
-                hora: 'A confirmar',
-                cliente: document.getElementById('nome').value,
-                telefone: document.getElementById('telefone').value,
-                servico: servicoId,
-                servicoNome: servico ? servico.nome : '',
-                valor: servico ? servico.preco : 0,
-                status: 'PENDENTE',
-                pago: false
-            };
-            
-            AgendamentoStore.save(agendamento);
-            
-            const whatsappMsg = encodeURIComponent(
-                'Olá! Acabei de fazer um agendamento no site:\n\n' +
-                '📅 Data: ' + formatarData(agendamento.data) + '\n' +
-                '👤 Nome: ' + agendamento.cliente + '\n' +
-                '💇 Serviço: ' + agendamento.servicoNome + '\n' +
-                '💰 Valor: R$ ' + agendamento.valor.toFixed(2).replace('.', ',')
-            );
-            
-            fecharModal();
-            renderizarCalendario();
-            renderizarMeusAgendamentos();
-            
-            alert('Agendamento realizado com sucesso!');
-            
-            window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + whatsappMsg, '_blank');
-        });
-
-        function abrirModalPagamento(id) {
-            agendamentoSelecionado = getAgendamentos().find(function(a) { return a.id === id; });
-            if (!agendamentoSelecionado) return;
-            
-            document.getElementById('info-pagamento-selecionado').innerHTML = 
-                '<p><strong>Serviço:</strong> ' + agendamentoSelecionado.servicoNome + '</p>' +
-                '<p><strong>Data:</strong> ' + formatarData(agendamentoSelecionado.data) + '</p>' +
-                '<p><strong>Valor:</strong> <span style="font-size:1.3rem; color:#2e7d32; font-weight:bold;">R$ ' + 
-                agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '</span></p>';
-            
-            document.getElementById('modal-pagamento').classList.add('active');
-        }
-
-        function fecharModalPagamento() {
-            document.getElementById('modal-pagamento').classList.remove('active');
-            agendamentoSelecionado = null;
-        }
-
-        function copiarChavePix() {
-            navigator.clipboard.writeText('14996638056').then(function() {
-                alert('Chave PIX copiada!');
-            });
-        }
-
-        function confirmarPagamento() {
-            if (!agendamentoSelecionado) return;
-            
-            AgendamentoStore.update(agendamentoSelecionado.id, { pago: true });
-            
-            const whatsappMsg = encodeURIComponent(
-                'Olá! Já fiz o pagamento do meu agendamento:\n\n' +
-                '📅 Data: ' + formatarData(agendamentoSelecionado.data) + '\n' +
-                '💇 Serviço: ' + agendamentoSelecionado.servicoNome + '\n' +
-                '💰 Valor: R$ ' + agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '\n\n' +
-                'Por favor, confirmem o recebimento!'
-            );
-            
-            fecharModalPagamento();
-            renderizarCalendario();
-            renderizarMeusAgendamentos();
-            
-            alert('Pagamento registrado! Entraremos em contato para confirmar.');
-            window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + whatsappMsg, '_blank');
-        }
-
-        ServicosStore.init().then(function() {
-            popularServicos();
-            renderizarCalendario();
-            renderizarMeusAgendamentos();
-            verificarParametroURL();
-        }).catch(function(err) {
-            console.error('Erro ao carregar servicos:', err);
-            popularServicos();
-            renderizarCalendario();
-            renderizarMeusAgendamentos();
-        });
-        
-        function verificarParametroURL() {
-            const params = new URLSearchParams(window.location.search);
-            const servicoId = params.get('servico');
-            const data = params.get('data');
-            
-            if (data) {
-                document.getElementById('data-selecao').value = data;
-                document.getElementById('modal-agendamento').classList.add('active');
-                document.getElementById('data-selecionada').textContent = formatarData(data);
-            }
-            
-            if (servicoId) {
-                const select = document.getElementById('servico');
-                for (var i = 0; i < select.options.length; i++) {
-                    if (select.options[i].value === servicoId) {
-                        select.selectedIndex = i;
-                        atualizarPreco();
-                        break;
-                    }
-                }
-            }
-        }
-    </script>
+    <script src="../static/js/paginas.js"></script>
 </body>
 </html>
