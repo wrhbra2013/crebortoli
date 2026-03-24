@@ -292,6 +292,93 @@
 }
 
 /* -----------------------------------------------------------------------------
+   Tabela de Preços
+   ----------------------------------------------------------------------------- */
+.tabela-precos {
+    width: 100%;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.tabela-precos th {
+    background: #e91e63;
+    color: white;
+    padding: 1rem;
+    text-align: left;
+}
+
+.tabela-precos th:last-child {
+    width: 120px;
+    text-align: center;
+}
+
+.tabela-precos td {
+    padding: 1rem;
+    border-bottom: 1px solid #eee;
+}
+
+.tabela-precos td:nth-child(2) {
+    text-align: right;
+}
+
+.tabela-precos td:last-child {
+    text-align: center;
+}
+
+.tabela-precos tr:last-child td {
+    border-bottom: none;
+}
+
+.tabela-precos tbody tr:hover {
+    background: #fce4ec;
+}
+
+.preco {
+    font-weight: bold;
+    color: #2e7d32;
+    font-size: 1.1rem;
+}
+
+.desconto {
+    color: #e65100;
+    font-size: 0.9rem;
+}
+
+.categoria-tag {
+    background: #f8bbd0;
+    color: #880e4f;
+    padding: 0.3rem 0.8rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    display: inline-block;
+    margin-bottom: 0.3rem;
+}
+
+/* -----------------------------------------------------------------------------
+   Info Pagamento
+   ----------------------------------------------------------------------------- */
+.info-pagamento {
+    background: #e3f2fd;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-top: 2rem;
+}
+
+.info-pagamento h3 {
+    color: #1565c0;
+    margin-top: 0;
+}
+
+.info-pagamento p {
+    margin: 0.5rem 0;
+    color: #333;
+}
+
+/* -----------------------------------------------------------------------------
    Responsivo
    ----------------------------------------------------------------------------- */
 @media (max-width: 600px) {
