@@ -276,14 +276,19 @@ var AgendaPagina = (function() {
         AgendamentoStore.save(agendamento);
         
         var whatsappMsg = 'Olá! Acabei de fazer um agendamento no site:\n\n' +
+            '👤 Nome completo: ' + nome + '\n' +
             '📅 Data: ' + formatarData(agendamento.data) + '\n' +
-            '👤 Nome: ' + agendamento.cliente + '\n' +
-            '📱 WhatsApp: ' + telefoneFormatado + '\n' +
             '💇 Serviço: ' + agendamento.servicoNome + '\n' +
             '💰 Valor: R$ ' + agendamento.valor.toFixed(2).replace('.', ',');
         
         if (pagarAgora) {
             whatsappMsg += '\n\n✅ Pagamento: Efetuado via PIX';
+            whatsappMsg += '\n\n📋 Instruções para pagamento:';
+            whatsappMsg += '\n1. Abra o app do seu banco';
+            whatsappMsg += '\n2. Escolha PIX ou Transferência';
+            whatsappMsg += '\n3. Use a chave: 14996638056';
+            whatsappMsg += '\n4. Valor: R$ ' + agendamento.valor.toFixed(2).replace('.', ',');
+            whatsappMsg += '\n5. Escreva seu nome completo na mensagem do PIX';
         }
         
         fecharModal();
@@ -305,6 +310,7 @@ var AgendaPagina = (function() {
         if (!agendamentoSelecionado) return;
         
         document.getElementById('info-pagamento-selecionado').innerHTML = 
+            '<p><strong>Cliente:</strong> ' + agendamentoSelecionado.cliente + '</p>' +
             '<p><strong>Serviço:</strong> ' + agendamentoSelecionado.servicoNome + '</p>' +
             '<p><strong>Data:</strong> ' + formatarData(agendamentoSelecionado.data) + '</p>' +
             '<p><strong>Valor:</strong> <span style="font-size:1.3rem; color:#2e7d32; font-weight:bold;">R$ ' + 
@@ -330,6 +336,7 @@ var AgendaPagina = (function() {
         AgendamentoStore.update(agendamentoSelecionado.id, { pago: true, status: 'PAGO' });
         
         var whatsappMsg = 'Olá! Já fiz o pagamento do meu agendamento:\n\n' +
+            '👤 Nome: ' + agendamentoSelecionado.cliente + '\n' +
             '📅 Data: ' + formatarData(agendamentoSelecionado.data) + '\n' +
             '💇 Serviço: ' + agendamentoSelecionado.servicoNome + '\n' +
             '💰 Valor: R$ ' + agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '\n\n' +
