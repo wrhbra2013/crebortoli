@@ -213,17 +213,22 @@
         }
         
         async function criarSessao() {
+            const urlAprovacao = `${obterUrlBase()}/sig/aprovar.html`;
+            const apiUrl = getApiUrl();
+            
             try {
-                const urlAprovacao = `${obterUrlBase()}/sig/aprovar.html`;
-                const response = await fetch(getApiUrl(), {
+                const response = await fetch(apiUrl, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ acao: 'criar', urlAprovacao })
                 });
+                
                 const data = await response.json();
                 return data.token;
             } catch (e) {
-                console.error('Erro ao criar sessão:', e);
+                console.error('Erro conexão:', e);
+                document.getElementById('qr-code').innerHTML = 
+                    `<span style="color:#dc3545;font-size:12px;">Erro: ${e.message}<br>URL: ${apiUrl}</span>`;
                 return null;
             }
         }
