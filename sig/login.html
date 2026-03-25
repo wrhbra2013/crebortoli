@@ -189,7 +189,7 @@
             </ol>
         </div>
         
-        <button class="btn-primary" onclick="gerarNovoQR()">↻ Gerar Novo QR Code</button>
+        <button class="btn-primary" onclick="gerarNovoQR(this)">↻ Gerar Novo QR Code</button>
         
         <div class="back-link">
             <a href="../index.html">← Voltar ao site</a>
@@ -270,16 +270,26 @@
             el.style.display = 'block';
         }
         
-        async function gerarNovoQR() {
+        async function gerarNovoQR(botao) {
+            const btn = botao || document.querySelector('.btn-primary');
+            const textoOriginal = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Gerando...';
+            
             document.getElementById('status-message').style.display = 'none';
             document.getElementById('qr-code').innerHTML = '<span style="color: #999;">Gerando...</span>';
             
             tokenAtual = await criarSessao();
             
             if (!tokenAtual) {
+                btn.disabled = false;
+                btn.textContent = textoOriginal;
                 document.getElementById('qr-code').innerHTML = '<span style="color: #dc3545;">Erro de conexão</span>';
                 return;
             }
+            
+            btn.disabled = false;
+            btn.textContent = '↻ Gerar Novo QR Code';
             
             document.getElementById('token-display').textContent = tokenAtual;
             
@@ -300,6 +310,7 @@
             document.getElementById('qr-code').appendChild(canvas);
             
             canvas.style.cursor = 'pointer';
+            canvas.title = 'Clique para abrir no celular';
             canvas.addEventListener('click', () => {
                 window.open(urlAprovacao, '_blank');
             });
