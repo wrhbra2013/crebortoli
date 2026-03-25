@@ -5,44 +5,41 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login - SIG Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
+    <link rel="stylesheet" href="../static/css/style.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --cor-principal: #6C63FF;
+            --cor-accent: #00BFA6;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: linear-gradient(135deg, #f7f8fc 0%, #e8eaf6 100%);
         }
         .login-container {
             background: white;
             padding: 2.5rem;
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 40px rgba(108, 99, 255, 0.15);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             margin: 1rem;
             text-align: center;
         }
-        .logo {
-            margin-bottom: 2rem;
-        }
         .logo h1 {
-            color: #e91e63;
+            color: var(--cor-principal);
             font-size: 1.8rem;
             margin-bottom: 0.5rem;
         }
         .logo p {
             color: #666;
             font-size: 0.9rem;
+            margin-bottom: 2rem;
         }
         .qr-container {
-            background: #f8f8f8;
+            background: #f8f9fa;
             border-radius: 12px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
@@ -52,41 +49,47 @@
             height: 200px;
             margin: 0 auto 1rem;
             background: white;
-            border: 2px solid #e91e63;
-            border-radius: 8px;
+            border: 3px solid var(--cor-principal);
+            border-radius: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
             overflow: hidden;
         }
+        .qr-code canvas {
+            max-width: 100%;
+            cursor: pointer;
+        }
         .token-info {
             font-size: 0.85rem;
             color: #666;
-            margin-top: 0.5rem;
         }
         .token-code {
-            font-family: monospace;
-            background: #e91e63;
+            font-family: 'Courier New', monospace;
+            background: var(--cor-principal);
             color: white;
-            padding: 0.3rem 0.8rem;
-            border-radius: 4px;
+            padding: 0.4rem 1rem;
+            border-radius: 6px;
             display: inline-block;
             margin-top: 0.5rem;
-            font-size: 1.2rem;
-            letter-spacing: 2px;
+            font-size: 1.3rem;
+            letter-spacing: 3px;
+            font-weight: bold;
         }
         .instructions {
-            background: #e3f2fd;
-            border-radius: 8px;
+            background: #e8eaf6;
+            border-radius: 10px;
             padding: 1rem;
             margin-bottom: 1.5rem;
             text-align: left;
             font-size: 0.9rem;
-            color: #1565c0;
+            color: #444;
+            border-left: 4px solid var(--cor-principal);
         }
         .instructions h3 {
             margin-bottom: 0.5rem;
             font-size: 1rem;
+            color: var(--cor-principal);
         }
         .instructions ol {
             margin: 0;
@@ -104,35 +107,45 @@
         .status-message.aguardando {
             background: #fff3cd;
             color: #856404;
+            border-left: 4px solid #ffc107;
         }
         .status-message.aprovado {
             background: #d4edda;
             color: #155724;
+            border-left: 4px solid #28a745;
         }
         .status-message.negado {
             background: #f8d7da;
             color: #721c24;
+            border-left: 4px solid #dc3545;
         }
-        .btn-recarregar {
-            background: #e91e63;
+        .btn-primary {
+            background: var(--cor-principal);
             color: white;
             border: none;
-            padding: 0.8rem 1.5rem;
+            padding: 0.9rem 2rem;
             border-radius: 8px;
             font-size: 1rem;
+            font-weight: 600;
             cursor: pointer;
-            margin-top: 1rem;
+            transition: all 0.3s;
+            width: 100%;
         }
-        .btn-recarregar:hover {
-            background: #c2185b;
+        .btn-primary:hover {
+            background: #5a52d5;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 99, 255, 0.3);
         }
         .back-link {
             margin-top: 1.5rem;
         }
         .back-link a {
-            color: #e91e63;
+            color: var(--cor-principal);
             text-decoration: none;
             font-size: 0.9rem;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
         }
         .celular-icon {
             font-size: 3rem;
@@ -140,7 +153,7 @@
         }
         @keyframes pulse {
             0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+            50% { opacity: 0.6; }
         }
         .loading {
             animation: pulse 1.5s infinite;
@@ -177,7 +190,7 @@
             </ol>
         </div>
         
-        <button class="btn-recarregar" onclick="gerarNovoQR()">↻ Gerar Novo QR Code</button>
+        <button class="btn-primary" onclick="gerarNovoQR()">↻ Gerar Novo QR Code</button>
         
         <div class="back-link">
             <a href="../index.html">← Voltar ao site</a>
@@ -209,12 +222,7 @@
                 return data.token;
             } catch (e) {
                 console.error('Erro ao criar sessão:', e);
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let token = '';
-                for (let i = 0; i < 8; i++) {
-                    token += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                return token;
+                return null;
             }
         }
         
@@ -260,6 +268,12 @@
             document.getElementById('qr-code').innerHTML = '<span style="color: #999;">Gerando...</span>';
             
             tokenAtual = await criarSessao();
+            
+            if (!tokenAtual) {
+                document.getElementById('qr-code').innerHTML = '<span style="color: #dc3545;">Erro de conexão</span>';
+                return;
+            }
+            
             document.getElementById('token-display').textContent = tokenAtual;
             
             const urlAprovacao = `${obterUrlBase()}/sig/aprovar.html?token=${tokenAtual}`;
@@ -270,7 +284,7 @@
                 value: urlAprovacao,
                 size: 180,
                 background: 'white',
-                foreground: '#e91e63',
+                foreground: '#6C63FF',
                 level: 'M',
                 padding: 10
             });

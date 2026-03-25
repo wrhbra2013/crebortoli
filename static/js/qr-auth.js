@@ -41,7 +41,7 @@ async function loadQRCode() {
         return;
     }
     
-    const approvalUrl = `${authUrl}#auth=${result.token}`;
+    const approvalUrl = `${authUrl}?token=${result.token}`;
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(approvalUrl)}`;
     
     container.innerHTML = `
@@ -75,10 +75,9 @@ async function pollForApproval(token) {
 }
 
 async function approveLogin() {
-    const hash = window.location.hash;
-    const match = hash.match(/auth=([A-Za-z0-9]+)/);
-    if (match) {
-        const token = match[1];
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    if (token) {
         const result = await apiSession('aprovar', { token });
         if (result.sucesso) {
             document.getElementById('approval-result').innerHTML = '<p class="success">Login aprovado! Você pode fechar esta página.</p>';

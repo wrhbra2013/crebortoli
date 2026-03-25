@@ -5,45 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aprovar Login - SIG Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
+    <link rel="stylesheet" href="../static/css/style.css">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --cor-principal: #6C63FF;
+            --cor-accent: #00BFA6;
         }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            background: linear-gradient(135deg, #f7f8fc 0%, #e8eaf6 100%);
             padding: 1rem;
         }
         .aprovar-container {
             background: white;
             padding: 2rem;
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 40px rgba(108, 99, 255, 0.15);
             width: 100%;
             max-width: 400px;
             text-align: center;
         }
-        .logo {
-            margin-bottom: 1.5rem;
-        }
         .logo h1 {
-            color: #e91e63;
+            color: var(--cor-principal);
             font-size: 1.5rem;
+            margin-bottom: 1.5rem;
         }
         .icon {
             font-size: 4rem;
             margin-bottom: 1rem;
         }
         .token-info {
-            background: #fce4ec;
+            background: #e8eaf6;
             padding: 1rem;
-            border-radius: 8px;
+            border-radius: 10px;
             margin-bottom: 1.5rem;
         }
         .token-info .label {
@@ -52,10 +49,10 @@
             margin-bottom: 0.3rem;
         }
         .token-info .token {
-            font-family: monospace;
+            font-family: 'Courier New', monospace;
             font-size: 1.5rem;
             font-weight: bold;
-            color: #e91e63;
+            color: var(--cor-principal);
             letter-spacing: 2px;
         }
         .btn {
@@ -70,18 +67,22 @@
             transition: all 0.3s;
         }
         .btn-aprovar {
-            background: #4caf50;
+            background: #28a745;
             color: white;
         }
         .btn-aprovar:hover {
-            background: #388e3c;
+            background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
         .btn-negar {
-            background: #f44336;
+            background: #dc3545;
             color: white;
         }
         .btn-negar:hover {
-            background: #d32f2f;
+            background: #c82333;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
         }
         .status-message {
             padding: 1rem;
@@ -92,14 +93,17 @@
         .status-message.sucesso {
             background: #d4edda;
             color: #155724;
+            border-left: 4px solid #28a745;
         }
         .status-message.erro {
             background: #f8d7da;
             color: #721c24;
+            border-left: 4px solid #dc3545;
         }
         .status-message.info {
             background: #fff3cd;
             color: #856404;
+            border-left: 4px solid #ffc107;
         }
         .info-text {
             font-size: 0.85rem;
@@ -110,9 +114,20 @@
             margin-top: 1.5rem;
         }
         .back-link a {
-            color: #e91e63;
+            color: var(--cor-principal);
             text-decoration: none;
             font-size: 0.9rem;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        h2 {
+            color: var(--cor-principal);
+            margin-bottom: 0.5rem;
+        }
+        p {
+            color: #666;
+            margin-bottom: 1.5rem;
         }
     </style>
 </head>
@@ -126,10 +141,8 @@
         
         <div class="icon" id="icon">🔐</div>
         
-        <h2 id="titulo" style="margin-bottom: 0.5rem;">Aprovar Acesso</h2>
-        <p id="subtitulo" style="color: #666; margin-bottom: 1.5rem;">
-            Alguém está tentando acessar o sistema SIG
-        </p>
+        <h2 id="titulo">Aprovar Acesso</h2>
+        <p id="subtitulo">Alguém está tentando acessar o sistema SIG</p>
         
         <div class="token-info">
             <div class="label">Código da sessão</div>
@@ -137,11 +150,11 @@
         </div>
         
         <button class="btn btn-aprovar" id="btn-aprovar" onclick="aprovarLogin()">
-            ✅ Aprovar Login
+            ✓ Aprovar Login
         </button>
         
         <button class="btn btn-negar" id="btn-negar" onclick="negarLogin()">
-            ❌ Negar
+            ✕ Negar
         </button>
         
         <p class="info-text">
@@ -181,7 +194,7 @@
                     mostrarStatus('Este login já foi aprovado!', 'sucesso');
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('icon').textContent = '✅';
+                    document.getElementById('icon').textContent = '✓';
                     document.getElementById('titulo').textContent = 'Aprovado!';
                     document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
                     return;
@@ -200,7 +213,7 @@
             setTimeout(() => verificarStatus(token), 2000);
         }
         
-        async function aprovarLogin() {
+        async function aprobarLogin() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             
@@ -216,7 +229,7 @@
                     mostrarStatus('Login aprovado!', 'sucesso');
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('icon').textContent = '✅';
+                    document.getElementById('icon').textContent = '✓';
                     document.getElementById('titulo').textContent = 'Aprovado!';
                     document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
                 } else {
@@ -241,7 +254,7 @@
                 mostrarStatus('Login negado.', 'erro');
                 document.getElementById('btn-aprovar').style.display = 'none';
                 document.getElementById('btn-negar').style.display = 'none';
-                document.getElementById('icon').textContent = '❌';
+                document.getElementById('icon').textContent = '✕';
                 document.getElementById('titulo').textContent = 'Negado';
                 document.getElementById('subtitulo').textContent = 'O login foi negado.';
             } catch (e) {
