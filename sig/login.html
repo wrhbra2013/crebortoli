@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SIG Cre Bortoli</title>
+    <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            margin: 1rem;
+            text-align: center;
+        }
+        .logo {
+            margin-bottom: 2rem;
+        }
+        .logo h1 {
+            color: #e91e63;
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .logo p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+        .qr-container {
+            background: #f8f8f8;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .qr-code {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto 1rem;
+            background: white;
+            border: 2px solid #e91e63;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .qr-code canvas, .qr-code img {
+            max-width: 100%;
+            max-height: 100%;
+        }
+        .token-info {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.5rem;
+        }
+        .token-code {
+            font-family: monospace;
+            background: #e91e63;
+            color: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 4px;
+            display: inline-block;
+            margin-top: 0.5rem;
+        }
+        .instructions {
+            background: #e3f2fd;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            text-align: left;
+            font-size: 0.9rem;
+            color: #1565c0;
+        }
+        .instructions h3 {
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+        .instructions ol {
+            margin: 0;
+            padding-left: 1.2rem;
+        }
+        .instructions li {
+            margin-bottom: 0.3rem;
+        }
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .status-message.aguardando {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .status-message.aprovado {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-message.negado {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .btn-recarregar {
+            background: #e91e63;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+        .btn-recarregar:hover {
+            background: #c2185b;
+        }
+        .back-link {
+            margin-top: 1.5rem;
+        }
+        .back-link a {
+            color: #e91e63;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        .celular-icon {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .loading {
+            animation: pulse 1.5s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <h1>SIG Cre Bortoli</h1>
+            <p>Sistema de Gestão Interna</p>
+        </div>
+        
+        <div id="status-message" class="status-message" style="display: none;"></div>
+        
+        <div class="qr-container">
+            <div class="celular-icon">📱</div>
+            <div class="qr-code" id="qr-code">
+                <span style="color: #999;">Gerando QR Code...</span>
+            </div>
+            <div class="token-info">
+                Código da sessão:
+                <div class="token-code" id="token-display">-</div>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Como acessar:</h3>
+            <ol>
+                <li>Abra o QR Code no celular</li>
+                <li>Escaneie com a câmera do celular</li>
+                <li>Clique no link que aparecer</li>
+                <li>Confirme o login no celular</li>
+            </ol>
+        </div>
+        
+        <button class="btn-recarregar" onclick="gerarNovoQR()">&#8635; Gerar Novo QR Code</button>
+        
+        <div class="back-link">
+            <a href="../index.html">&#8592; Voltar ao site</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script>
+        const SESSION_KEY = 'sig_qr_session';
+        const AUTH_KEY = 'sig_authenticated';
+        
+        function gerarToken() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let token = '';
+            for (let i = 0; i < 8; i++) {
+                token += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return token;
+        }
+        
+        function obterUrlBase() {
+            const path = window.location.pathname;
+            if (path.includes('/sig/')) {
+                return window.location.origin + window.location.pathname.replace('/sig/login.html', '');
+            }
+            return window.location.origin;
+        }
+        
+        function gerarNovoQR() {
+            const token = gerarToken();
+            const sessionData = {
+                token: token,
+                criadoEm: Date.now(),
+                status: 'aguardando',
+                urlAprovacao: `${obterUrlBase()}/sig/aprovar.html?token=${token}`
+            };
+            
+            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+            
+            document.getElementById('token-display').textContent = token;
+            document.getElementById('qr-code').innerHTML = '';
+            document.getElementById('status-message').style.display = 'none';
+            
+            const qrUrl = `${obterUrlBase()}/sig/login.html?token=${token}`;
+            
+            new QRCode(document.getElementById('qr-code'), {
+                text: qrUrl,
+                width: 180,
+                height: 180,
+                colorDark: '#e91e63',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            
+            verificarStatus();
+        }
+        
+        function verificarStatus() {
+            const sessionStr = localStorage.getItem(SESSION_KEY);
+            if (!sessionStr) {
+                gerarNovoQR();
+                return;
+            }
+            
+            const session = JSON.parse(sessionStr);
+            
+            if (session.status === 'aprovado') {
+                localStorage.setItem(AUTH_KEY, 'true');
+                localStorage.setItem('sig_user_email', session.email || 'qr-auth');
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            if (session.status === 'negado') {
+                mostrarStatus('Login negado. Tente novamente.', 'negado');
+                setTimeout(gerarNovoQR, 2000);
+                return;
+            }
+            
+            setTimeout(verificarStatus, 1000);
+        }
+        
+        function mostrarStatus(mensagem, tipo) {
+            const el = document.getElementById('status-message');
+            el.textContent = mensagem;
+            el.className = 'status-message ' + tipo;
+            el.style.display = 'block';
+        }
+        
+        function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const tokenParam = urlParams.get('token');
+            
+            if (tokenParam) {
+                document.getElementById('token-display').textContent = tokenParam;
+                
+                const sessionStr = localStorage.getItem(SESSION_KEY);
+                if (sessionStr) {
+                    const session = JSON.parse(sessionStr);
+                    if (session.token === tokenParam && session.status === 'aprovado') {
+                        localStorage.setItem(AUTH_KEY, 'true');
+                        window.location.href = 'index.html';
+                        return;
+                    }
+                }
+            }
+            
+            gerarNovoQR();
+        }
+        
+        init();
+    </script>
+</body>
+</html>

@@ -1,8 +1,29 @@
 function getBasePath() {
     const path = window.location.pathname;
+    if (path === '/' || path.endsWith('/index.html') || path === '/index.html') {
+        return './';
+    }
     const pathWithoutFile = path.replace(/\/[^/]*$/, '');
     const depth = pathWithoutFile.split('/').filter(p => p).length;
-    return depth > 0 ? '../'.repeat(depth) : './';
+    if (depth === 0) return './';
+    if (path.includes('/sig/')) {
+        return '../';
+    }
+    if (path.includes('/paginas/')) {
+        return '../';
+    }
+    return './';
+}
+
+function getSigPath() {
+    const path = window.location.pathname;
+    if (path.includes('/paginas/')) {
+        return '../sig/';
+    }
+    if (path.includes('/sig/')) {
+        return './';
+    }
+    return 'sig/';
 }
 
 function getStaticPath() {
@@ -31,7 +52,7 @@ function initComponents() {
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/pagamento.html">Pagamento</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/sobre.html">Sobre</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}paginas/contato.html">Contato</a></li>
-            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/index.html">Admin</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getSigPath()}index.html">Admin</a></li>
         </ul>
     </nav>
 </header>
@@ -39,7 +60,7 @@ function initComponents() {
 
     const headerSigHTML = `<header class="header">
     <div class="header-container">
-        <a href="${getBasePath()}sig/index.html" class="header-title">
+        <a href="${getSigPath()}index.html" class="header-title">
             <span class="site-title">Espaço Cre Bortoli - SIG</span>
         </a>
         <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
@@ -50,10 +71,10 @@ function initComponents() {
     </div>
     <nav id="main-navigation" class="main-nav">
         <ul class="menu">
-            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/index.html">Dashboard</a></li>
-            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/agenda.html">Agenda</a></li>
-            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/tabela_precos.html">Tabela de Preços</a></li>
-            <li class="nav-item"><a class="nav-link" href="${getBasePath()}sig/relatorios.html">Relatórios</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getSigPath()}index.html">Dashboard</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getSigPath()}agenda.html">Agenda</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getSigPath()}tabela_precos.html">Tabela de Preços</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getSigPath()}relatorios.html">Relatórios</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}index.html">Ver Site</a></li>
             <li class="nav-item"><a class="nav-link" href="javascript:logout()" style="color:#e91e63;">Sair</a></li>
         </ul>

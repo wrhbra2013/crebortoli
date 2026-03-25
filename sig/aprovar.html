@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprovar Login - SIG Cre Bortoli</title>
+    <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .aprovar-container {
+            background: white;
+            padding: 2rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .logo {
+            margin-bottom: 1.5rem;
+        }
+        .logo h1 {
+            color: #e91e63;
+            font-size: 1.5rem;
+        }
+        .icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+        }
+        .token-info {
+            background: #fce4ec;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .token-info .label {
+            font-size: 0.85rem;
+            color: #666;
+            margin-bottom: 0.3rem;
+        }
+        .token-info .token {
+            font-family: monospace;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #e91e63;
+            letter-spacing: 2px;
+        }
+        .btn {
+            width: 100%;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 0.8rem;
+            transition: all 0.3s;
+        }
+        .btn-aprovar {
+            background: #4caf50;
+            color: white;
+        }
+        .btn-aprovar:hover {
+            background: #388e3c;
+        }
+        .btn-negar {
+            background: #f44336;
+            color: white;
+        }
+        .btn-negar:hover {
+            background: #d32f2f;
+        }
+        .status-message {
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        .status-message.sucesso {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status-message.erro {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .status-message.info {
+            background: #fff3cd;
+            color: #856404;
+        }
+        .info-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 1rem;
+        }
+        .back-link {
+            margin-top: 1.5rem;
+        }
+        .back-link a {
+            color: #e91e63;
+            text-decoration: none;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="aprovar-container">
+        <div class="logo">
+            <h1>SIG Cre Bortoli</h1>
+        </div>
+        
+        <div id="status-message" class="status-message" style="display: none;"></div>
+        
+        <div class="icon" id="icon">🔐</div>
+        
+        <h2 id="titulo" style="margin-bottom: 0.5rem;">Aprovar Acesso</h2>
+        <p id="subtitulo" style="color: #666; margin-bottom: 1.5rem;">
+            Alguém está tentando acessar o sistema SIG
+        </p>
+        
+        <div class="token-info">
+            <div class="label">Código da sessão</div>
+            <div class="token" id="token-display">-</div>
+        </div>
+        
+        <button class="btn btn-aprovar" id="btn-aprovar" onclick="aprovarLogin()">
+            ✅ Aprovar Login
+        </button>
+        
+        <button class="btn btn-negar" id="btn-negar" onclick="negarLogin()">
+            ❌ Negar
+        </button>
+        
+        <p class="info-text">
+            Ao aprovar, o acesso ao sistema será liberado neste navegador.
+        </p>
+        
+        <div class="back-link">
+            <a href="../index.html">&#8592; Voltar ao site</a>
+        </div>
+    </div>
+
+    <script>
+        const SESSION_KEY = 'sig_qr_session';
+        
+        function init() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            if (!token) {
+                mostrarStatus('Link inválido ou expirado.', 'erro');
+                document.getElementById('btn-aprovar').style.display = 'none';
+                document.getElementById('btn-negar').style.display = 'none';
+                document.getElementById('icon').textContent = '❌';
+                return;
+            }
+            
+            document.getElementById('token-display').textContent = token;
+            
+            const sessionStr = localStorage.getItem(SESSION_KEY);
+            if (sessionStr) {
+                const session = JSON.parse(sessionStr);
+                if (session.token !== token) {
+                    mostrarStatus('Código não corresponde à sessão atual.', 'erro');
+                    document.getElementById('btn-aprovar').style.display = 'none';
+                    return;
+                }
+                
+                if (session.status === 'aprovado') {
+                    mostrarStatus('Este login já foi aprovado!', 'sucesso');
+                    document.getElementById('btn-aprovar').style.display = 'none';
+                    document.getElementById('btn-negar').style.display = 'none';
+                    document.getElementById('icon').textContent = '✅';
+                    return;
+                }
+                
+                if (session.status === 'negado') {
+                    mostrarStatus('Este login foi negado. Solicite um novo QR Code.', 'info');
+                    document.getElementById('btn-aprovar').style.display = 'none';
+                    return;
+                }
+            } else {
+                mostrarStatus('Sessão expirada. Solicite um novo QR Code.', 'erro');
+                document.getElementById('btn-aprovar').style.display = 'none';
+                return;
+            }
+            
+            verificarStatus(token);
+        }
+        
+        function verificarStatus(token) {
+            const sessionStr = localStorage.getItem(SESSION_KEY);
+            if (sessionStr) {
+                const session = JSON.parse(sessionStr);
+                if (session.token === token && session.status !== 'aguardando') {
+                    location.reload();
+                }
+            }
+            setTimeout(() => verificarStatus(token), 1000);
+        }
+        
+        function aprovarLogin() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            const sessionStr = localStorage.getItem(SESSION_KEY);
+            if (sessionStr) {
+                const session = JSON.parse(sessionStr);
+                session.status = 'aprovado';
+                session.aprovadoEm = Date.now();
+                localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+            }
+            
+            mostrarStatus('Login aprovado! Aguarde...', 'sucesso');
+            document.getElementById('btn-aprovar').style.display = 'none';
+            document.getElementById('btn-negar').style.display = 'none';
+            document.getElementById('icon').textContent = '✅';
+            document.getElementById('titulo').textContent = 'Aprovado!';
+            document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
+        }
+        
+        function negarLogin() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            const sessionStr = localStorage.getItem(SESSION_KEY);
+            if (sessionStr) {
+                const session = JSON.parse(sessionStr);
+                session.status = 'negado';
+                session.negadoEm = Date.now();
+                localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+            }
+            
+            mostrarStatus('Login negado.', 'erro');
+            document.getElementById('btn-aprovar').style.display = 'none';
+            document.getElementById('btn-negar').style.display = 'none';
+            document.getElementById('icon').textContent = '❌';
+            document.getElementById('titulo').textContent = 'Negado';
+            document.getElementById('subtitulo').textContent = 'O login foi negado.';
+        }
+        
+        function mostrarStatus(mensagem, tipo) {
+            const el = document.getElementById('status-message');
+            el.textContent = mensagem;
+            el.className = 'status-message ' + tipo;
+            el.style.display = 'block';
+        }
+        
+        init();
+    </script>
+</body>
+</html>

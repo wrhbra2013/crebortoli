@@ -1,15 +1,21 @@
 /**
- * Sistema de Persistência de Dados com LocalStorage + JSON
+ * Sistema de Persistência de Dados com LocalStorage
  */
 
 const DataStore = {
     PREFIX: 'crebortoli_',
+    STORAGE_TYPE: 'localStorage',
 
     save(key, data) {
         try {
             const fullKey = this.PREFIX + key;
             const jsonData = JSON.stringify(data);
-            localStorage.setItem(fullKey, jsonData);
+            if (this.STORAGE_TYPE === 'localStorage') {
+                localStorage.setItem(fullKey, jsonData);
+            } else {
+                sessionStorage.setItem(fullKey, jsonData);
+            }
+            this.backupToJson(data, key);
             return true;
         } catch (e) {
             console.error('Erro ao salvar dados:', e);
@@ -20,10 +26,43 @@ const DataStore = {
     load(key) {
         try {
             const fullKey = this.PREFIX + key;
-            const jsonData = localStorage.getItem(fullKey);
+            let jsonData = null;
+            if (this.STORAGE_TYPE === 'localStorage') {
+                jsonData = localStorage.getItem(fullKey);
+            }
+            if (!jsonData) {
+                jsonData = sessionStorage.getItem(fullKey);
+            }
+            if (!jsonData) {
+                const backupData = this.loadFromBackup(key);
+                if (backupData) {
+                    this.save(key, backupData);
+                    return backupData;
+                }
+            }
             return jsonData ? JSON.parse(jsonData) : null;
         } catch (e) {
             console.error('Erro ao carregar dados:', e);
+            return null;
+        }
+    },
+
+    backupToJson(data, key) {
+        try {
+            const backups = JSON.parse(localStorage.getItem('crebortoli_backups') || '{}');
+            backups[key] = data;
+            backups[key + '_updated'] = Date.now();
+            localStorage.setItem('crebortoli_backups', JSON.stringify(backups));
+        } catch (e) {
+            console.warn('Erro no backup:', e);
+        }
+    },
+
+    loadFromBackup(key) {
+        try {
+            const backups = JSON.parse(localStorage.getItem('crebortoli_backups') || '{}');
+            return backups[key] || null;
+        } catch (e) {
             return null;
         }
     },
@@ -32,6 +71,7 @@ const DataStore = {
         try {
             const fullKey = this.PREFIX + key;
             localStorage.removeItem(fullKey);
+            sessionStorage.removeItem(fullKey);
             return true;
         } catch (e) {
             console.error('Erro ao remover dados:', e);
@@ -487,3 +527,90 @@ const InsumoStore = createStore('insumos');
 const CustosFixosStore = createStore('custos_fixos');
 const RelatorioMeiStore = createStore('relatorios_mei');
 const AnamneseStore = createStore('anamnese');
+
+// Sincronização com servidor
+const ServerSync = {
+    DATA_FILE: 'data.json',
+    
+    getDataUrl() {
+        const path = window.location.pathname;
+        if (path.includes('/paginas/') || path.includes('/sig/')) {
+            return '../' + this.DATA_FILE;
+        }
+        return this.DATA_FILE;
+    },
+    
+    async load() {
+        try {
+            const response = await fetch(this.getDataUrl() + '?t=' + Date.now());
+            if (!response.ok) return null;
+            const data = await response.json();
+            return data;
+        } catch (e) {
+            console.warn('Não foi possível carregar dados do servidor:', e);
+            return null;
+        }
+    },
+    
+    async save(data) {
+        localStorage.setItem('crebortoli_server_data', JSON.stringify(data));
+        console.log('Dados salvos localmente (sync com servidor não disponível)');
+    },
+    
+    init() {
+        this.load().then(serverData => {
+            if (serverData) {
+                Object.keys(serverData).forEach(key => {
+                    if (!localStorage.getItem('crebortoli_' + key) || 
+                        serverData[key + '_updated'] > this.getLocalUpdateTime(key)) {
+                        DataStore.save(key, serverData[key]);
+                    }
+                });
+                console.log('Dados sincronizados do servidor');
+            }
+        });
+    },
+    
+    getLocalUpdateTime(key) {
+        const data = DataStore.load(key);
+        return data ? (data._updated || 0) : 0;
+    }
+};
+
+// Inicializar sincronização se na página de agendamento
+if (typeof window !== 'undefined') {
+    window.ServerSync = ServerSync;
+}
+
+// Sobrescrever AgendamentoStore para sincronizar
+(function() {
+    const originalSave = AgendamentoStore.save.bind(AgendamentoStore);
+    const originalUpdate = AgendamentoStore.update.bind(AgendamentoStore);
+    const originalDelete = AgendamentoStore.delete.bind(AgendamentoStore);
+    
+    AgendamentoStore.save = function(agendamento) {
+        const result = originalSave(agendamento);
+        this.syncToServer();
+        return result;
+    };
+    
+    AgendamentoStore.update = function(id, dados) {
+        const result = originalUpdate(id, dados);
+        this.syncToServer();
+        return result;
+    };
+    
+    AgendamentoStore.delete = function(id) {
+        const result = originalDelete(id);
+        this.syncToServer();
+        return result;
+    };
+    
+    AgendamentoStore.syncToServer = function() {
+        const data = {
+            agendamentos: this.getAll(),
+            agendamentos_updated: Date.now()
+        };
+        ServerSync.save(data);
+    };
+})();
