@@ -166,20 +166,25 @@
     </div>
 
     <script>
-        function obterUrlBase() {
-            const path = window.location.pathname;
-            const basePath = path.substring(0, path.lastIndexOf('/sig/'));
-            return window.location.origin + basePath;
+        const SESSION_PREFIX = 'sig_session_';
+
+        function getSession(token) {
+            const data = localStorage.getItem(SESSION_PREFIX + token);
+            return data ? JSON.parse(data) : null;
         }
-        
-        function getApiUrl() {
-            return `${obterUrlBase()}/api_session.php`;
+
+        function updateSession(token, status) {
+            const session = getSession(token);
+            if (session) {
+                session.status = status;
+                localStorage.setItem(SESSION_PREFIX + token, JSON.stringify(session));
+            }
         }
-        
+
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
-            
+
             if (!token) {
                 mostrarStatus('Link inválido ou expirado.', 'erro');
                 document.getElementById('btn-aprovar').style.display = 'none';
@@ -187,108 +192,87 @@
                 document.getElementById('icon').textContent = '❌';
                 return;
             }
-            
+
             document.getElementById('token-display').textContent = token;
             verificarStatus(token);
         }
-        
-        async function verificarStatus(token) {
-            try {
-                const response = await fetch(`${getApiUrl()}?token=${token}`);
-                const data = await response.json();
-                
-                if (data.status === 'aprovado') {
-                    mostrarStatus('Este login já foi aprovado!', 'sucesso');
-                    document.getElementById('btn-aprovar').style.display = 'none';
-                    document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('icon').textContent = '✓';
-                    document.getElementById('titulo').textContent = 'Aprovado!';
-                    document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
-                    return;
-                }
-                
-                if (data.status === 'negado') {
-                    mostrarStatus('Este login foi negado. Solicite um novo QR Code.', 'info');
-                    document.getElementById('btn-aprovar').style.display = 'none';
-                    document.getElementById('btn-negar').style.display = 'none';
-                    return;
-                }
-            } catch (e) {
-                console.error('Erro ao verificar status:', e);
+
+        function verificarStatus(token) {
+            const session = getSession(token);
+
+            if (!session) {
+                mostrarStatus('Sessão não encontrada. Solicite um novo QR Code.', 'erro');
+                document.getElementById('btn-aprovar').style.display = 'none';
+                document.getElementById('btn-negar').style.display = 'none';
+                return;
             }
-            
+
+            if (session.status === 'aprovado') {
+                mostrarStatus('Este login já foi aprovado!', 'sucesso');
+                document.getElementById('btn-aprovar').style.display = 'none';
+                document.getElementById('btn-negar').style.display = 'none';
+                document.getElementById('icon').textContent = '✓';
+                document.getElementById('titulo').textContent = 'Aprovado!';
+                document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
+                return;
+            }
+
+            if (session.status === 'negado') {
+                mostrarStatus('Este login foi negado. Solicite um novo QR Code.', 'info');
+                document.getElementById('btn-aprovar').style.display = 'none';
+                document.getElementById('btn-negar').style.display = 'none';
+                return;
+            }
+
             setTimeout(() => verificarStatus(token), 2000);
         }
-        
-        async function aprobarLogin() {
+
+        function aprobarLogin() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
-            
+
             if (!token) {
                 mostrarStatus('Token não encontrado.', 'erro');
                 return;
             }
-            
+
             const btn = document.getElementById('btn-aprovar');
             btn.disabled = true;
             btn.textContent = 'Aprovando...';
-            
-            try {
-                const response = await fetch(getApiUrl(), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acao: 'aprovar', token })
-                });
-                const data = await response.json();
-                
-                if (data.sucesso) {
-                    mostrarStatus('Login aprovado!', 'sucesso');
-                    document.getElementById('btn-aprovar').style.display = 'none';
-                    document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('icon').textContent = '✓';
-                    document.getElementById('titulo').textContent = 'Aprovado!';
-                    document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
-                } else {
-                    mostrarStatus('Erro ao aprovar: ' + (data.erro || 'Desconhecido'), 'erro');
-                    btn.disabled = false;
-                    btn.textContent = '✓ Aprovar Login';
-                }
-            } catch (e) {
-                mostrarStatus('Erro de conexão. Tente novamente.', 'erro');
-                btn.disabled = false;
-                btn.textContent = '✓ Aprovar Login';
-            }
+
+            updateSession(token, 'aprovado');
+
+            mostrarStatus('Login aprovado!', 'sucesso');
+            document.getElementById('btn-aprovar').style.display = 'none';
+            document.getElementById('btn-negar').style.display = 'none';
+            document.getElementById('icon').textContent = '✓';
+            document.getElementById('titulo').textContent = 'Aprovado!';
+            document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
         }
-        
-        async function negarLogin() {
+
+        function negarLogin() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
-            
-            try {
-                const response = await fetch(getApiUrl(), {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acao: 'negar', token })
-                });
-                
-                mostrarStatus('Login negado.', 'erro');
-                document.getElementById('btn-aprovar').style.display = 'none';
-                document.getElementById('btn-negar').style.display = 'none';
-                document.getElementById('icon').textContent = '✕';
-                document.getElementById('titulo').textContent = 'Negado';
-                document.getElementById('subtitulo').textContent = 'O login foi negado.';
-            } catch (e) {
-                mostrarStatus('Erro de conexão. Tente novamente.', 'erro');
+
+            if (token) {
+                updateSession(token, 'negado');
             }
+
+            mostrarStatus('Login negado.', 'erro');
+            document.getElementById('btn-aprovar').style.display = 'none';
+            document.getElementById('btn-negar').style.display = 'none';
+            document.getElementById('icon').textContent = '✕';
+            document.getElementById('titulo').textContent = 'Negado';
+            document.getElementById('subtitulo').textContent = 'O login foi negado.';
         }
-        
+
         function mostrarStatus(mensagem, tipo) {
             const el = document.getElementById('status-message');
             el.textContent = mensagem;
             el.className = 'status-message ' + tipo;
             el.style.display = 'block';
         }
-        
+
         init();
     </script>
 </body>
