@@ -582,7 +582,7 @@ if (typeof window !== 'undefined') {
     window.ServerSync = ServerSync;
 }
 
-// Sobrescrever AgendamentoStore para sincronizar
+// Sobrescrever AgendamentoStore para sincronizar com servidor
 (function() {
     const originalSave = AgendamentoStore.save.bind(AgendamentoStore);
     const originalUpdate = AgendamentoStore.update.bind(AgendamentoStore);
@@ -606,11 +606,38 @@ if (typeof window !== 'undefined') {
         return result;
     };
     
-    AgendamentoStore.syncToServer = function() {
+    AgendamentoStore.syncToServer = async function() {
         const data = {
-            agendamentos: this.getAll(),
-            agendamentos_updated: Date.now()
+            agendamentos: this.getAll()
         };
-        ServerSync.save(data);
+        
+        try {
+            await fetch('../api.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        } catch (e) {
+            console.warn('Erro ao sincronizar com servidor:', e);
+        }
+    };
+    
+    AgendamentoStore.syncFromServer = async function() {
+        try {
+            const response = await fetch('../api.php?t=' + Date.now());
+            if (response.ok) {
+                const data = await response.json();
+                if (data.agendamentos && data.agendamentos.length > 0) {
+                    const local = this.getAll();
+                    data.agendamentos.forEach(serv => {
+                        if (!local.find(a => a.id === serv.id)) {
+                            AgendamentoStore.save(serv);
+                        }
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn('Erro ao buscar do servidor:', e);
+        }
     };
 })();

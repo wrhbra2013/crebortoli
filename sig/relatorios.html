@@ -260,13 +260,49 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script>
         const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        
+        let dadosServidor = { agendamentos: [] };
+        let agendamentosCarregados = false;
+
+        async function carregarDadosServidor() {
+            try {
+                const response = await fetch('../data.json?t=' + Date.now());
+                if (response.ok) {
+                    dadosServidor = await response.json();
+                    if (!dadosServidor.agendamentos) {
+                        dadosServidor.agendamentos = [];
+                    }
+                }
+            } catch (e) {
+                console.warn('Erro ao carregar data.json:', e);
+                dadosServidor = { agendamentos: [] };
+            }
+            agendamentosCarregados = true;
+        }
+
+        function obterAgendamentos() {
+            const local = AgendamentoStore.getAll();
+            const servidor = dadosServidor.agendamentos || [];
+            const mesclado = [...servidor];
+            
+            local.forEach(item => {
+                if (!mesclado.find(a => a.id === item.id)) {
+                    mesclado.push(item);
+                }
+            });
+            
+            return mesclado;
+        }
 
         function init() {
             preencherAnos();
             const hoje = new Date();
             document.getElementById('mes').value = hoje.getMonth();
             document.getElementById('ano').value = hoje.getFullYear();
-            gerarRelatorio();
+            
+            carregarDadosServidor().then(() => {
+                gerarRelatorio();
+            });
         }
 
         function preencherAnos() {
@@ -286,11 +322,16 @@
         }
 
         function gerarRelatorio() {
+            if (!agendamentosCarregados) {
+                setTimeout(gerarRelatorio, 100);
+                return;
+            }
+            
             const tipoPeriodo = document.getElementById('tipo-periodo').value;
             const mes = parseInt(document.getElementById('mes').value);
             const ano = parseInt(document.getElementById('ano').value);
             
-            let agendamentos = AgendamentoStore.getAll();
+            let agendamentos = obterAgendamentos();
             
             if (tipoPeriodo === 'mensal') {
                 agendamentos = agendamentos.filter(a => {

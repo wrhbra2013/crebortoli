@@ -429,6 +429,8 @@ var AgendaPagina = (function() {
 
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('calendario-grid')) {
-        AgendaPagina.init();
+        AgendamentoStore.syncFromServer().then(() => {
+            AgendaPagina.init();
+        });
     }
 });

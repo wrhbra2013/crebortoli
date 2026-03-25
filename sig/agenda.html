@@ -639,6 +639,10 @@
         });
 
         renderizarCalendario();
+        
+        AgendamentoStore.syncFromServer().then(() => {
+            renderizarCalendario();
+        });
     </script>
 </body>
 </html>
