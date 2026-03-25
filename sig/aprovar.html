@@ -217,6 +217,15 @@
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             
+            if (!token) {
+                mostrarStatus('Token não encontrado.', 'erro');
+                return;
+            }
+            
+            const btn = document.getElementById('btn-aprovar');
+            btn.disabled = true;
+            btn.textContent = 'Aprovando...';
+            
             try {
                 const response = await fetch(API_SESSION, {
                     method: 'POST',
@@ -234,9 +243,13 @@
                     document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
                 } else {
                     mostrarStatus('Erro ao aprovar: ' + (data.erro || 'Desconhecido'), 'erro');
+                    btn.disabled = false;
+                    btn.textContent = '✓ Aprovar Login';
                 }
             } catch (e) {
                 mostrarStatus('Erro de conexão. Tente novamente.', 'erro');
+                btn.disabled = false;
+                btn.textContent = '✓ Aprovar Login';
             }
         }
         
