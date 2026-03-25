@@ -24,62 +24,90 @@
         }
         .dados-pix {
             background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
             padding: 2rem;
             margin-bottom: 1.5rem;
+            text-align: center;
         }
         .dados-pix h3 {
             color: #2e7d32;
             margin-top: 0;
+            margin-bottom: 1rem;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
+        }
+        .qr-code-container {
+            background: white;
+            border: 3px solid #4caf50;
+            border-radius: 12px;
+            padding: 1rem;
+            display: inline-block;
+            margin: 1rem 0;
+        }
+        #qr-code-pix {
+            display: block;
         }
         .chave-pix {
             background: #e8f5e9;
-            border: 2px solid #4caf50;
             border-radius: 8px;
             padding: 1rem;
-            text-align: center;
             margin: 1rem 0;
         }
         .chave-pix .label {
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             color: #666;
             margin-bottom: 0.3rem;
         }
         .chave-pix .valor {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: bold;
             color: #2e7d32;
             font-family: monospace;
+            letter-spacing: 2px;
         }
-        .copiar-btn {
+        .btn-copiar {
             background: #4caf50;
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 4px;
+            padding: 0.8rem 2rem;
+            border-radius: 8px;
             cursor: pointer;
-            margin-top: 0.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 1rem;
         }
-        .copiar-btn:hover {
+        .btn-copiar:hover {
             background: #388e3c;
         }
-        .qr-code {
-            text-align: center;
+        .btn-copiar.copiado {
+            background: #2e7d32;
+        }
+        .alert-importante {
+            background: #fff3e0;
+            border: 1px solid #ff9800;
+            border-radius: 8px;
             padding: 1rem;
+            margin: 1rem 0;
+            text-align: left;
+        }
+        .alert-importante p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #e65100;
         }
         .agendamentos-pendentes {
             background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
             padding: 1.5rem;
         }
         .agendamentos-pendentes h3 {
             color: #e65100;
             margin-top: 0;
+            margin-bottom: 1rem;
         }
         .agendamento-item {
             border: 1px solid #ddd;
@@ -108,7 +136,7 @@
             color: white;
             border: none;
             padding: 0.8rem 1.5rem;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
             margin-top: 0.5rem;
@@ -123,7 +151,7 @@
             color: white;
             border: none;
             padding: 0.8rem 1.5rem;
-            border-radius: 4px;
+            border-radius: 8px;
             cursor: pointer;
             font-size: 1rem;
             margin-top: 0.5rem;
@@ -134,28 +162,10 @@
         .btn-whatsapp:hover {
             background: #128c7e;
         }
-        .status-badge {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-            font-weight: bold;
-        }
-        .status-pendente {
-            background: #fff3cd;
-            color: #856404;
-        }
-        .status-pago {
-            background: #d4edda;
-            color: #155724;
-        }
-        .alert-info {
-            background: #e3f2fd;
-            border: 1px solid #2196f3;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            font-size: 0.9rem;
+        .sem-agendamentos {
+            text-align: center;
+            padding: 2rem;
+            color: #999;
         }
     </style>
 </head>
@@ -166,30 +176,33 @@
         <div class="paginas-container">
             <div class="paginas-header">
                 <h1>Pagamento via PIX</h1>
-                <p>Dados para realização do pagamento</p>
+                <p>Escaneie o QR Code ou copie a chave para pagar</p>
             </div>
 
             <div class="dados-pix">
-                <h3>&#10004; Chave PIX</h3>
-                <div class="chave-pix">
-                    <div class="label">Chave CPF</div>
-                    <div class="valor">149.966.380-**</div>
-                </div>
-                <button class="copiar-btn" onclick="copiarChave()">Copiar Chave PIX</button>
+                <h3>&#10004; PIX - Chave Celular</h3>
                 
-                <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin: 1rem 0; border: 1px solid #ff9800;">
-                    <p style="margin: 0; font-size: 0.9rem; color: #e65100;">
-                        <strong>&#9888; Importante:</strong><br>
-                        Ao fazer o PIX, escreva <strong>seu nome completo</strong> na mensagem/comentário do pagamento para facilitar a identificação.
-                    </p>
+                <div class="qr-code-container">
+                    <div id="qr-code-pix"></div>
+                </div>
+                
+                <div class="chave-pix">
+                    <div class="label">Chave PIX (Celular)</div>
+                    <div class="valor" id="chave-pix-display">(14) 99663-8056</div>
+                </div>
+                
+                <button class="btn-copiar" id="btn-copiar" onclick="copiarChave()">
+                    📋 Copiar Chave PIX
+                </button>
+                
+                <div class="alert-importante">
+                    <p><strong>&#9888; Importante:</strong><br>
+                    Ao fazer o PIX, escreva <strong>seu nome completo</strong> na mensagem do pagamento para facilitar a identificação.</p>
                 </div>
             </div>
 
             <div class="agendamentos-pendentes">
                 <h3>Meus Agendamentos</h3>
-                <div class="alert-info">
-                    <strong>Como funciona:</strong> Após agendar seu serviço, realize o pagamento via PIX e marque como pago abaixo. Envie o comprovante pelo WhatsApp.
-                </div>
                 <div id="lista-agendamentos"></div>
             </div>
         </div>
@@ -197,13 +210,35 @@
 
     <div id="footer-placeholder"></div>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <script>
+        const CHAVE_PIX = '14996638056';
+        const TELEFONE_FORMATADO = '(14) 99663-8056';
+        const WHATSAPP = '5514996638056';
+        
+        function gerarQRCodePIX() {
+            const qr = new QRious({
+                element: document.getElementById('qr-code-pix'),
+                value: CHAVE_PIX,
+                size: 200,
+                background: 'white',
+                foreground: '#2e7d32',
+                level: 'M',
+                padding: 10
+            });
+        }
+        
         function copiarChave() {
-            const chave = '14996638056';
-            navigator.clipboard.writeText(chave).then(() => {
-                alert('Chave PIX copiada!');
+            navigator.clipboard.writeText(CHAVE_PIX).then(() => {
+                const btn = document.getElementById('btn-copiar');
+                btn.textContent = '✓ Chave Copiada!';
+                btn.classList.add('copiado');
+                setTimeout(() => {
+                    btn.textContent = '📋 Copiar Chave PIX';
+                    btn.classList.remove('copiado');
+                }, 2000);
             }).catch(() => {
-                prompt('Copie a chave:', chave);
+                prompt('Copie a chave PIX:', CHAVE_PIX);
             });
         }
 
@@ -215,7 +250,7 @@
             const container = document.getElementById('lista-agendamentos');
             
             if (agendamentos.length === 0) {
-                container.innerHTML = '<p style="color: #666; text-align: center;">Nenhum agendamento pendente de pagamento.</p>';
+                container.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento pendente de pagamento.</div>';
                 return;
             }
             
@@ -225,11 +260,11 @@
                     <div class="info"><strong>Data:</strong> ${formatarData(a.data)}</div>
                     <div class="info"><strong>Cliente:</strong> ${a.cliente}</div>
                     <div class="valor">Total: R$ ${a.valor.toFixed(2).replace('.', ',')}</div>
-                    <button class="btn-pagar" onclick="marcarPago('${a.id}')">&#10004; Confirmar Pagamento</button>
-                    <a href="https://api.whatsapp.com/send?phone=5514996638056&text=Olá!%20Estou%20enviando%20o%20comprovante%20do%20agendamento%20de%20${encodeURIComponent(a.servicoNome)}%20no%20valor%20de%20R$%20${a.valor.toFixed(2).replace('.', ',')}" 
+                    <button class="btn-pagar" onclick="marcarPago('${a.id}')">✓ Confirmar Pagamento</button>
+                    <a href="https://api.whatsapp.com/send?phone=${WHATSAPP}&text=Olá!%20Estou%20enviando%20o%20comprovante%20do%20agendamento%20de%20${encodeURIComponent(a.servicoNome)}%20no%20valor%20de%20R$%20${a.valor.toFixed(2).replace('.', ',')}" 
                        target="_blank"
                        class="btn-whatsapp">
-                        &#128222; Enviar Comprovante
+                        📱 Enviar Comprovante
                     </a>
                 </div>
             `).join('');
@@ -248,6 +283,7 @@
             }
         }
 
+        gerarQRCodePIX();
         renderAgendamentos();
     </script>
 </body>
