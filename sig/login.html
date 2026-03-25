@@ -57,10 +57,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-        .qr-code canvas, .qr-code img {
-            max-width: 100%;
-            max-height: 100%;
+            overflow: hidden;
         }
         .token-info {
             font-size: 0.85rem;
@@ -75,6 +72,8 @@
             border-radius: 4px;
             display: inline-block;
             margin-top: 0.5rem;
+            font-size: 1.2rem;
+            letter-spacing: 2px;
         }
         .instructions {
             background: #e3f2fd;
@@ -135,9 +134,6 @@
             text-decoration: none;
             font-size: 0.9rem;
         }
-        .back-link a:hover {
-            text-decoration: underline;
-        }
         .celular-icon {
             font-size: 3rem;
             margin-bottom: 0.5rem;
@@ -174,93 +170,81 @@
         <div class="instructions">
             <h3>Como acessar:</h3>
             <ol>
-                <li>Abra o QR Code no celular</li>
-                <li>Escaneie com a câmera do celular</li>
-                <li>Clique no link que aparecer</li>
-                <li>Confirme o login no celular</li>
+                <li>Escaneie o QR Code com a câmera do celular</li>
+                <li>Ou toque no QR Code para abrir no celular</li>
+                <li>Clique em "Aprovar Login" no celular</li>
+                <li>Aguarde a redireção automática</li>
             </ol>
         </div>
         
-        <button class="btn-recarregar" onclick="gerarNovoQR()">&#8635; Gerar Novo QR Code</button>
+        <button class="btn-recarregar" onclick="gerarNovoQR()">↻ Gerar Novo QR Code</button>
         
         <div class="back-link">
-            <a href="../index.html">&#8592; Voltar ao site</a>
+            <a href="../index.html">← Voltar ao site</a>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <script>
-        const SESSION_KEY = 'sig_qr_session';
+        const API_SESSION = '../api_session.php';
         const AUTH_KEY = 'sig_authenticated';
-        
-        function gerarToken() {
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let token = '';
-            for (let i = 0; i < 8; i++) {
-                token += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return token;
-        }
+        let tokenAtual = null;
+        let verificando = false;
         
         function obterUrlBase() {
             const path = window.location.pathname;
-            if (path.includes('/sig/')) {
-                return window.location.origin + window.location.pathname.replace('/sig/login.html', '');
-            }
-            return window.location.origin;
+            const basePath = path.substring(0, path.lastIndexOf('/sig/'));
+            return window.location.origin + basePath;
         }
         
-        function gerarNovoQR() {
-            const token = gerarToken();
-            const sessionData = {
-                token: token,
-                criadoEm: Date.now(),
-                status: 'aguardando',
-                urlAprovacao: `${obterUrlBase()}/sig/aprovar.html?token=${token}`
-            };
-            
-            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-            
-            document.getElementById('token-display').textContent = token;
-            document.getElementById('qr-code').innerHTML = '';
-            document.getElementById('status-message').style.display = 'none';
-            
-            const qrUrl = `${obterUrlBase()}/sig/login.html?token=${token}`;
-            
-            new QRCode(document.getElementById('qr-code'), {
-                text: qrUrl,
-                width: 180,
-                height: 180,
-                colorDark: '#e91e63',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
-            
-            verificarStatus();
+        async function criarSessao() {
+            try {
+                const urlAprovacao = `${obterUrlBase()}/sig/aprovar.html`;
+                const response = await fetch(API_SESSION, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao: 'criar', urlAprovacao })
+                });
+                const data = await response.json();
+                return data.token;
+            } catch (e) {
+                console.error('Erro ao criar sessão:', e);
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let token = '';
+                for (let i = 0; i < 8; i++) {
+                    token += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return token;
+            }
         }
         
-        function verificarStatus() {
-            const sessionStr = localStorage.getItem(SESSION_KEY);
-            if (!sessionStr) {
-                gerarNovoQR();
-                return;
+        async function verificarStatus() {
+            if (!tokenAtual || verificando) return;
+            verificando = true;
+            
+            try {
+                const response = await fetch(`${API_SESSION}?token=${tokenAtual}`);
+                const data = await response.json();
+                
+                if (data.status === 'aprovado') {
+                    localStorage.setItem(AUTH_KEY, 'true');
+                    localStorage.setItem('sig_user_email', 'qr-auth');
+                    mostrarStatus('Login aprovado! Redirecionando...', 'aprovado');
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 1000);
+                    return;
+                }
+                
+                if (data.status === 'negado') {
+                    mostrarStatus('Login negado. Gere um novo QR Code.', 'negado');
+                    return;
+                }
+            } catch (e) {
+                console.error('Erro ao verificar status:', e);
             }
             
-            const session = JSON.parse(sessionStr);
-            
-            if (session.status === 'aprovado') {
-                localStorage.setItem(AUTH_KEY, 'true');
-                localStorage.setItem('sig_user_email', session.email || 'qr-auth');
-                window.location.href = 'index.html';
-                return;
-            }
-            
-            if (session.status === 'negado') {
-                mostrarStatus('Login negado. Tente novamente.', 'negado');
-                setTimeout(gerarNovoQR, 2000);
-                return;
-            }
-            
+            verificando = false;
             setTimeout(verificarStatus, 1000);
         }
         
@@ -271,22 +255,46 @@
             el.style.display = 'block';
         }
         
+        async function gerarNovoQR() {
+            document.getElementById('status-message').style.display = 'none';
+            document.getElementById('qr-code').innerHTML = '<span style="color: #999;">Gerando...</span>';
+            
+            tokenAtual = await criarSessao();
+            document.getElementById('token-display').textContent = tokenAtual;
+            
+            const urlAprovacao = `${obterUrlBase()}/sig/aprovar.html?token=${tokenAtual}`;
+            
+            const canvas = document.createElement('canvas');
+            const qr = new QRious({
+                element: canvas,
+                value: urlAprovacao,
+                size: 180,
+                background: 'white',
+                foreground: '#e91e63',
+                level: 'M',
+                padding: 10
+            });
+            
+            document.getElementById('qr-code').innerHTML = '';
+            document.getElementById('qr-code').appendChild(canvas);
+            
+            canvas.style.cursor = 'pointer';
+            canvas.addEventListener('click', () => {
+                window.open(urlAprovacao, '_blank');
+            });
+            
+            verificarStatus();
+        }
+        
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
             const tokenParam = urlParams.get('token');
             
             if (tokenParam) {
+                localStorage.setItem('sig_pending_token', tokenParam);
                 document.getElementById('token-display').textContent = tokenParam;
-                
-                const sessionStr = localStorage.getItem(SESSION_KEY);
-                if (sessionStr) {
-                    const session = JSON.parse(sessionStr);
-                    if (session.token === tokenParam && session.status === 'aprovado') {
-                        localStorage.setItem(AUTH_KEY, 'true');
-                        window.location.href = 'index.html';
-                        return;
-                    }
-                }
+                mostrarStatus('Escaneie o QR Code no computador para aprovar este login.', 'aguardando');
+                return;
             }
             
             gerarNovoQR();

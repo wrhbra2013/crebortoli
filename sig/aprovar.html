@@ -145,16 +145,16 @@
         </button>
         
         <p class="info-text">
-            Ao aprovar, o acesso ao sistema será liberado neste navegador.
+            Ao aprovar, o acesso ao sistema será liberado no computador.
         </p>
         
         <div class="back-link">
-            <a href="../index.html">&#8592; Voltar ao site</a>
+            <a href="../index.html">← Voltar ao site</a>
         </div>
     </div>
 
     <script>
-        const SESSION_KEY = 'sig_qr_session';
+        const API_SESSION = '../api_session.php';
         
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -169,87 +169,84 @@
             }
             
             document.getElementById('token-display').textContent = token;
-            
-            const sessionStr = localStorage.getItem(SESSION_KEY);
-            if (sessionStr) {
-                const session = JSON.parse(sessionStr);
-                if (session.token !== token) {
-                    mostrarStatus('Código não corresponde à sessão atual.', 'erro');
-                    document.getElementById('btn-aprovar').style.display = 'none';
-                    return;
-                }
+            verificarStatus(token);
+        }
+        
+        async function verificarStatus(token) {
+            try {
+                const response = await fetch(`${API_SESSION}?token=${token}`);
+                const data = await response.json();
                 
-                if (session.status === 'aprovado') {
+                if (data.status === 'aprovado') {
                     mostrarStatus('Este login já foi aprovado!', 'sucesso');
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
                     document.getElementById('icon').textContent = '✅';
+                    document.getElementById('titulo').textContent = 'Aprovado!';
+                    document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
                     return;
                 }
                 
-                if (session.status === 'negado') {
+                if (data.status === 'negado') {
                     mostrarStatus('Este login foi negado. Solicite um novo QR Code.', 'info');
                     document.getElementById('btn-aprovar').style.display = 'none';
+                    document.getElementById('btn-negar').style.display = 'none';
                     return;
                 }
-            } else {
-                mostrarStatus('Sessão expirada. Solicite um novo QR Code.', 'erro');
-                document.getElementById('btn-aprovar').style.display = 'none';
-                return;
+            } catch (e) {
+                console.error('Erro ao verificar status:', e);
             }
             
-            verificarStatus(token);
+            setTimeout(() => verificarStatus(token), 2000);
         }
         
-        function verificarStatus(token) {
-            const sessionStr = localStorage.getItem(SESSION_KEY);
-            if (sessionStr) {
-                const session = JSON.parse(sessionStr);
-                if (session.token === token && session.status !== 'aguardando') {
-                    location.reload();
+        async function aprovarLogin() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const token = urlParams.get('token');
+            
+            try {
+                const response = await fetch(API_SESSION, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao: 'aprovar', token })
+                });
+                const data = await response.json();
+                
+                if (data.sucesso) {
+                    mostrarStatus('Login aprovado!', 'sucesso');
+                    document.getElementById('btn-aprovar').style.display = 'none';
+                    document.getElementById('btn-negar').style.display = 'none';
+                    document.getElementById('icon').textContent = '✅';
+                    document.getElementById('titulo').textContent = 'Aprovado!';
+                    document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
+                } else {
+                    mostrarStatus('Erro ao aprovar: ' + (data.erro || 'Desconhecido'), 'erro');
                 }
+            } catch (e) {
+                mostrarStatus('Erro de conexão. Tente novamente.', 'erro');
             }
-            setTimeout(() => verificarStatus(token), 1000);
         }
         
-        function aprovarLogin() {
+        async function negarLogin() {
             const urlParams = new URLSearchParams(window.location.search);
             const token = urlParams.get('token');
             
-            const sessionStr = localStorage.getItem(SESSION_KEY);
-            if (sessionStr) {
-                const session = JSON.parse(sessionStr);
-                session.status = 'aprovado';
-                session.aprovadoEm = Date.now();
-                localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+            try {
+                const response = await fetch(API_SESSION, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao: 'negar', token })
+                });
+                
+                mostrarStatus('Login negado.', 'erro');
+                document.getElementById('btn-aprovar').style.display = 'none';
+                document.getElementById('btn-negar').style.display = 'none';
+                document.getElementById('icon').textContent = '❌';
+                document.getElementById('titulo').textContent = 'Negado';
+                document.getElementById('subtitulo').textContent = 'O login foi negado.';
+            } catch (e) {
+                mostrarStatus('Erro de conexão. Tente novamente.', 'erro');
             }
-            
-            mostrarStatus('Login aprovado! Aguarde...', 'sucesso');
-            document.getElementById('btn-aprovar').style.display = 'none';
-            document.getElementById('btn-negar').style.display = 'none';
-            document.getElementById('icon').textContent = '✅';
-            document.getElementById('titulo').textContent = 'Aprovado!';
-            document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
-        }
-        
-        function negarLogin() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-            
-            const sessionStr = localStorage.getItem(SESSION_KEY);
-            if (sessionStr) {
-                const session = JSON.parse(sessionStr);
-                session.status = 'negado';
-                session.negadoEm = Date.now();
-                localStorage.setItem(SESSION_KEY, JSON.stringify(session));
-            }
-            
-            mostrarStatus('Login negado.', 'erro');
-            document.getElementById('btn-aprovar').style.display = 'none';
-            document.getElementById('btn-negar').style.display = 'none';
-            document.getElementById('icon').textContent = '❌';
-            document.getElementById('titulo').textContent = 'Negado';
-            document.getElementById('subtitulo').textContent = 'O login foi negado.';
         }
         
         function mostrarStatus(mensagem, tipo) {
