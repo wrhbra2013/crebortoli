@@ -166,7 +166,15 @@
     </div>
 
     <script>
-        const API_SESSION = '../api_session.php';
+        function obterUrlBase() {
+            const path = window.location.pathname;
+            const basePath = path.substring(0, path.lastIndexOf('/sig/'));
+            return window.location.origin + basePath;
+        }
+        
+        function getApiUrl() {
+            return `${obterUrlBase()}/api_session.php`;
+        }
         
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -186,7 +194,7 @@
         
         async function verificarStatus(token) {
             try {
-                const response = await fetch(`${API_SESSION}?token=${token}`);
+                const response = await fetch(`${getApiUrl()}?token=${token}`);
                 const data = await response.json();
                 
                 if (data.status === 'aprovado') {
@@ -226,7 +234,7 @@
             btn.textContent = 'Aprovando...';
             
             try {
-                const response = await fetch(API_SESSION, {
+                const response = await fetch(getApiUrl(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ acao: 'aprovar', token })
@@ -257,7 +265,7 @@
             const token = urlParams.get('token');
             
             try {
-                const response = await fetch(API_SESSION, {
+                const response = await fetch(getApiUrl(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ acao: 'negar', token })

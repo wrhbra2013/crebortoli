@@ -198,7 +198,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <script>
-        const API_SESSION = '../api_session.php';
         const AUTH_KEY = 'sig_authenticated';
         let tokenAtual = null;
         let verificando = false;
@@ -209,10 +208,14 @@
             return window.location.origin + basePath;
         }
         
+        function getApiUrl() {
+            return `${obterUrlBase()}/api_session.php`;
+        }
+        
         async function criarSessao() {
             try {
                 const urlAprovacao = `${obterUrlBase()}/sig/aprovar.html`;
-                const response = await fetch(API_SESSION, {
+                const response = await fetch(getApiUrl(), {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ acao: 'criar', urlAprovacao })
@@ -230,7 +233,7 @@
             verificando = true;
             
             try {
-                const response = await fetch(`${API_SESSION}?token=${tokenAtual}`);
+                const response = await fetch(`${getApiUrl()}?token=${tokenAtual}`);
                 const data = await response.json();
                 
                 if (data.status === 'aprovado') {
