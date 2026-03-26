@@ -197,23 +197,24 @@
     </div>
 
     <script>
-        const SESSION_PREFIX = 'sig_session_';
+        function getBaseUrl() {
+            const path = window.location.pathname;
+            const basePath = path.substring(0, path.lastIndexOf('/sig/'));
+            return window.location.origin + basePath;
+        }
+
+        async function apiSession(acao, dados = {}) {
+            const response = await fetch(getBaseUrl() + '/api_session.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao, ...dados })
+            });
+            return response.json();
+        }
+
         let tokenUrl = '';
 
-        function getSession(token) {
-            const data = localStorage.getItem(SESSION_PREFIX + token);
-            return data ? JSON.parse(data) : null;
-        }
-
-        function updateSession(token, status) {
-            const session = getSession(token);
-            if (session) {
-                session.status = status;
-                localStorage.setItem(SESSION_PREFIX + token, JSON.stringify(session));
-            }
-        }
-
-        function init() {
+        async function init() {
             const urlParams = new URLSearchParams(window.location.search);
             tokenUrl = urlParams.get('token') || '';
 
@@ -231,34 +232,38 @@
             verificarStatus(tokenUrl);
         }
 
-        function verificarStatus(token) {
-            const session = getSession(token);
+        async function verificarStatus(token) {
+            try {
+                const result = await apiSession('verificar', { token });
 
-            if (!session) {
-                mostrarStatus('Sessão não encontrada. Solicite um novo QR Code.', 'erro');
-                document.getElementById('btn-aprovar').style.display = 'none';
-                document.getElementById('btn-negar').style.display = 'none';
-                document.getElementById('input-container').style.display = 'none';
-                return;
-            }
+                if (result.status === 'nao_encontrada') {
+                    mostrarStatus('Sessão não encontrada. Solicite um novo QR Code.', 'erro');
+                    document.getElementById('btn-aprovar').style.display = 'none';
+                    document.getElementById('btn-negar').style.display = 'none';
+                    document.getElementById('input-container').style.display = 'none';
+                    return;
+                }
 
-            if (session.status === 'aprovado') {
-                mostrarStatus('Este login já foi aprovado!', 'sucesso');
-                document.getElementById('btn-aprovar').style.display = 'none';
-                document.getElementById('btn-negar').style.display = 'none';
-                document.getElementById('input-container').style.display = 'none';
-                document.getElementById('icon').textContent = '✓';
-                document.getElementById('titulo').textContent = 'Aprovado!';
-                document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
-                return;
-            }
+                if (result.status === 'aprovado') {
+                    mostrarStatus('Este login já foi aprovado!', 'sucesso');
+                    document.getElementById('btn-aprovar').style.display = 'none';
+                    document.getElementById('btn-negar').style.display = 'none';
+                    document.getElementById('input-container').style.display = 'none';
+                    document.getElementById('icon').textContent = '✓';
+                    document.getElementById('titulo').textContent = 'Aprovado!';
+                    document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
+                    return;
+                }
 
-            if (session.status === 'negado') {
-                mostrarStatus('Este login foi negado. Solicite um novo QR Code.', 'info');
-                document.getElementById('btn-aprovar').style.display = 'none';
-                document.getElementById('btn-negar').style.display = 'none';
-                document.getElementById('input-container').style.display = 'none';
-                return;
+                if (result.status === 'negado') {
+                    mostrarStatus('Este login foi negado. Solicite um novo QR Code.', 'info');
+                    document.getElementById('btn-aprovar').style.display = 'none';
+                    document.getElementById('btn-negar').style.display = 'none';
+                    document.getElementById('input-container').style.display = 'none';
+                    return;
+                }
+            } catch (e) {
+                console.error('Erro:', e);
             }
 
             setTimeout(() => verificarStatus(token), 2000);
@@ -269,7 +274,7 @@
             return digitado === tokenUrl;
         }
 
-        function aprobarLogin() {
+        async function approveLogin() {
             if (!validarCodigo()) {
                 mostrarStatus('Código incorreto. Digite exatamente o código exibido acima.', 'erro');
                 document.getElementById('codigo-digitado').value = '';
@@ -281,20 +286,35 @@
             btn.disabled = true;
             btn.textContent = 'Confirmando...';
 
-            updateSession(tokenUrl, 'aprovado');
-
-            mostrarStatus('Login confirmado!', 'sucesso');
-            document.getElementById('btn-aprovar').style.display = 'none';
-            document.getElementById('btn-negar').style.display = 'none';
-            document.getElementById('input-container').style.display = 'none';
-            document.getElementById('icon').textContent = '✓';
-            document.getElementById('titulo').textContent = 'Confirmado!';
-            document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
+            try {
+                const result = await apiSession('aprovar', { token: tokenUrl });
+                if (result.sucesso) {
+                    mostrarStatus('Login confirmado!', 'sucesso');
+                    document.getElementById('btn-aprovar').style.display = 'none';
+                    document.getElementById('btn-negar').style.display = 'none';
+                    document.getElementById('input-container').style.display = 'none';
+                    document.getElementById('icon').textContent = '✓';
+                    document.getElementById('titulo').textContent = 'Confirmado!';
+                    document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
+                } else {
+                    btn.disabled = false;
+                    btn.textContent = '✓ Aprovar Login';
+                    mostrarStatus('Erro ao confirmar. Tente novamente.', 'erro');
+                }
+            } catch (e) {
+                btn.disabled = false;
+                btn.textContent = '✓ Aprovar Login';
+                mostrarStatus('Erro de conexão.', 'erro');
+            }
         }
 
-        function negarLogin() {
+        async function negarLogin() {
             if (tokenUrl) {
-                updateSession(tokenUrl, 'negado');
+                try {
+                    await apiSession('negar', { token: tokenUrl });
+                } catch (e) {
+                    console.error('Erro:', e);
+                }
             }
 
             mostrarStatus('Login cancelado.', 'info');
