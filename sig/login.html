@@ -200,6 +200,7 @@
     <script>
         const AuthQR = (() => {
             const AUTH_KEY = 'sig_authenticated';
+            const SESSION_PREFIX = 'sig_session_';
             const POLL_INTERVAL = 2000;
             let currentToken = null;
             let isPolling = false;
@@ -209,10 +210,6 @@
                 const path = window.location.pathname;
                 const basePath = path.substring(0, path.lastIndexOf('/sig/'));
                 return window.location.origin + basePath;
-            }
-
-            function getApiUrl() {
-                return getBaseUrl() + '/api.php';
             }
 
             function getElement(id) {
@@ -242,59 +239,54 @@
                 isPolling = false;
             }
 
-            async function criarSessaoAPI() {
-                try {
-                    const response = await fetch(getApiUrl() + '?acao=criar_sessao');
-                    const data = await response.json();
-                    if (data.sucesso && data.token) {
-                        return data.token;
-                    }
-                    return null;
-                } catch (e) {
-                    console.error('Erro ao criar sessão:', e);
-                    return null;
+            function generateToken() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let token = '';
+                for (let i = 0; i < 8; i++) {
+                    token += chars[Math.floor(Math.random() * chars.length)];
                 }
+                return token;
             }
 
-            async function verificarStatusAPI(token) {
-                try {
-                    const response = await fetch(getApiUrl() + '?acao=verificar_sessao&token=' + token);
-                    const data = await response.json();
-                    return data;
-                } catch (e) {
-                    console.error('Erro ao verificar status:', e);
-                    return null;
-                }
+            function createSession() {
+                const token = generateToken();
+                const session = {
+                    token: token,
+                    status: 'aguardando',
+                    criadoEm: Date.now()
+                };
+                localStorage.setItem(SESSION_PREFIX + token, JSON.stringify(session));
+                return token;
+            }
+
+            function getSession(token) {
+                const data = localStorage.getItem(SESSION_PREFIX + token);
+                return data ? JSON.parse(data) : null;
             }
 
             function checkStatus() {
                 if (!currentToken || isPolling) return;
                 isPolling = true;
 
-                verificarStatusAPI(currentToken).then(data => {
-                    if (data && data.sucesso) {
-                        if (data.status === 'aprovado') {
-                            stopPolling();
-                            localStorage.setItem(AUTH_KEY, 'true');
-                            localStorage.setItem('sig_user_email', 'qr-auth');
-                            showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                            setTimeout(() => window.location.href = 'index.html', 1000);
-                            return;
-                        }
+                const session = getSession(currentToken);
 
-                        if (data.status === 'negado') {
-                            stopPolling();
-                            showStatus('Login negado. Gere um novo QR Code.', 'negado');
-                            return;
-                        }
-                    }
+                if (session && session.status === 'aprovado') {
+                    stopPolling();
+                    localStorage.setItem(AUTH_KEY, 'true');
+                    localStorage.setItem('sig_user_email', 'qr-auth');
+                    showStatus('Login aprovado! Redirecionando...', 'aprovado');
+                    setTimeout(() => window.location.href = 'index.html', 1000);
+                    return;
+                }
 
-                    isPolling = false;
-                    pollIntervalId = setTimeout(checkStatus, POLL_INTERVAL);
-                }).catch(() => {
-                    isPolling = false;
-                    pollIntervalId = setTimeout(checkStatus, POLL_INTERVAL);
-                });
+                if (session && session.status === 'negado') {
+                    stopPolling();
+                    showStatus('Login negado. Gere um novo QR Code.', 'negado');
+                    return;
+                }
+
+                isPolling = false;
+                pollIntervalId = setTimeout(checkStatus, POLL_INTERVAL);
             }
 
             function generateQRCanvas(code) {
@@ -311,7 +303,7 @@
                 return canvas;
             }
 
-            async function generateQR(button) {
+            function generateQR(button) {
                 const btn = button || document.querySelector('.btn-primary');
                 const originalText = btn.textContent;
 
@@ -322,24 +314,22 @@
 
                 stopPolling();
 
-                const token = await criarSessaoAPI();
+                currentToken = createSession();
 
-                if (!token) {
+                if (!currentToken) {
                     btn.disabled = false;
                     btn.textContent = originalText;
                     setElementContent('qr-code', '<span style="color: #dc3545;">Erro ao gerar sessão</span>');
-                    showStatus('Erro ao conectar com o servidor.', 'negado');
+                    showStatus('Erro ao gerar sessão.', 'negado');
                     return;
                 }
 
-                currentToken = token;
-
                 btn.disabled = false;
                 btn.textContent = '↻ Gerar Novo QR Code';
-                getElement('token-display').textContent = token;
+                getElement('token-display').textContent = currentToken;
 
-                const confirmUrl = `${getBaseUrl()}/sig/confirmar.html?codigo=${token}`;
-                const canvas = generateQRCanvas(confirmUrl);
+                const approvalUrl = `${getBaseUrl()}/sig/aprovar.html?token=${currentToken}`;
+                const canvas = generateQRCanvas(approvalUrl);
                 setElementContent('qr-code', '');
                 getElement('qr-code').appendChild(canvas);
 

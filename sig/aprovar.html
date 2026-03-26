@@ -54,6 +54,32 @@
             color: var(--cor-principal);
             letter-spacing: 2px;
         }
+        .input-container {
+            margin-bottom: 1.5rem;
+        }
+        .input-container label {
+            display: block;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 0.5rem;
+            text-align: left;
+        }
+        .input-container input {
+            width: 100%;
+            padding: 0.8rem;
+            font-size: 1.2rem;
+            font-family: 'Courier New', monospace;
+            text-align: center;
+            letter-spacing: 4px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-transform: uppercase;
+            box-sizing: border-box;
+        }
+        .input-container input:focus {
+            outline: none;
+            border-color: var(--cor-principal);
+        }
         .btn {
             width: 100%;
             padding: 1rem;
@@ -148,6 +174,11 @@
             <div class="token" id="token-display">-</div>
         </div>
         
+        <div class="input-container" id="input-container">
+            <label for="codigo-digitado">Digite o código acima para confirmar:</label>
+            <input type="text" id="codigo-digitado" maxlength="8" placeholder="________" autocomplete="off">
+        </div>
+        
         <button class="btn btn-aprovar" id="btn-aprovar" onclick="aprovarLogin()">
             ✓ Aprovar Login
         </button>
@@ -167,6 +198,7 @@
 
     <script>
         const SESSION_PREFIX = 'sig_session_';
+        let tokenUrl = '';
 
         function getSession(token) {
             const data = localStorage.getItem(SESSION_PREFIX + token);
@@ -183,18 +215,20 @@
 
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
+            tokenUrl = urlParams.get('token') || '';
 
-            if (!token) {
-                mostrarStatus('Link inválido ou expirado.', 'erro');
+            if (!tokenUrl) {
+                mostrarStatus('Link inválido. Escaneie o QR Code novamente.', 'erro');
                 document.getElementById('btn-aprovar').style.display = 'none';
                 document.getElementById('btn-negar').style.display = 'none';
+                document.getElementById('input-container').style.display = 'none';
                 document.getElementById('icon').textContent = '❌';
                 return;
             }
 
-            document.getElementById('token-display').textContent = token;
-            verificarStatus(token);
+            document.getElementById('token-display').textContent = tokenUrl;
+            document.getElementById('codigo-digitado').focus();
+            verificarStatus(tokenUrl);
         }
 
         function verificarStatus(token) {
@@ -204,6 +238,7 @@
                 mostrarStatus('Sessão não encontrada. Solicite um novo QR Code.', 'erro');
                 document.getElementById('btn-aprovar').style.display = 'none';
                 document.getElementById('btn-negar').style.display = 'none';
+                document.getElementById('input-container').style.display = 'none';
                 return;
             }
 
@@ -211,6 +246,7 @@
                 mostrarStatus('Este login já foi aprovado!', 'sucesso');
                 document.getElementById('btn-aprovar').style.display = 'none';
                 document.getElementById('btn-negar').style.display = 'none';
+                document.getElementById('input-container').style.display = 'none';
                 document.getElementById('icon').textContent = '✓';
                 document.getElementById('titulo').textContent = 'Aprovado!';
                 document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
@@ -221,49 +257,53 @@
                 mostrarStatus('Este login foi negado. Solicite um novo QR Code.', 'info');
                 document.getElementById('btn-aprovar').style.display = 'none';
                 document.getElementById('btn-negar').style.display = 'none';
+                document.getElementById('input-container').style.display = 'none';
                 return;
             }
 
             setTimeout(() => verificarStatus(token), 2000);
         }
 
-        function aprobarLogin() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
+        function validarCodigo() {
+            const digitado = document.getElementById('codigo-digitado').value.toUpperCase().trim();
+            return digitado === tokenUrl;
+        }
 
-            if (!token) {
-                mostrarStatus('Token não encontrado.', 'erro');
+        function aprobarLogin() {
+            if (!validarCodigo()) {
+                mostrarStatus('Código incorreto. Digite exatamente o código exibido acima.', 'erro');
+                document.getElementById('codigo-digitado').value = '';
+                document.getElementById('codigo-digitado').focus();
                 return;
             }
 
             const btn = document.getElementById('btn-aprovar');
             btn.disabled = true;
-            btn.textContent = 'Aprovando...';
+            btn.textContent = 'Confirmando...';
 
-            updateSession(token, 'aprovado');
+            updateSession(tokenUrl, 'aprovado');
 
-            mostrarStatus('Login aprovado!', 'sucesso');
+            mostrarStatus('Login confirmado!', 'sucesso');
             document.getElementById('btn-aprovar').style.display = 'none';
             document.getElementById('btn-negar').style.display = 'none';
+            document.getElementById('input-container').style.display = 'none';
             document.getElementById('icon').textContent = '✓';
-            document.getElementById('titulo').textContent = 'Aprovado!';
-            document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
+            document.getElementById('titulo').textContent = 'Confirmado!';
+            document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
         }
 
         function negarLogin() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const token = urlParams.get('token');
-
-            if (token) {
-                updateSession(token, 'negado');
+            if (tokenUrl) {
+                updateSession(tokenUrl, 'negado');
             }
 
-            mostrarStatus('Login negado.', 'erro');
+            mostrarStatus('Login cancelado.', 'info');
             document.getElementById('btn-aprovar').style.display = 'none';
             document.getElementById('btn-negar').style.display = 'none';
+            document.getElementById('input-container').style.display = 'none';
             document.getElementById('icon').textContent = '✕';
-            document.getElementById('titulo').textContent = 'Negado';
-            document.getElementById('subtitulo').textContent = 'O login foi negado.';
+            document.getElementById('titulo').textContent = 'Cancelado';
+            document.getElementById('subtitulo').textContent = 'O login foi cancelado.';
         }
 
         function mostrarStatus(mensagem, tipo) {
@@ -272,6 +312,17 @@
             el.className = 'status-message ' + tipo;
             el.style.display = 'block';
         }
+
+        document.getElementById('codigo-digitado').addEventListener('input', function(e) {
+            this.value = this.value.toUpperCase();
+            mostrarStatus('', '');
+        });
+
+        document.getElementById('codigo-digitado').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                aprobarLogin();
+            }
+        });
 
         init();
     </script>
