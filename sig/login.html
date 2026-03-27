@@ -192,7 +192,7 @@
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+    <script src="../static/js/qrcode.min.js"></script>
     <script>
         const AuthQR = (() => {
             const AUTH_KEY = 'sig_authenticated';
@@ -275,17 +275,17 @@
             }
 
             function generateQRCanvas(code) {
-                const canvas = document.createElement('canvas');
-                new QRious({
-                    element: canvas,
-                    value: code,
-                    size: 180,
-                    background: 'white',
-                    foreground: '#8a4baf',
-                    level: 'M',
-                    padding: 10
+                const container = getElement('qr-code');
+                container.innerHTML = '';
+                new QRCode(container, {
+                    text: code,
+                    width: 180,
+                    height: 180,
+                    colorDark: '#8a4baf',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.M
                 });
-                return canvas;
+                return container.querySelector('img') || container.querySelector('canvas');
             }
 
             function saveSession(sessionData) {
@@ -331,9 +331,7 @@
                 btn.textContent = '↻ Gerar Novo QR Code';
 
                 const approvalUrl = `${getBaseUrl()}/sig/aprovar.html?token=${currentToken}`;
-                const canvas = generateQRCanvas(approvalUrl);
-                setElementContent('qr-code', '');
-                getElement('qr-code').appendChild(canvas);
+                generateQRCanvas(approvalUrl);
 
                 checkStatus();
             }
@@ -410,9 +408,7 @@
                     if (age < SESSION_TIMEOUT && sessionData.status === 'aguardando') {
                         currentToken = sessionData.token;
                         const approvalUrl = `${getBaseUrl()}/sig/aprovar.html?token=${currentToken}`;
-                        const canvas = generateQRCanvas(approvalUrl);
-                        setElementContent('qr-code', '');
-                        getElement('qr-code').appendChild(canvas);
+                        generateQRCanvas(approvalUrl);
                         document.querySelector('.btn-primary').textContent = '↻ Gerar Novo QR Code';
                         checkStatus();
                         return true;
@@ -424,10 +420,6 @@
             }
 
             function init() {
-                if (typeof QRious === 'undefined') {
-                    setTimeout(init, 100);
-                    return;
-                }
                 if (!loadFromStorage()) {
                     generateQR();
                 }
