@@ -424,6 +424,10 @@
             }
 
             function init() {
+                if (typeof QRious === 'undefined') {
+                    setTimeout(init, 100);
+                    return;
+                }
                 if (!loadFromStorage()) {
                     generateQR();
                 }
