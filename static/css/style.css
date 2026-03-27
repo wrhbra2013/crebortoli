@@ -467,7 +467,9 @@ h1, h2, h3 {
 
 .btn-submit:hover {
     background-color: var(--cor-principal-escura);
+    color: var(--cor-principal);
     transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(138, 75, 175, 0.4);
     text-decoration: none;
 }
 

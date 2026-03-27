@@ -247,8 +247,10 @@ h1, h2, h3 {
 }
 
 .btn-submit:hover {
-    background-color: #6a1b9a; /* Um roxo mais escuro no hover */
+    background-color: #6a1b9a;
+    color: #8a4baf;
     transform: scale(1.05);
+    box-shadow: 0 4px 15px rgba(138, 75, 175, 0.4);
     text-decoration: none;
 }
 
