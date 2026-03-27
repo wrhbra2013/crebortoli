@@ -270,6 +270,7 @@
 
                     if (result.status === 'aprovado') {
                         stopPolling();
+                        localStorage.removeItem('sig_qr_session');
                         localStorage.setItem(AUTH_KEY, 'true');
                         localStorage.setItem('sig_user_email', 'qr-auth');
                         showStatus('Login aprovado! Redirecionando...', 'aprovado');
@@ -279,7 +280,15 @@
 
                     if (result.status === 'negado') {
                         stopPolling();
+                        localStorage.removeItem('sig_qr_session');
                         showStatus('Login negado. Gere um novo QR Code.', 'negado');
+                        return;
+                    }
+
+                    if (result.status === 'nao_encontrada' || result.status === 'expirada') {
+                        stopPolling();
+                        localStorage.removeItem('sig_qr_session');
+                        showStatus('Sessão expirada. Gere um novo QR Code.', 'negado');
                         return;
                     }
                 } catch (e) {
@@ -327,11 +336,15 @@
                         return;
                     }
 
+                    const sessionData = {
+                        token: currentToken,
+                        criadoEm: Date.now(),
+                        status: 'aguardando'
+                    };
+                    localStorage.setItem('sig_qr_session', JSON.stringify(sessionData));
+
                     btn.disabled = false;
                     btn.textContent = '↻ Gerar Novo QR Code';
-                    getElement('token-display').textContent = currentToken;
-                    getElement('token-display').style.display = 'none';
-                    document.querySelector('.token-info').style.display = 'none';
 
                     const approvalUrl = `${getBaseUrl()}/sig/aprovar.html?token=${currentToken}`;
                     const canvas = generateQRCanvas(approvalUrl);
@@ -347,8 +360,31 @@
                 }
             }
 
+            function loadFromStorage() {
+                const stored = localStorage.getItem('sig_qr_session');
+                if (stored) {
+                    const sessionData = JSON.parse(stored);
+                    const age = (Date.now() - sessionData.criadoEm) / 1000;
+                    if (age < 30 && sessionData.status === 'aguardando') {
+                        currentToken = sessionData.token;
+                        const approvalUrl = `${getBaseUrl()}/sig/aprovar.html?token=${currentToken}`;
+                        const canvas = generateQRCanvas(approvalUrl);
+                        setElementContent('qr-code', '');
+                        getElement('qr-code').appendChild(canvas);
+                        document.querySelector('.btn-primary').textContent = '↻ Gerar Novo QR Code';
+                        checkStatus();
+                        return true;
+                    } else {
+                        localStorage.removeItem('sig_qr_session');
+                    }
+                }
+                return false;
+            }
+
             function init() {
-                generateQR();
+                if (!loadFromStorage()) {
+                    generateQR();
+                }
             }
 
             return { init, generateQR };

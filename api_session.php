@@ -79,11 +79,18 @@ switch ($acao) {
         $token = $dados['token'] ?? '';
         if ($token && isset($sessoes[$token])) {
             $sessao = $sessoes[$token];
-            if ($sessao['status'] === 'aprovado') {
+            $idade = time() - $sessao['criadoEm'];
+            if ($idade >= 30) {
                 unset($sessoes[$token]);
                 salvarSessao($sessoes);
+                echo json_encode(['status' => 'expirada']);
+            } elseif ($sessao['status'] === 'aprovado') {
+                unset($sessoes[$token]);
+                salvarSessao($sessoes);
+                echo json_encode(['status' => 'aprovado']);
+            } else {
+                echo json_encode(['status' => $sessao['status']]);
             }
-            echo json_encode(['status' => $sessao['status']]);
         } else {
             echo json_encode(['status' => 'nao_encontrada']);
         }
