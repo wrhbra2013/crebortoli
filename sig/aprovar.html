@@ -228,19 +228,26 @@
     </div>
 
     <script>
+        const SESSION_KEY = 'sig_qr_session';
+        const SESSION_TIMEOUT = 30;
+
         function getBaseUrl() {
             const path = window.location.pathname;
             const basePath = path.substring(0, path.lastIndexOf('/sig/'));
             return window.location.origin + basePath;
         }
 
-        async function apiSession(acao, dados = {}) {
-            const response = await fetch(getBaseUrl() + '/api_session.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ acao, ...dados })
-            });
-            return response.json();
+        async function syncToServer(acao, token) {
+            try {
+                const response = await fetch(getBaseUrl() + '/api_session.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao, token })
+                });
+                return await response.json();
+            } catch (e) {
+                return null;
+            }
         }
 
         let tokenUrl = '';
@@ -249,7 +256,7 @@
         let verificarInterval = null;
 
         function startCountdown() {
-            countdown = 30;
+            countdown = SESSION_TIMEOUT;
             const countdownEl = document.getElementById('countdown');
             const timerEl = document.getElementById('timer');
             
@@ -274,14 +281,25 @@
             document.getElementById('expired-message').style.display = 'block';
             document.getElementById('btn-aprovar').style.display = 'none';
             document.getElementById('btn-negar').style.display = 'none';
-            document.getElementById('token-info').style.display = 'none';
             document.getElementById('icon').textContent = '⏰';
             document.getElementById('titulo').textContent = 'Expirado';
             document.getElementById('subtitulo').textContent = 'O tempo para aprovar expirou.';
             document.querySelector('.info-text').style.display = 'none';
         }
 
-        async function init() {
+        function loadSession() {
+            const stored = localStorage.getItem(SESSION_KEY);
+            if (stored) {
+                return JSON.parse(stored);
+            }
+            return null;
+        }
+
+        function saveSession(sessionData) {
+            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+        }
+
+        function init() {
             const urlParams = new URLSearchParams(window.location.search);
             tokenUrl = urlParams.get('token') || '';
 
@@ -293,25 +311,33 @@
                 return;
             }
 
+            const sessionData = loadSession();
+            if (sessionData && sessionData.token === tokenUrl && sessionData.status === 'aprovado') {
+                mostrarStatus('Este login já foi aprovado!', 'sucesso');
+                document.getElementById('btn-aprovar').style.display = 'none';
+                document.getElementById('btn-negar').style.display = 'none';
+                document.getElementById('icon').textContent = '✓';
+                document.getElementById('titulo').textContent = 'Aprovado!';
+                document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
+                return;
+            }
+
             document.getElementById('token-display').textContent = tokenUrl;
             startCountdown();
             verificarStatus(tokenUrl);
         }
 
         async function verificarStatus(token) {
-            try {
-                const result = await apiSession('verificar', { token });
-
-                if (result.status === 'nao_encontrada') {
-                    mostrarStatus('Sessão expirou. Solicite um novo QR Code.', 'erro');
-                    clearInterval(countdownInterval);
-                    document.getElementById('btn-aprovar').style.display = 'none';
-                    document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('timer').style.display = 'none';
+            const sessionData = loadSession();
+            
+            if (sessionData && sessionData.token === token) {
+                const age = (Date.now() - sessionData.criadoEm) / 1000;
+                if (age >= SESSION_TIMEOUT) {
+                    showExpired();
                     return;
                 }
 
-                if (result.status === 'aprovado') {
+                if (sessionData.status === 'aprovado') {
                     clearInterval(countdownInterval);
                     clearInterval(verificarInterval);
                     mostrarStatus('Aprovado!', 'sucesso');
@@ -324,62 +350,82 @@
                     return;
                 }
 
-                if (result.status === 'negado') {
+                if (sessionData.status === 'negado') {
                     clearInterval(countdownInterval);
                     clearInterval(verificarInterval);
-                    mostrarStatus('Login negado. Solicite um novo QR Code.', 'info');
+                    mostrarStatus('Login negado.', 'info');
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
                     document.getElementById('timer').style.display = 'none';
                     return;
                 }
-            } catch (e) {
-                console.error('Erro:', e);
             }
 
-            verificarInterval = setTimeout(() => verificarStatus(token), 2000);
-        }
-
-        async function aprobarLogin() {
-            const btn = document.getElementById('btn-aprovar');
-            btn.disabled = true;
-            btn.textContent = 'Confirmando...';
-
-            try {
-                const result = await apiSession('aprovar', { token: tokenUrl });
-                if (result.sucesso) {
+            const serverResult = await syncToServer('verificar', token);
+            if (serverResult) {
+                if (serverResult.status === 'aprovado') {
                     clearInterval(countdownInterval);
                     clearInterval(verificarInterval);
+                    if (sessionData) {
+                        sessionData.status = 'aprovado';
+                        saveSession(sessionData);
+                    }
                     mostrarStatus('Aprovado!', 'sucesso');
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
                     document.getElementById('timer').style.display = 'none';
                     document.getElementById('icon').textContent = '✓';
-                    document.getElementById('titulo').textContent = 'Confirmado!';
+                    document.getElementById('titulo').textContent = 'Aprovado!';
                     document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
-                } else {
-                    btn.disabled = false;
-                    btn.textContent = '✓ Aprovar Login';
-                    mostrarStatus('Erro ao confirmar. Tente novamente.', 'erro');
+                    return;
                 }
-            } catch (e) {
-                btn.disabled = false;
-                btn.textContent = '✓ Aprovar Login';
-                mostrarStatus('Erro de conexão.', 'erro');
+                if (serverResult.status === 'nao_encontrada' || serverResult.status === 'expirada') {
+                    showExpired();
+                    return;
+                }
             }
+
+            verificarInterval = setTimeout(() => verificarStatus(token), 2000);
+        }
+
+        async function approveLogin() {
+            const btn = document.getElementById('btn-aprovar');
+            btn.disabled = true;
+            btn.textContent = 'Confirmando...';
+
+            const sessionData = loadSession();
+            if (sessionData && sessionData.token === tokenUrl) {
+                sessionData.status = 'aprovado';
+                sessionData.aprovadoEm = Date.now();
+                saveSession(sessionData);
+            }
+
+            await syncToServer('aprovar', tokenUrl);
+
+            clearInterval(countdownInterval);
+            clearInterval(verificarInterval);
+            
+            mostrarStatus('Aprovado!', 'sucesso');
+            document.getElementById('btn-aprovar').style.display = 'none';
+            document.getElementById('btn-negar').style.display = 'none';
+            document.getElementById('timer').style.display = 'none';
+            document.getElementById('icon').textContent = '✓';
+            document.getElementById('titulo').textContent = 'Confirmado!';
+            document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
         }
 
         async function negarLogin() {
             clearInterval(countdownInterval);
             clearInterval(verificarInterval);
-            
-            if (tokenUrl) {
-                try {
-                    await apiSession('negar', { token: tokenUrl });
-                } catch (e) {
-                    console.error('Erro:', e);
-                }
+
+            const sessionData = loadSession();
+            if (sessionData && sessionData.token === tokenUrl) {
+                sessionData.status = 'negado';
+                sessionData.negadoEm = Date.now();
+                saveSession(sessionData);
             }
+
+            await syncToServer('negar', tokenUrl);
 
             mostrarStatus('Cancelado.', 'info');
             document.getElementById('btn-aprovar').style.display = 'none';
