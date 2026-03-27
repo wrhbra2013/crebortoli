@@ -255,10 +255,7 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
             
-            var info = document.createElement('div');
-            info.style.cssText = 'margin-top:15px;font-size:12px;color:#666;';
-            info.innerHTML = 'Código: <strong style="letter-spacing:3px;color:#8a4baf;">' + token + '</strong>';
-            container.appendChild(info);
+
         }
 
         function generateQR() {
@@ -336,6 +333,7 @@
                     clearSession();
                     localStorage.setItem(AUTH_KEY, 'true');
                     localStorage.setItem('sig_user_email', 'qr-auth');
+                    hideTokenCode();
                     showStatus('Login aprovado! Redirecionando...', 'aprovado');
                     setTimeout(function() { window.location.href = 'index.html'; }, 1000);
                     return;
