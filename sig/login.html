@@ -173,10 +173,6 @@
             <div class="qr-code" id="qr-code">
                 <span style="color: #999;">Gerando QR Code...</span>
             </div>
-            <div class="token-info">
-                Código da sessão:
-                <div class="token-code" id="token-display">-</div>
-            </div>
         </div>
         
         <div class="instructions">
@@ -334,6 +330,8 @@
                     btn.disabled = false;
                     btn.textContent = '↻ Gerar Novo QR Code';
                     getElement('token-display').textContent = currentToken;
+                    getElement('token-display').style.display = 'none';
+                    document.querySelector('.token-info').style.display = 'none';
 
                     const approvalUrl = `${getBaseUrl()}/sig/aprovar.html?token=${currentToken}`;
                     const canvas = generateQRCanvas(approvalUrl);

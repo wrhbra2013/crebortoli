@@ -128,7 +128,7 @@ function limparSessoesExpiradas() {
     
     foreach ($sessoes as $token => $sessao) {
         $idade = $agora - $sessao['criadoEm'];
-        if ($idade < 600) {
+        if ($idade < 30) {
             $novas[$token] = $sessao;
         }
     }

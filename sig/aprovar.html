@@ -135,6 +135,34 @@
             color: #666;
             margin-top: 1rem;
         }
+        .timer {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .timer span {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--cor-principal);
+        }
+        .timer.expirando {
+            color: #dc3545;
+        }
+        .timer.expirando span {
+            color: #dc3545;
+        }
+        .expired-message {
+            display: none;
+            padding: 1rem;
+            background: #f8d7da;
+            border-radius: 8px;
+            color: #721c24;
+            margin-bottom: 1rem;
+        }
         .back-link {
             margin-top: 1.5rem;
         }
@@ -174,12 +202,15 @@
             <div class="token" id="token-display">-</div>
         </div>
         
-        <div class="input-container" id="input-container">
-            <label for="codigo-digitado">Digite o código acima para confirmar:</label>
-            <input type="text" id="codigo-digitado" maxlength="8" placeholder="________" autocomplete="off">
+        <div class="timer" id="timer">
+            ⏱️ Expira em: <span id="countdown">30</span>s
         </div>
         
-        <button class="btn btn-aprovar" id="btn-aprovar" onclick="aprovarLogin()">
+        <div class="expired-message" id="expired-message">
+            ⚠️ Tempo expirado! Solicite um novo QR Code no computador.
+        </div>
+        
+        <button class="btn btn-aprovar" id="btn-aprovar" onclick="approveLogin()">
             ✓ Aprovar Login
         </button>
         
@@ -213,6 +244,42 @@
         }
 
         let tokenUrl = '';
+        let countdown = 30;
+        let countdownInterval = null;
+        let verificarInterval = null;
+
+        function startCountdown() {
+            countdown = 30;
+            const countdownEl = document.getElementById('countdown');
+            const timerEl = document.getElementById('timer');
+            
+            countdownInterval = setInterval(() => {
+                countdown--;
+                countdownEl.textContent = countdown;
+                
+                if (countdown <= 10) {
+                    timerEl.classList.add('expirando');
+                }
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    showExpired();
+                }
+            }, 1000);
+        }
+
+        function showExpired() {
+            clearInterval(verificarInterval);
+            document.getElementById('timer').style.display = 'none';
+            document.getElementById('expired-message').style.display = 'block';
+            document.getElementById('btn-aprovar').style.display = 'none';
+            document.getElementById('btn-negar').style.display = 'none';
+            document.getElementById('token-info').style.display = 'none';
+            document.getElementById('icon').textContent = '⏰';
+            document.getElementById('titulo').textContent = 'Expirado';
+            document.getElementById('subtitulo').textContent = 'O tempo para aprovar expirou.';
+            document.querySelector('.info-text').style.display = 'none';
+        }
 
         async function init() {
             const urlParams = new URLSearchParams(window.location.search);
@@ -222,13 +289,12 @@
                 mostrarStatus('Link inválido. Escaneie o QR Code novamente.', 'erro');
                 document.getElementById('btn-aprovar').style.display = 'none';
                 document.getElementById('btn-negar').style.display = 'none';
-                document.getElementById('input-container').style.display = 'none';
                 document.getElementById('icon').textContent = '❌';
                 return;
             }
 
             document.getElementById('token-display').textContent = tokenUrl;
-            document.getElementById('codigo-digitado').focus();
+            startCountdown();
             verificarStatus(tokenUrl);
         }
 
@@ -237,51 +303,44 @@
                 const result = await apiSession('verificar', { token });
 
                 if (result.status === 'nao_encontrada') {
-                    mostrarStatus('Sessão não encontrada. Solicite um novo QR Code.', 'erro');
+                    mostrarStatus('Sessão expirou. Solicite um novo QR Code.', 'erro');
+                    clearInterval(countdownInterval);
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('input-container').style.display = 'none';
+                    document.getElementById('timer').style.display = 'none';
                     return;
                 }
 
                 if (result.status === 'aprovado') {
-                    mostrarStatus('Este login já foi aprovado!', 'sucesso');
+                    clearInterval(countdownInterval);
+                    clearInterval(verificarInterval);
+                    mostrarStatus('Aprovado!', 'sucesso');
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('input-container').style.display = 'none';
+                    document.getElementById('timer').style.display = 'none';
                     document.getElementById('icon').textContent = '✓';
                     document.getElementById('titulo').textContent = 'Aprovado!';
-                    document.getElementById('subtitulo').textContent = 'Você pode fechar esta página.';
+                    document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
                     return;
                 }
 
                 if (result.status === 'negado') {
-                    mostrarStatus('Este login foi negado. Solicite um novo QR Code.', 'info');
+                    clearInterval(countdownInterval);
+                    clearInterval(verificarInterval);
+                    mostrarStatus('Login negado. Solicite um novo QR Code.', 'info');
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('input-container').style.display = 'none';
+                    document.getElementById('timer').style.display = 'none';
                     return;
                 }
             } catch (e) {
                 console.error('Erro:', e);
             }
 
-            setTimeout(() => verificarStatus(token), 2000);
+            verificarInterval = setTimeout(() => verificarStatus(token), 2000);
         }
 
-        function validarCodigo() {
-            const digitado = document.getElementById('codigo-digitado').value.toUpperCase().trim();
-            return digitado === tokenUrl;
-        }
-
-        async function approveLogin() {
-            if (!validarCodigo()) {
-                mostrarStatus('Código incorreto. Digite exatamente o código exibido acima.', 'erro');
-                document.getElementById('codigo-digitado').value = '';
-                document.getElementById('codigo-digitado').focus();
-                return;
-            }
-
+        async function aprobarLogin() {
             const btn = document.getElementById('btn-aprovar');
             btn.disabled = true;
             btn.textContent = 'Confirmando...';
@@ -289,13 +348,15 @@
             try {
                 const result = await apiSession('aprovar', { token: tokenUrl });
                 if (result.sucesso) {
-                    mostrarStatus('Login confirmado!', 'sucesso');
+                    clearInterval(countdownInterval);
+                    clearInterval(verificarInterval);
+                    mostrarStatus('Aprovado!', 'sucesso');
                     document.getElementById('btn-aprovar').style.display = 'none';
                     document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('input-container').style.display = 'none';
+                    document.getElementById('timer').style.display = 'none';
                     document.getElementById('icon').textContent = '✓';
                     document.getElementById('titulo').textContent = 'Confirmado!';
-                    document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
+                    document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
                 } else {
                     btn.disabled = false;
                     btn.textContent = '✓ Aprovar Login';
@@ -309,6 +370,9 @@
         }
 
         async function negarLogin() {
+            clearInterval(countdownInterval);
+            clearInterval(verificarInterval);
+            
             if (tokenUrl) {
                 try {
                     await apiSession('negar', { token: tokenUrl });
@@ -317,10 +381,10 @@
                 }
             }
 
-            mostrarStatus('Login cancelado.', 'info');
+            mostrarStatus('Cancelado.', 'info');
             document.getElementById('btn-aprovar').style.display = 'none';
             document.getElementById('btn-negar').style.display = 'none';
-            document.getElementById('input-container').style.display = 'none';
+            document.getElementById('timer').style.display = 'none';
             document.getElementById('icon').textContent = '✕';
             document.getElementById('titulo').textContent = 'Cancelado';
             document.getElementById('subtitulo').textContent = 'O login foi cancelado.';
@@ -330,19 +394,8 @@
             const el = document.getElementById('status-message');
             el.textContent = mensagem;
             el.className = 'status-message ' + tipo;
-            el.style.display = 'block';
+            el.style.display = mensagem ? 'block' : 'none';
         }
-
-        document.getElementById('codigo-digitado').addEventListener('input', function(e) {
-            this.value = this.value.toUpperCase();
-            mostrarStatus('', '');
-        });
-
-        document.getElementById('codigo-digitado').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                aprobarLogin();
-            }
-        });
 
         init();
     </script>
