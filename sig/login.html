@@ -145,10 +145,12 @@
             </div>
         </div>
 
-        <div class="approval-section">
-            <p style="margin-bottom: 0.5rem; color: #666; font-size: 0.9rem;">Ou digite o código abaixo:</p>
-            <input type="text" id="approval-code" placeholder="Digite o código" maxlength="8" style="width: 100%; padding: 0.8rem; font-size: 1.2rem; text-align: center; letter-spacing: 3px; border: 2px solid #ddd; border-radius: 8px; text-transform: uppercase; margin-bottom: 0.5rem; box-sizing: border-box; outline: none; cursor: text;">
-            <button class="btn-primary" onclick="aprovarLogin()" id="btn-aprovar" style="width: 100%;">✓ Aprovar Acesso</button>
+        <div class="approval-section" id="approval-section" style="display: none;">
+            <p style="margin-bottom: 0.5rem; color: #666; font-size: 0.9rem;">Código de acesso:</p>
+            <div id="token-display" style="font-size: 24px; font-weight: bold; color: #8a4baf; letter-spacing: 5px; margin-bottom: 1rem; display: none;"></div>
+            <a id="whatsapp-link" href="#" target="_blank" class="btn-primary" style="display: block; text-align: center; text-decoration: none; background-color: #25D366; color: white; padding: 0.75rem 2rem; border-radius: 5px; font-weight: bold; margin-bottom: 0.5rem;">📱 Enviar via WhatsApp</a>
+            <input type="text" id="approval-code" placeholder="Digite o código recebido" maxlength="8" style="width: 100%; padding: 0.8rem; font-size: 1.2rem; text-align: center; letter-spacing: 3px; border: 2px solid #ddd; border-radius: 8px; text-transform: uppercase; margin-bottom: 0.5rem; box-sizing: border-box; outline: none; cursor: text;">
+            <button class="btn-primary" onclick="aprovarLogin()" id="btn-aprovar" style="width: 100%;">✓ Confirmar Acesso</button>
         </div>
         
         <button class="btn-primary" onclick="gerarNovoQR(this)" id="btn-gerar">↻ Gerar Novo Código</button>
@@ -272,7 +274,6 @@
 
         function generateQR() {
             var btn = getElement('btn-gerar');
-            var originalText = btn ? btn.textContent : 'Gerar Novo';
 
             if (btn) {
                 btn.disabled = true;
@@ -292,6 +293,13 @@
                 status: 'aguardando'
             };
             saveSession(sessionData);
+
+            getElement('approval-section').style.display = 'block';
+            getElement('token-display').textContent = token;
+            
+            var whatsappLink = getElement('whatsapp-link');
+            var message = encodeURIComponent('Código de acesso SIG: ' + token);
+            whatsappLink.href = 'https://wa.me/5514996638056?text=' + message;
 
             if (btn) {
                 btn.disabled = false;
