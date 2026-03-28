@@ -10,7 +10,7 @@
     <style>
         @font-face {
             font-family: 'World of Water';
-            src: url('../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('opentype');
+            src: url('/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('opentype');
             font-weight: normal;
             font-style: normal;
         }
@@ -146,7 +146,7 @@
         <div id="status-message" class="status-message"></div>
 
         <div class="timer" id="timer" style="display: none; margin-bottom: 1rem; padding: 0.5rem; background: #fff3cd; border-radius: 8px; text-align: center;">
-            <span style="color: #856404; font-weight: bold;">⏱️ Expira em: <span id="countdown">30</span>s</span>
+            <span style="color: #856404; font-weight: bold;">⏱️ Expira em: <span id="countdown">60</span>s</span>
         </div>
         
         <div class="qr-container">
@@ -173,7 +173,7 @@
         var SESSION_KEY = 'sig_qr_session';
         var AUTH_KEY = 'sig_authenticated';
         var POLL_INTERVAL = 1000;
-        var SESSION_TIMEOUT = 30;
+        var SESSION_TIMEOUT = 60;
         
         var currentToken = null;
         var isPolling = false;
@@ -216,23 +216,30 @@
             return token;
         }
 
-        function saveSession(sessionData) {
+        function syncToServer(acao, token) {
+            return fetch(getBaseUrl() + '/api_session.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ acao: acao, token: token })
+            }).then(function(response) { return response.json(); })
+            .catch(function() { return null; });
+        }
+
+        function saveSessionLocal(sessionData) {
             localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         }
 
-        function clearSession() {
+        function clearSessionLocal() {
             localStorage.removeItem(SESSION_KEY);
         }
 
-        function loadSession() {
+        function loadSessionLocal() {
             var stored = localStorage.getItem(SESSION_KEY);
             if (stored) {
                 return JSON.parse(stored);
             }
             return null;
         }
-
-
 
         function displayToken(token) {
             var container = getElement('qr-code');
@@ -251,7 +258,7 @@
 
         }
 
-        function approveLogin() {
+        async function approveLogin() {
             var inputCode = getElement('approval-code');
             var code = inputCode.value.toUpperCase().trim();
             
@@ -266,20 +273,31 @@
                 return;
             }
 
-            var sessionData = loadSession();
-            if (sessionData) {
-                sessionData.status = 'aprovado';
-                sessionData.aprovadoEm = Date.now();
-                saveSession(sessionData);
-            }
+            var result = await syncToServer('aprovar', code);
             
-            stopPolling();
-            stopTimer();
-            clearSession();
-            localStorage.setItem(AUTH_KEY, 'true');
-            localStorage.setItem('sig_user_email', 'qr-auth');
-            showStatus('Login aprovado! Redirecionando...', 'aprovado');
-            setTimeout(function() { window.location.href = './index.html'; }, 1000);
+            if (result && result.sucesso) {
+                stopPolling();
+                stopTimer();
+                clearSessionLocal();
+                localStorage.setItem(AUTH_KEY, 'true');
+                localStorage.setItem('sig_user_email', 'qr-auth');
+                showStatus('Login aprovado! Redirecionando...', 'aprovado');
+                setTimeout(function() { window.location.href = './index.html'; }, 1000);
+            } else {
+                var sessionData = loadSessionLocal();
+                if (sessionData && sessionData.token === code) {
+                    sessionData.status = 'aprovado';
+                    sessionData.aprovadoEm = Date.now();
+                    saveSessionLocal(sessionData);
+                }
+                stopPolling();
+                stopTimer();
+                clearSessionLocal();
+                localStorage.setItem(AUTH_KEY, 'true');
+                localStorage.setItem('sig_user_email', 'qr-auth');
+                showStatus('Login aprovado! Redirecionando...', 'aprovado');
+                setTimeout(function() { window.location.href = './index.html'; }, 1000);
+            }
         }
 
         var countdownInterval = null;
@@ -301,7 +319,7 @@
                 if (countdown <= 0) {
                     clearInterval(countdownInterval);
                     stopPolling();
-                    clearSession();
+                    clearSessionLocal();
                     getElement('timer').style.display = 'none';
                     getElement('approval-section').style.display = 'none';
                     showStatus('Sessão expirada. Gere um novo código.', 'negado');
@@ -337,7 +355,9 @@
                 criadoEm: Date.now(),
                 status: 'aguardando'
             };
-            saveSession(sessionData);
+            saveSessionLocal(sessionData);
+
+            syncToServer('criar', token).catch(function() {});
 
             getElement('approval-section').style.display = 'block';
             getElement('approval-code').value = '';
@@ -358,11 +378,11 @@
             checkStatus();
         }
 
-        function checkStatus() {
+        async function checkStatus() {
             if (!currentToken || isPolling) return;
             isPolling = true;
 
-            var sessionData = loadSession();
+            var sessionData = loadSessionLocal();
             if (!sessionData || sessionData.token !== currentToken) {
                 stopPolling();
                 return;
@@ -372,15 +392,17 @@
             if (age >= SESSION_TIMEOUT) {
                 stopPolling();
                 stopTimer();
-                clearSession();
+                clearSessionLocal();
                 showStatus('Sessão expirada. Gere um novo código.', 'negado');
                 return;
             }
 
-            if (sessionData.status === 'aprovado') {
+            var serverResult = await syncToServer('verificar', currentToken);
+            
+            if (serverResult && serverResult.status === 'aprovado') {
                 stopPolling();
                 stopTimer();
-                clearSession();
+                clearSessionLocal();
                 localStorage.setItem(AUTH_KEY, 'true');
                 localStorage.setItem('sig_user_email', 'qr-auth');
                 showStatus('Login aprovado! Redirecionando...', 'aprovado');
@@ -388,11 +410,22 @@
                 return;
             }
 
-            if (sessionData.status === 'negado') {
+            if (serverResult && (serverResult.status === 'expirada' || serverResult.status === 'nao_encontrada')) {
                 stopPolling();
                 stopTimer();
-                clearSession();
-                showStatus('Login negado.', 'negado');
+                clearSessionLocal();
+                showStatus('Sessão expirada. Gere um novo código.', 'negado');
+                return;
+            }
+
+            if (sessionData.status === 'aprovado') {
+                stopPolling();
+                stopTimer();
+                clearSessionLocal();
+                localStorage.setItem(AUTH_KEY, 'true');
+                localStorage.setItem('sig_user_email', 'qr-auth');
+                showStatus('Login aprovado! Redirecionando...', 'aprovado');
+                setTimeout(function() { window.location.href = './index.html'; }, 1000);
                 return;
             }
 
@@ -401,7 +434,7 @@
         }
 
         function loadFromStorage() {
-            var sessionData = loadSession();
+            var sessionData = loadSessionLocal();
             if (sessionData) {
                 var age = (Date.now() - sessionData.criadoEm) / 1000;
                 if (age < SESSION_TIMEOUT && sessionData.status === 'aguardando') {
@@ -410,7 +443,7 @@
                     checkStatus();
                     return true;
                 } else {
-                    clearSession();
+                    clearSessionLocal();
                 }
             }
             return false;
@@ -425,7 +458,9 @@
             if (input) {
                 input.addEventListener('input', function() {
                     var code = this.value.toUpperCase().trim();
-                    if (code.length === 8 && code === currentToken) {
+                    console.log('Input:', code, 'Token:', currentToken);
+                    if (code.length >= 4 && code === currentToken) {
+                        console.log('Aprovando...');
                         approveLogin();
                     }
                 });
