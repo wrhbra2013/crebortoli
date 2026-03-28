@@ -142,14 +142,11 @@
                 <span style="color: #999;">Aguardando...</span>
             </div>
         </div>
-        
-        <div class="instructions">
-            <h3>Como acessar:</h3>
-            <ol>
-                <li>Abra este link no celular</li>
-                <li>Clique em "Aprovar Login" no celular</li>
-                <li>Aguarde a redireção automática</li>
-            </ol>
+
+        <div class="approval-section">
+            <p style="margin-bottom: 0.5rem; color: #666; font-size: 0.9rem;">Ou digite o código abaixo:</p>
+            <input type="text" id="approval-code" placeholder="Digite o código" maxlength="8" style="width: 100%; padding: 0.8rem; font-size: 1.2rem; text-align: center; letter-spacing: 3px; border: 2px solid #ddd; border-radius: 8px; text-transform: uppercase; margin-bottom: 0.5rem; box-sizing: border-box;">
+            <button class="btn-primary" onclick="aprovarLogin()" id="btn-aprovar" style="width: 100%;">✓ Aprovar Acesso</button>
         </div>
         
         <button class="btn-primary" onclick="gerarNovoQR(this)" id="btn-gerar">↻ Gerar Novo Código</button>
@@ -238,8 +235,37 @@
                 colorLight: '#ffffff',
                 correctLevel: QRCode.CorrectLevel.H
             });
-            
 
+        }
+
+        function approveLogin() {
+            var inputCode = getElement('approval-code');
+            var code = inputCode.value.toUpperCase().trim();
+            
+            if (!code) {
+                showStatus('Digite o código de acesso.', 'negado');
+                return;
+            }
+            
+            if (code !== currentToken) {
+                showStatus('Código incorreto. Tente novamente.', 'negado');
+                inputCode.value = '';
+                return;
+            }
+
+            var sessionData = loadSession();
+            if (sessionData) {
+                sessionData.status = 'aprovado';
+                sessionData.aprovadoEm = Date.now();
+                saveSession(sessionData);
+            }
+            
+            stopPolling();
+            clearSession();
+            localStorage.setItem(AUTH_KEY, 'true');
+            localStorage.setItem('sig_user_email', 'qr-auth');
+            showStatus('Login aprovado! Redirecionando...', 'aprovado');
+            setTimeout(function() { window.location.href = './index.html'; }, 1000);
         }
 
         function generateQR() {
