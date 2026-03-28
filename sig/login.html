@@ -137,6 +137,10 @@
         </div>
         
         <div id="status-message" class="status-message"></div>
+
+        <div class="timer" id="timer" style="display: none; margin-bottom: 1rem; padding: 0.5rem; background: #fff3cd; border-radius: 8px; text-align: center;">
+            <span style="color: #856404; font-weight: bold;">⏱️ Expira em: <span id="countdown">30</span>s</span>
+        </div>
         
         <div class="qr-container">
             <div class="celular-icon">📱</div>
@@ -146,10 +150,9 @@
         </div>
 
         <div class="approval-section" id="approval-section" style="display: none;">
-            <p style="margin-bottom: 0.5rem; color: #666; font-size: 0.9rem;">Código de acesso:</p>
-            <div id="token-display" style="font-size: 24px; font-weight: bold; color: #8a4baf; letter-spacing: 5px; margin-bottom: 1rem; display: none;"></div>
-            <a id="whatsapp-link" href="#" target="_blank" class="btn-primary" style="display: block; text-align: center; text-decoration: none; background-color: #25D366; color: white; padding: 0.75rem 2rem; border-radius: 5px; font-weight: bold; margin-bottom: 0.5rem;">📱 Enviar via WhatsApp</a>
-            <input type="text" id="approval-code" placeholder="Digite o código recebido" maxlength="8" style="width: 100%; padding: 0.8rem; font-size: 1.2rem; text-align: center; letter-spacing: 3px; border: 2px solid #ddd; border-radius: 8px; text-transform: uppercase; margin-bottom: 0.5rem; box-sizing: border-box; outline: none; cursor: text;">
+            <a id="whatsapp-link" href="#" target="_blank" style="display: block; text-align: center; text-decoration: none; background-color: #25D366; color: white; padding: 0.75rem; border-radius: 5px; font-weight: bold; margin-bottom: 1rem;">📱 Enviar Código via WhatsApp</a>
+            <p style="margin-bottom: 0.5rem; color: #666; font-size: 0.9rem;">Ou digite o código do QRCode:</p>
+            <input type="text" id="approval-code" placeholder="Código" maxlength="8" style="width: 100%; padding: 0.8rem; font-size: 1.2rem; text-align: center; letter-spacing: 3px; border: 2px solid #ddd; border-radius: 8px; text-transform: uppercase; margin-bottom: 0.5rem; box-sizing: border-box; outline: none; cursor: text;">
             <button class="btn-primary" onclick="aprovarLogin()" id="btn-aprovar" style="width: 100%;">✓ Confirmar Acesso</button>
         </div>
         
@@ -265,11 +268,47 @@
             }
             
             stopPolling();
+            stopTimer();
             clearSession();
             localStorage.setItem(AUTH_KEY, 'true');
             localStorage.setItem('sig_user_email', 'qr-auth');
             showStatus('Login aprovado! Redirecionando...', 'aprovado');
             setTimeout(function() { window.location.href = './index.html'; }, 1000);
+        }
+
+        var countdownInterval = null;
+
+        function startTimer() {
+            var countdown = SESSION_TIMEOUT;
+            var countdownEl = getElement('countdown');
+            var timerEl = getElement('timer');
+            
+            timerEl.style.display = 'block';
+            countdownEl.textContent = countdown;
+            
+            if (countdownInterval) clearInterval(countdownInterval);
+            
+            countdownInterval = setInterval(function() {
+                countdown--;
+                countdownEl.textContent = countdown;
+                
+                if (countdown <= 0) {
+                    clearInterval(countdownInterval);
+                    stopPolling();
+                    clearSession();
+                    getElement('timer').style.display = 'none';
+                    getElement('approval-section').style.display = 'none';
+                    showStatus('Sessão expirada. Gere um novo código.', 'negado');
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            getElement('timer').style.display = 'none';
         }
 
         function generateQR() {
@@ -280,9 +319,9 @@
                 btn.textContent = 'Gerando...';
             }
             hideStatus();
-            displayToken('...');
-
             stopPolling();
+            stopTimer();
+            displayToken('...');
 
             var token = gerarToken();
             currentToken = token;
@@ -295,11 +334,13 @@
             saveSession(sessionData);
 
             getElement('approval-section').style.display = 'block';
-            getElement('token-display').textContent = token;
+            getElement('approval-code').value = '';
             
             var whatsappLink = getElement('whatsapp-link');
-            var message = encodeURIComponent('Código de acesso SIG: ' + token);
-            whatsappLink.href = 'https://wa.me/5514996638056?text=' + message;
+            if (whatsappLink) {
+                var message = encodeURIComponent('Código de acesso SIG: ' + token);
+                whatsappLink.href = 'https://wa.me/5514996638056?text=' + message;
+            }
 
             if (btn) {
                 btn.disabled = false;
@@ -307,6 +348,7 @@
             }
 
             displayToken(token);
+            startTimer();
             checkStatus();
         }
 
@@ -323,6 +365,7 @@
             var age = (Date.now() - sessionData.criadoEm) / 1000;
             if (age >= SESSION_TIMEOUT) {
                 stopPolling();
+                stopTimer();
                 clearSession();
                 showStatus('Sessão expirada. Gere um novo código.', 'negado');
                 return;
@@ -330,6 +373,7 @@
 
             if (sessionData.status === 'aprovado') {
                 stopPolling();
+                stopTimer();
                 clearSession();
                 localStorage.setItem(AUTH_KEY, 'true');
                 localStorage.setItem('sig_user_email', 'qr-auth');
@@ -340,6 +384,7 @@
 
             if (sessionData.status === 'negado') {
                 stopPolling();
+                stopTimer();
                 clearSession();
                 showStatus('Login negado.', 'negado');
                 return;
