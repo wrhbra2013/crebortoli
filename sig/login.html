@@ -158,9 +158,8 @@
 
         <div class="approval-section" id="approval-section" style="display: none;">
             <a id="whatsapp-link" href="#" target="_blank" style="display: block; text-align: center; text-decoration: none; background-color: #25D366; color: white; padding: 0.75rem; border-radius: 5px; font-weight: bold; margin-bottom: 1rem;">📱 Enviar Código via WhatsApp</a>
-            <p style="margin-bottom: 0.5rem; color: #666; font-size: 0.9rem;">Ou digite o código do QRCode:</p>
+            <p style="margin-bottom: 0.5rem; color: #666; font-size: 0.9rem;">Digite o código do QRCode:</p>
             <input type="text" id="approval-code" placeholder="Código" maxlength="8" style="width: 100%; padding: 0.8rem; font-size: 1.2rem; text-align: center; letter-spacing: 3px; border: 2px solid #ddd; border-radius: 8px; text-transform: uppercase; margin-bottom: 0.5rem; box-sizing: border-box; outline: none; cursor: text;">
-            <button class="btn-primary" onclick="aprovarLogin()" id="btn-aprovar" style="width: 100%;">✓ Confirmar Acesso</button>
         </div>
         
         <button class="btn-primary" onclick="gerarNovoQR(this)" id="btn-gerar">↻ Gerar Novo Código</button>
@@ -421,7 +420,20 @@
             generateQR();
         };
 
+        function setupAutoApprove() {
+            var input = getElement('approval-code');
+            if (input) {
+                input.addEventListener('input', function() {
+                    var code = this.value.toUpperCase().trim();
+                    if (code.length === 8 && code === currentToken) {
+                        approveLogin();
+                    }
+                });
+            }
+        }
+
         window.onload = function() {
+            setupAutoApprove();
             if (!loadFromStorage()) {
                 generateQR();
             }
