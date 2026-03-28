@@ -94,21 +94,23 @@
             margin-bottom: 0.3rem;
         }
         .btn-primary {
-            background: var(--cor-principal);
+            display: inline-block;
+            padding: 0.75rem 2rem;
+            background-color: var(--cor-principal);
             color: white;
             border: none;
-            padding: 1rem 2rem;
-            border-radius: 8px;
+            border-radius: 5px;
             font-size: 1rem;
-            font-weight: 600;
+            font-weight: bold;
             cursor: pointer;
             width: 100%;
-            transition: all 0.3s;
+            transition: background-color 0.2s, transform 0.2s;
         }
         .btn-primary:hover {
-            background: #7a3fa0;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(138, 75, 175, 0.3);
+            background-color: #7a3fa0;
+            color: white;
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(138, 75, 175, 0.4);
         }
         .btn-primary:disabled {
             opacity: 0.7;
