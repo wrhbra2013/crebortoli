@@ -454,9 +454,16 @@
             return data.toLocaleDateString('pt-BR');
         }
 
-        function gerarPDF() {
+        async function gerarPDF() {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
+            
+            const fontBase64 = await fetch('../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf')
+                .then(r => r.arrayBuffer())
+                .then(buf => btoa(String.fromCharCode(...new Uint8Array(buf))));
+            doc.addFileToVFS('WorldDiscovery.ttf', fontBase64);
+            doc.addFont('WorldDiscovery.ttf', 'WorldDiscovery', 'normal');
+            doc.setFont('WorldDiscovery');
             
             const tipoPeriodo = document.getElementById('tipo-periodo').value;
             const mes = parseInt(document.getElementById('mes').value);
@@ -469,16 +476,32 @@
                 titulo = `Relatório Anual - ${ano}`;
             }
 
-            doc.setFontSize(18);
+            doc.setFontSize(20);
             doc.setTextColor(233, 30, 99);
-            doc.text('Espaço Cre Bortoli', 105, 15, { align: 'center' });
+            doc.text('Espaço Cre Bortoli', 105, 20, { align: 'center' });
+            
+            doc.setFontSize(12);
+            doc.setTextColor(233, 30, 99);
+            doc.text('Estética & Depilação', 105, 30, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Rua Francisco Martineli, 492', 105, 40, { align: 'center' });
+            doc.text('Palmital – Marília, SP', 105, 46, { align: 'center' });
+            doc.text('(14) 99663.8056', 105, 52, { align: 'center' });
+            
+            doc.setDrawColor(233, 30, 99);
+            doc.setLineWidth(0.5);
+            doc.line(20, 58, 190, 58);
             
             doc.setFontSize(14);
             doc.setTextColor(0);
-            doc.text(titulo, 105, 25, { align: 'center' });
+            doc.setFont('helvetica', 'bold');
+            doc.text(titulo, 105, 70, { align: 'center' });
             
             doc.setFontSize(10);
-            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 105, 32, { align: 'center' });
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 105, 78, { align: 'center' });
 
             const totalRecebido = document.getElementById('total-recebido').textContent;
             const totalPendente = document.getElementById('total-pendente').textContent;
@@ -486,10 +509,10 @@
             const ticketMedio = document.getElementById('ticket-medio').textContent;
 
             doc.setFontSize(10);
-            doc.text(`Total Recebido: ${totalRecebido}`, 14, 45);
-            doc.text(`Total Pendente: ${totalPendente}`, 105, 45);
-            doc.text(`Qtd. Serviços: ${qtdServicos}`, 14, 52);
-            doc.text(`Tíquete Médio: ${ticketMedio}`, 105, 52);
+            doc.text(`Total Recebido: ${totalRecebido}`, 14, 90);
+            doc.text(`Total Pendente: ${totalPendente}`, 105, 90);
+            doc.text(`Qtd. Serviços: ${qtdServicos}`, 14, 97);
+            doc.text(`Tíquete Médio: ${ticketMedio}`, 105, 97);
 
             const tableData = [];
             const rows = document.querySelectorAll('#tabela-corpo tr');
@@ -510,7 +533,7 @@
             });
 
             doc.autoTable({
-                startY: 60,
+                startY: 105,
                 head: [['Data', 'Cliente', 'Serviço', 'Valor', 'Status']],
                 body: tableData,
                 styles: { fontSize: 8 },

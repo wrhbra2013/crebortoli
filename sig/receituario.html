@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cre Bortoli - Receituário</title>
+    <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <script>var v='1.0.0';document.write('<link rel="stylesheet" href="../static/css/style.css?v='+v+'">');</script>
+    <style>
+        @font-face {
+            font-family: 'World of Water';
+            src: url('/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+        .receituario-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .receituario-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .receituario-header h1 {
+            color: #e91e63;
+            margin-bottom: 0.5rem;
+        }
+        .form-card {
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            padding: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #333;
+        }
+        .form-group input, 
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+        .form-group textarea {
+            min-height: 150px;
+            resize: vertical;
+        }
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        .btn-primary {
+            background: #e91e63;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #c2185b;
+        }
+        .btn-secondary {
+            background: #666;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <div id="header-placeholder"></div>
+
+    <main>
+        <div class="receituario-container">
+            <div class="receituario-header">
+                <h1>Receituário</h1>
+                <p>Crie indicationes terapéuticas para seus clientes</p>
+            </div>
+
+            <div class="form-card">
+                <form id="receituarioForm">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="paciente">Nome do Paciente</label>
+                            <input type="text" id="paciente" name="paciente" required placeholder="Digite o nome do paciente">
+                        </div>
+                        <div class="form-group">
+                            <label for="data">Data</label>
+                            <input type="date" id="data" name="data" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="indicacao">Indicação Terapêutica</label>
+                        <textarea id="indicacao" name="indicacao" required placeholder="Descreva as indicações terapêuticas..."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="observacoes">Observações (opcional)</label>
+                        <textarea id="observacoes" name="observacoes" placeholder="Observações adicionais..."></textarea>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-primary" onclick="gerarPDF()">&#128196; Gerar PDF</button>
+                        <button type="button" class="btn btn-secondary" onclick="limparForm()">Limpar</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <div id="footer-placeholder"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
+    <script>
+        document.getElementById('data').valueAsDate = new Date();
+
+        function limparForm() {
+            document.getElementById('receituarioForm').reset();
+            document.getElementById('data').valueAsDate = new Date();
+        }
+
+        function gerarPDF() {
+            const paciente = document.getElementById('paciente').value;
+            const data = document.getElementById('data').value;
+            const indicacao = document.getElementById('indicacao').value;
+            const observacoes = document.getElementById('observacoes').value;
+
+            if (!paciente || !data || !indicacao) {
+                alert('Por favor, preencha todos os campos obrigatórios.');
+                return;
+            }
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(20);
+            doc.setTextColor(233, 30, 99);
+            doc.text('Espaço Cre Bortoli', 105, 30, { align: 'center' });
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(12);
+            doc.setTextColor(233, 30, 99);
+            doc.text('Estética & Depilação', 105, 40, { align: 'center' });
+            
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Rua Francisco Martineli, 492', 105, 52, { align: 'center' });
+            doc.text('Palmital – Marília, SP', 105, 58, { align: 'center' });
+            doc.text('(14) 99663.8056', 105, 64, { align: 'center' });
+            
+            doc.setDrawColor(233, 30, 99);
+            doc.setLineWidth(0.5);
+            doc.line(20, 75, 190, 75);
+            
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(16);
+            doc.setTextColor(201, 33, 29);
+            doc.text('INDICAÇÃO TERAPÊUTICA', 105, 90, { align: 'center' });
+            
+            doc.setDrawColor(201, 33, 29);
+            doc.setLineWidth(0.3);
+            doc.line(60, 95, 150, 95);
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(12);
+            doc.setTextColor(0, 0, 0);
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text('Paciente:', 20, 115);
+            doc.setFont('helvetica', 'normal');
+            doc.text(paciente, 50, 115);
+            
+            doc.setFont('helvetica', 'bold');
+            doc.text('Data:', 140, 115);
+            doc.setFont('helvetica', 'normal');
+            doc.text(dataFormatada, 158, 115);
+            
+            doc.setDrawColor(200, 200, 200);
+            doc.setLineWidth(0.1);
+            doc.line(20, 122, 190, 122);
+            
+            const splitIndicacao = doc.splitTextToSize(indicacao, 170);
+            doc.text(splitIndicacao, 20, 135);
+            
+            let yPos = 135 + (splitIndicacao.length * 7) + 15;
+            
+            if (observacoes) {
+                if (yPos > 230) {
+                    doc.addPage();
+                    yPos = 30;
+                }
+                
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(12);
+                doc.text('Observações:', 20, yPos);
+                
+                doc.setFont('helvetica', 'normal');
+                const splitObs = doc.splitTextToSize(observacoes, 170);
+                doc.text(splitObs, 20, yPos + 7);
+            }
+            
+            const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${data}.pdf`;
+            doc.save(nomeArquivo);
+        }
+    </script>
+</body>
+</html>
