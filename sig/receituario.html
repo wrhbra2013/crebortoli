@@ -160,57 +160,68 @@
             
             const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
             
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(20);
-            doc.setTextColor(233, 30, 99);
-            doc.text('Espaço Cre Bortoli', 105, 30, { align: 'center' });
+            doc.setDrawColor(128, 0, 128);
+            doc.setLineWidth(2);
+            doc.rect(5, 5, 200, 287);
+            
+            doc.setDrawColor(147, 112, 219);
+            doc.setLineWidth(0.5);
+            doc.rect(8, 8, 194, 279);
+            
+            doc.setDrawColor(221, 160, 221);
+            doc.setLineWidth(0.3);
+            doc.rect(11, 11, 188, 273);
+            
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.setTextColor(0, 0, 0);
+            doc.text('Rua Francisco Martineli, 492', 20, 25);
+            doc.text('Palmital – Marília, SP', 20, 32);
+            doc.text('(14) 99663.8056', 20, 39);
+            
+            doc.setFont('World of Water', 'normal');
+            doc.setFontSize(24);
+            doc.setTextColor(128, 0, 128);
+            doc.text('Espaço Cre Bortoli', 190, 25, { align: 'right' });
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(12);
-            doc.setTextColor(233, 30, 99);
-            doc.text('Estética & Depilação', 105, 40, { align: 'center' });
-            
-            doc.setFontSize(10);
             doc.setTextColor(0, 0, 0);
-            doc.text('Rua Francisco Martineli, 492', 105, 52, { align: 'center' });
-            doc.text('Palmital – Marília, SP', 105, 58, { align: 'center' });
-            doc.text('(14) 99663.8056', 105, 64, { align: 'center' });
+            doc.text('Estética & Depilação', 190, 34, { align: 'right' });
             
-            doc.setDrawColor(233, 30, 99);
+            doc.setDrawColor(147, 112, 219);
             doc.setLineWidth(0.5);
-            doc.line(20, 75, 190, 75);
+            doc.line(15, 50, 195, 50);
             
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(16);
-            doc.setTextColor(201, 33, 29);
-            doc.text('INDICAÇÃO TERAPÊUTICA', 105, 90, { align: 'center' });
+            doc.setTextColor(128, 0, 128);
+            doc.text('INDICAÇÃO TERAPÊUTICA', 105, 65, { align: 'center' });
             
-            doc.setDrawColor(201, 33, 29);
+            doc.setDrawColor(147, 112, 219);
             doc.setLineWidth(0.3);
-            doc.line(60, 95, 150, 95);
+            doc.line(60, 70, 150, 70);
             
-            doc.setFont('helvetica', 'normal');
+            doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
             doc.setTextColor(0, 0, 0);
+            doc.text('Paciente:', 20, 85);
+            doc.setFont('helvetica', 'normal');
+            doc.text(paciente, 50, 85);
             
             doc.setFont('helvetica', 'bold');
-            doc.text('Paciente:', 20, 115);
+            doc.text('Data:', 140, 85);
             doc.setFont('helvetica', 'normal');
-            doc.text(paciente, 50, 115);
-            
-            doc.setFont('helvetica', 'bold');
-            doc.text('Data:', 140, 115);
-            doc.setFont('helvetica', 'normal');
-            doc.text(dataFormatada, 158, 115);
+            doc.text(dataFormatada, 158, 85);
             
             doc.setDrawColor(200, 200, 200);
             doc.setLineWidth(0.1);
-            doc.line(20, 122, 190, 122);
+            doc.line(20, 92, 190, 92);
             
             const splitIndicacao = doc.splitTextToSize(indicacao, 170);
-            doc.text(splitIndicacao, 20, 135);
+            doc.text(splitIndicacao, 20, 105);
             
-            let yPos = 135 + (splitIndicacao.length * 7) + 15;
+            let yPos = 105 + (splitIndicacao.length * 7) + 15;
             
             if (observacoes) {
                 if (yPos > 230) {
