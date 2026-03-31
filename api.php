@@ -9,27 +9,79 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit;
 }
 
-$DATA_FILE = __DIR__ . '/data.json';
+$DB_FILE = __DIR__ . '/database.sqlite';
 
-function lerDados() {
-    global $DATA_FILE;
-    if (!file_exists($DATA_FILE)) {
-        return ['agendamentos' => [], 'servicos' => [], 'clientes' => []];
-    }
-    $conteudo = file_get_contents($DATA_FILE);
-    return json_decode($conteudo, true) ?: ['agendamentos' => [], 'servicos' => [], 'clientes' => []];
+try {
+    $pdo = new PDO('sqlite:' . $DB_FILE);
+    $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    inicializarBanco($pdo);
+} catch (PDOException $e) {
+    http_response_code(500);
+    echo json_encode(['erro' => 'Erro na conexão: ' . $e->getMessage()]);
+    exit;
 }
 
-function salvarDados($dados) {
-    global $DATA_FILE;
-    $json = json_encode($dados, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-    return file_put_contents($DATA_FILE, $json) !== false;
+function inicializarBanco($pdo) {
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS agendamentos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente TEXT,
+            servico TEXT,
+            data TEXT,
+            hora TEXT,
+            status TEXT DEFAULT 'pendente',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS servicos (
+            id TEXT PRIMARY KEY,
+            nome TEXT,
+            preco REAL,
+            categoria TEXT,
+            desconto TEXT
+        )
+    ");
+
+    $pdo->exec("
+        CREATE TABLE IF NOT EXISTS clientes (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT,
+            telefone TEXT,
+            email TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
+$action = $_GET['action'] ?? '';
+
+if ($method === 'GET' && $action === 'agendamentos') {
+    $stmt = $pdo->query("SELECT * FROM agendamentos ORDER BY data DESC");
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
+if ($method === 'GET' && $action === 'servicos') {
+    $stmt = $pdo->query("SELECT * FROM servicos");
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
+
+if ($method === 'GET' && $action === 'clientes') {
+    $stmt = $pdo->query("SELECT * FROM clientes ORDER BY nome");
+    echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));
+    exit;
+}
 
 if ($method === 'GET') {
-    echo json_encode(lerDados());
+    echo json_encode([
+        'agendamentos' => $pdo->query("SELECT * FROM agendamentos")->fetchAll(PDO::FETCH_ASSOC),
+        'servicos' => $pdo->query("SELECT * FROM servicos")->fetchAll(PDO::FETCH_ASSOC),
+        'clientes' => $pdo->query("SELECT * FROM clientes")->fetchAll(PDO::FETCH_ASSOC)
+    ]);
     exit;
 }
 
@@ -42,23 +94,41 @@ if (!$dadosRecebidos) {
     exit;
 }
 
-$dados = lerDados();
-
 if (isset($dadosRecebidos['agendamentos'])) {
-    $dados['agendamentos'] = $dadosRecebidos['agendamentos'];
+    $stmt = $pdo->prepare("INSERT INTO agendamentos (cliente, servico, data, hora, status) VALUES (?, ?, ?, ?, ?)");
+    foreach ($dadosRecebidos['agendamentos'] as $agendamento) {
+        $stmt->execute([
+            $agendamento['cliente'] ?? '',
+            $agendamento['servico'] ?? '',
+            $agendamento['data'] ?? '',
+            $agendamento['hora'] ?? '',
+            $agendamento['status'] ?? 'pendente'
+        ]);
+    }
 }
 
 if (isset($dadosRecebidos['servicos'])) {
-    $dados['servicos'] = $dadosRecebidos['servicos'];
+    $stmt = $pdo->prepare("INSERT OR REPLACE INTO servicos (id, nome, preco, categoria, desconto) VALUES (?, ?, ?, ?, ?)");
+    foreach ($dadosRecebidos['servicos'] as $servico) {
+        $stmt->execute([
+            $servico['id'] ?? '',
+            $servico['nome'] ?? '',
+            $servico['preco'] ?? 0,
+            $servico['categoria'] ?? '',
+            $servico['desconto'] ?? ''
+        ]);
+    }
 }
 
 if (isset($dadosRecebidos['clientes'])) {
-    $dados['clientes'] = $dadosRecebidos['clientes'];
+    $stmt = $pdo->prepare("INSERT INTO clientes (nome, telefone, email) VALUES (?, ?, ?)");
+    foreach ($dadosRecebidos['clientes'] as $cliente) {
+        $stmt->execute([
+            $cliente['nome'] ?? '',
+            $cliente['telefone'] ?? '',
+            $cliente['email'] ?? ''
+        ]);
+    }
 }
 
-if (salvarDados($dados)) {
-    echo json_encode(['sucesso' => true, 'mensagem' => 'Dados salvos']);
-} else {
-    http_response_code(500);
-    echo json_encode(['erro' => 'Erro ao salvar dados']);
-}
+echo json_encode(['sucesso' => true]);

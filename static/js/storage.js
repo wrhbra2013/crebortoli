@@ -607,37 +607,55 @@ if (typeof window !== 'undefined') {
     };
     
     AgendamentoStore.syncToServer = async function() {
-        const data = {
-            agendamentos: this.getAll()
-        };
-        
-        try {
-            await fetch('../api.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            });
-        } catch (e) {
-            console.warn('Erro ao sincronizar com servidor:', e);
+        if (typeof pb !== 'undefined') {
+            try {
+                const agendamentos = this.getAll();
+                for (const a of agendamentos) {
+                    if (a.id) {
+                        await pb.collection('agendamentos').upsert(a.id, a);
+                    } else {
+                        await pb.collection('agendamentos').create(a);
+                    }
+                }
+            } catch (e) {
+                console.warn('Erro ao sincronizar com servidor:', e);
+            }
         }
     };
     
     AgendamentoStore.syncFromServer = async function() {
-        try {
-            const response = await fetch('../api.php?t=' + Date.now());
-            if (response.ok) {
-                const data = await response.json();
-                if (data.agendamentos && data.agendamentos.length > 0) {
-                    const local = this.getAll();
-                    data.agendamentos.forEach(serv => {
-                        if (!local.find(a => a.id === serv.id)) {
-                            AgendamentoStore.save(serv);
-                        }
-                    });
-                }
+        if (typeof pb !== 'undefined') {
+            try {
+                const records = await pb.collection('agendamentos').getFullList({ sort: '-created' });
+                records.forEach(serv => {
+                    if (!this.get(serv.id)) {
+                        this.save(serv);
+                    }
+                });
+            } catch (e) {
+                console.warn('Erro ao buscar do servidor:', e);
             }
-        } catch (e) {
-            console.warn('Erro ao buscar do servidor:', e);
+        }
+    };
+    
+    let pollingInterval = null;
+
+    DataStore.startPolling = function(intervalMs = 10000) {
+        if (pollingInterval) return;
+        
+        pollingInterval = setInterval(() => {
+            if (typeof AgendamentoStore !== 'undefined') {
+                AgendamentoStore.syncFromServer();
+            }
+        }, intervalMs);
+        console.log('Polling iniciado:', intervalMs, 'ms');
+    };
+
+    DataStore.stopPolling = function() {
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+            console.log('Polling parado');
         }
     };
 })();
