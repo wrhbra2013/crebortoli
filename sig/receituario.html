@@ -298,7 +298,11 @@
             return new Blob([byteArray], { type: mimeType });
         }
         
-        renderHistorico();
+        }
+
+        (async () => {
+            await renderHistorico();
+        })();
 
         function limparForm() {
             document.getElementById('receituarioForm').reset();
@@ -406,17 +410,19 @@
             const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${data}.pdf`;
             const pdfData = doc.output('datauristring').split(',')[1];
             
-            saveReceita({
-                id: Date.now().toString(),
-                paciente: paciente,
-                data: data,
-                dataFormatada: dataFormatada,
-                pdfData: pdfData,
-                nomeArquivo: nomeArquivo
-            });
+            doc.save(nomeArquivo);
             
-            renderHistorico();
-            alert('Receita gerada com sucesso!');
+            (async () => {
+                await saveReceita({
+                    paciente: paciente,
+                    data: data,
+                    dataFormatada: dataFormatada,
+                    pdfData: pdfData,
+                    nomeArquivo: nomeArquivo
+                });
+                await renderHistorico();
+                alert('Receita gerada com sucesso!');
+            })();
         }
     </script>
 </body>
