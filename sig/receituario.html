@@ -202,6 +202,7 @@
     <div id="footer-placeholder"></div>
     <script type="module">import '../static/js/pocketbase-api.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-customfonts@1.0.0/dist/jspdf.plugin.customfonts.min.js"></script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         document.getElementById('data').valueAsDate = new Date();
@@ -395,7 +396,7 @@
             doc.text('Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', 105, 28, { align: 'center' });
             
             if (customFont) {
-                doc.addFileVFS('WorldDiscovery.ttf', customFont);
+                doc.addFileToVFS('WorldDiscovery.ttf', customFont);
                 doc.addFont('WorldDiscovery.ttf', 'WorldDiscovery', 'normal');
                 doc.setFont('WorldDiscovery', 'normal');
             } else {
