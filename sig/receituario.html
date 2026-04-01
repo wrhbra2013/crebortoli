@@ -202,24 +202,10 @@
     <div id="footer-placeholder"></div>
     <script type="module">import '../static/js/pocketbase-api.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jspdf-customfonts@1.0.0/dist/jspdf.plugin.customfonts.min.js"></script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         document.getElementById('data').valueAsDate = new Date();
         
-        let customFont = null;
-        
-        async function loadFont() {
-            try {
-                const response = await fetch('../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf');
-                const fontData = await response.arrayBuffer();
-                customFont = new Uint8Array(fontData);
-            } catch (e) {
-                console.warn('Font load error:', e);
-            }
-        }
-        loadFont();
-
         const RECEITAS_KEY = 'crebortoli_receitas';
         
         function getReceitas() {
@@ -395,13 +381,7 @@
             doc.setTextColor(60, 60, 60);
             doc.text('Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', 105, 28, { align: 'center' });
             
-            if (customFont) {
-                doc.addFileToVFS('WorldDiscovery.ttf', customFont);
-                doc.addFont('WorldDiscovery.ttf', 'WorldDiscovery', 'normal');
-                doc.setFont('WorldDiscovery', 'normal');
-            } else {
-                doc.setFont('helvetica', 'bold');
-            }
+            doc.setFont('helvetica', 'bold');
             doc.setFontSize(22);
             doc.setTextColor(128, 0, 128);
             doc.text('Espaço Cre Bortoli', 105, 38, { align: 'center' });
