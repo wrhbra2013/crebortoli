@@ -342,7 +342,7 @@
             document.getElementById('data').valueAsDate = new Date();
         }
 
-        function gerarPDF() {
+        async function gerarPDF() {
             const paciente = document.getElementById('paciente').value;
             const data = document.getElementById('data').value;
             const indicacao = document.getElementById('indicacao').value;
@@ -359,8 +359,15 @@
             }
 
             try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            const fontBase64 = await fetch('../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf')
+                .then(r => r.arrayBuffer())
+                .then(buf => btoa(String.fromCharCode(...new Uint8Array(buf))));
+            doc.addFileToVFS('WorldDiscovery.ttf', fontBase64);
+            doc.addFont('WorldDiscovery.ttf', 'WorldDiscovery', 'normal');
+            doc.setFont('WorldDiscovery');
             
             const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
             
@@ -376,24 +383,22 @@
             doc.setLineWidth(0.3);
             doc.rect(18, 18, 174, 261);
             
+            doc.setLineWidth(0.5);
+            doc.rect(20, 20, 170, 40);
+            
+            doc.setFontSize(20);
+            doc.setTextColor(128, 0, 128);
+            doc.text('Espaço Cre Bortoli', 105, 30, { align: 'center' });
+            
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
             doc.setTextColor(60, 60, 60);
-            doc.text('Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', 105, 28, { align: 'center' });
-            
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(22);
-            doc.setTextColor(128, 0, 128);
-            doc.text('Espaço Cre Bortoli', 105, 38, { align: 'center' });
-            
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.setTextColor(60, 60, 60);
-            doc.text('Estética & Depilação', 105, 46, { align: 'center' });
+            doc.text('Estética & Depilação', 30, 40);
+            doc.text('Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', 190, 40, { align: 'right' });
             
             doc.setDrawColor(186, 85, 211);
             doc.setLineWidth(0.5);
-            doc.line(25, 55, 195, 55);
+            doc.line(25, 58, 195, 58);
             
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(16);
