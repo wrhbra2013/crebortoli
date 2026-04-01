@@ -219,31 +219,78 @@
         }
         loadFont();
 
-        async function getReceitas() {
+        const RECEITAS_KEY = 'crebortoli_receitas';
+        
+        function getReceitas() {
+            const data = localStorage.getItem(RECEITAS_KEY);
+            return data ? JSON.parse(data) : [];
+        }
+        
+        function saveReceitaLocal(receita) {
+            const receitas = getReceitas();
+            receitas.unshift(receita);
+            localStorage.setItem(RECEITAS_KEY, JSON.stringify(receitas));
+        }
+        
+        function deleteReceitaLocal(id) {
+            let receitas = getReceitas();
+            receitas = receitas.filter(r => r.id !== id);
+            localStorage.setItem(RECEITAS_KEY, JSON.stringify(receitas));
+        }
+        
+        async function syncReceitasToServer() {
+            if (typeof pb === 'undefined') return;
             try {
-                return await pb.collection('receitas').getFullList({ sort: '-created' });
+                const locais = getReceitas();
+                for (const r of locais) {
+                    if (!r.synced) {
+                        await pb.collection('receitas').create({
+                            paciente: r.paciente,
+                            data: r.data,
+                            dataFormatada: r.dataFormatada,
+                            pdfData: r.pdfData,
+                            nomeArquivo: r.nomeArquivo,
+                            localId: r.id
+                        });
+                        r.synced = true;
+                    }
+                }
+                localStorage.setItem(RECEITAS_KEY, JSON.stringify(locais));
             } catch (e) {
-                console.warn('Erro ao buscar receitas:', e);
-                return [];
+                console.warn('Erro ao sincronizar com servidor:', e);
             }
         }
         
-        async function saveReceita(receita) {
+        async function syncReceitasFromServer() {
+            if (typeof pb === 'undefined') return;
             try {
-                await pb.collection('receitas').create({
-                    paciente: receita.paciente,
-                    data: receita.data,
-                    dataFormatada: receita.dataFormatada,
-                    pdfData: receita.pdfData,
-                    nomeArquivo: receita.nomeArquivo
+                const remotos = await pb.collection('receitas').getFullList({ sort: '-created' });
+                const locais = getReceitas();
+                const localIds = new Set(locais.map(r => r.localId || r.id));
+                
+                remotos.forEach(r => {
+                    if (!localIds.has(r.id)) {
+                        locais.unshift({
+                            id: r.id,
+                            localId: r.id,
+                            paciente: r.paciente,
+                            data: r.data,
+                            dataFormatada: r.dataFormatada,
+                            pdfData: r.pdfData,
+                            nomeArquivo: r.nomeArquivo,
+                            synced: true
+                        });
+                    }
                 });
+                
+                localStorage.setItem(RECEITAS_KEY, JSON.stringify(locais));
             } catch (e) {
-                console.warn('Erro ao salvar receita:', e);
+                console.warn('Erro ao buscar receitas do servidor:', e);
             }
         }
         
-        async function renderHistorico() {
-            const receitas = await getReceitas();
+        function renderHistorico() {
+            const receitas = getReceitas();
             const tbody = document.getElementById('historicoBody');
             
             if (receitas.length === 0) {
@@ -263,8 +310,8 @@
             `).join('');
         }
         
-        async function downloadPDF(id) {
-            const receitas = await getReceitas();
+        function downloadPDF(id) {
+            const receitas = getReceitas();
             const receita = receitas.find(r => r.id === id);
             if (receita && receita.pdfData) {
                 const blob = base64ToBlob(receita.pdfData, 'application/pdf');
@@ -277,14 +324,13 @@
             }
         }
         
-        async function excluirReceita(id) {
+        function excluirReceita(id) {
             if (confirm('Deseja excluir esta receita?')) {
-                try {
-                    await pb.collection('receitas').delete(id);
-                    renderHistorico();
-                } catch (e) {
-                    console.warn('Erro ao excluir receita:', e);
+                deleteReceitaLocal(id);
+                if (typeof pb !== 'undefined') {
+                    pb.collection('receitas').delete(id).catch(() => {});
                 }
+                renderHistorico();
             }
         }
         
@@ -298,10 +344,10 @@
             return new Blob([byteArray], { type: mimeType });
         }
         
-        }
-
         (async () => {
-            await renderHistorico();
+            await syncReceitasFromServer();
+            renderHistorico();
+            setInterval(syncReceitasToServer, 30000);
         })();
 
         function limparForm() {
@@ -417,6 +463,22 @@
             const pdfData = doc.output('datauristring').split(',')[1];
             
             doc.save(nomeArquivo);
+            
+            saveReceitaLocal({
+                id: Date.now().toString(),
+                paciente: paciente,
+                data: data,
+                dataFormatada: dataFormatada,
+                pdfData: pdfData,
+                nomeArquivo: nomeArquivo,
+                synced: false
+            });
+            
+            renderHistorico();
+            
+            syncReceitasToServer();
+            
+            alert('Receita gerada com sucesso!');
 
             } catch (err) {
                 console.error('Erro ao gerar PDF:', err);

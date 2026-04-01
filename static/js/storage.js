@@ -582,6 +582,70 @@ if (typeof window !== 'undefined') {
     window.ServerSync = ServerSync;
 }
 
+// Funções de sincronização com localStorage + PocketBase
+const SyncManager = {
+    COLLECTION: 'agendamentos',
+    STORAGE_KEY: 'crebortoli_agendamentos_sync',
+    
+    getLocal() {
+        const data = localStorage.getItem(this.STORAGE_KEY);
+        return data ? JSON.parse(data) : [];
+    },
+    
+    saveLocal(agendamentos) {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(agendamentos));
+    },
+    
+    async syncToServer() {
+        if (typeof pb === 'undefined') return;
+        
+        const locais = this.getLocal();
+        for (const item of locais) {
+            if (!item.synced) {
+                try {
+                    await pb.collection(this.COLLECTION).create({
+                        ...item,
+                        localId: item.id
+                    });
+                    item.synced = true;
+                } catch (e) {
+                    console.warn('Erro ao sincronizar item:', e);
+                }
+            }
+        }
+        this.saveLocal(locais);
+    },
+    
+    async syncFromServer() {
+        if (typeof pb === 'undefined') return;
+        
+        try {
+            const remotos = await pb.collection(this.COLLECTION).getFullList({ sort: '-created' });
+            const locais = this.getLocal();
+            const localIds = new Set(locais.map(l => l.localId || l.id));
+            
+            remotos.forEach(r => {
+                if (!localIds.has(r.id)) {
+                    locais.push({
+                        ...r,
+                        localId: r.id,
+                        synced: true
+                    });
+                }
+            });
+            
+            this.saveLocal(locais);
+        } catch (e) {
+            console.warn('Erro ao buscar do servidor:', e);
+        }
+    },
+    
+    startSync(intervalMs = 30000) {
+        this.syncFromServer();
+        setInterval(() => this.syncToServer(), intervalMs);
+    }
+};
+
 // Sobrescrever AgendamentoStore para sincronizar com servidor
 (function() {
     const originalSave = AgendamentoStore.save.bind(AgendamentoStore);
@@ -590,57 +654,53 @@ if (typeof window !== 'undefined') {
     
     AgendamentoStore.save = function(agendamento) {
         const result = originalSave(agendamento);
-        this.syncToServer();
+        
+        // Salvar no storage de sincronização
+        const syncData = SyncManager.getLocal();
+        syncData.push({ ...agendamento, synced: false });
+        SyncManager.saveLocal(syncData);
+        
+        // Sincronizar com servidor
+        SyncManager.syncToServer();
+        
         return result;
     };
     
     AgendamentoStore.update = function(id, dados) {
         const result = originalUpdate(id, dados);
-        this.syncToServer();
+        
+        const syncData = SyncManager.getLocal();
+        const idx = syncData.findIndex(a => a.id === id);
+        if (idx >= 0) {
+            syncData[idx] = { ...syncData[idx], ...dados, synced: false };
+            SyncManager.saveLocal(syncData);
+        }
+        
+        SyncManager.syncToServer();
         return result;
     };
     
     AgendamentoStore.delete = function(id) {
         const result = originalDelete(id);
-        this.syncToServer();
+        
+        let syncData = SyncManager.getLocal();
+        syncData = syncData.filter(a => a.id !== id);
+        SyncManager.saveLocal(syncData);
+        
+        if (typeof pb !== 'undefined') {
+            pb.collection('agendamentos').delete(id).catch(() => {});
+        }
+        
         return result;
     };
     
-    AgendamentoStore.syncToServer = async function() {
-        if (typeof pb !== 'undefined') {
-            try {
-                const agendamentos = this.getAll();
-                for (const a of agendamentos) {
-                    if (a.id) {
-                        await pb.collection('agendamentos').upsert(a.id, a);
-                    } else {
-                        await pb.collection('agendamentos').create(a);
-                    }
-                }
-            } catch (e) {
-                console.warn('Erro ao sincronizar com servidor:', e);
-            }
-        }
-    };
-    
     AgendamentoStore.syncFromServer = async function() {
-        if (typeof pb !== 'undefined') {
-            try {
-                const records = await pb.collection('agendamentos').getFullList({ sort: '-created' });
-                records.forEach(serv => {
-                    if (!this.get(serv.id)) {
-                        this.save(serv);
-                    }
-                });
-            } catch (e) {
-                console.warn('Erro ao buscar do servidor:', e);
-            }
-        }
+        await SyncManager.syncFromServer();
     };
     
     let pollingInterval = null;
 
-    DataStore.startPolling = function(intervalMs = 10000) {
+    DataStore.startPolling = function(intervalMs = 30000) {
         if (pollingInterval) return;
         
         pollingInterval = setInterval(() => {
@@ -658,4 +718,7 @@ if (typeof window !== 'undefined') {
             console.log('Polling parado');
         }
     };
+    
+    // Iniciar sincronização automática
+    SyncManager.startSync();
 })();
