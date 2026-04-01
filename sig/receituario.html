@@ -320,8 +320,14 @@
                 return;
             }
 
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            if (!window.jspdf) {
+                alert('Biblioteca jsPDF não carregou. Aguarde um momento e tente novamente.');
+                return;
+            }
+
+            try {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
             
             const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
             
@@ -411,18 +417,12 @@
             const pdfData = doc.output('datauristring').split(',')[1];
             
             doc.save(nomeArquivo);
-            
-            (async () => {
-                await saveReceita({
-                    paciente: paciente,
-                    data: data,
-                    dataFormatada: dataFormatada,
-                    pdfData: pdfData,
-                    nomeArquivo: nomeArquivo
-                });
-                await renderHistorico();
-                alert('Receita gerada com sucesso!');
-            })();
+
+            } catch (err) {
+                console.error('Erro ao gerar PDF:', err);
+                alert('Erro ao gerar PDF: ' + err.message);
+                return;
+            }
         }
     </script>
 </body>
