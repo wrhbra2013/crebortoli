@@ -138,6 +138,19 @@
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         document.getElementById('data').valueAsDate = new Date();
+        
+        let customFont = null;
+        
+        async function loadFont() {
+            try {
+                const response = await fetch('../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf');
+                const fontData = await response.arrayBuffer();
+                customFont = new Uint8Array(fontData);
+            } catch (e) {
+                console.warn('Font load error:', e);
+            }
+        }
+        loadFont();
 
         function limparForm() {
             document.getElementById('receituarioForm').reset();
@@ -161,67 +174,71 @@
             const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
             
             doc.setDrawColor(128, 0, 128);
-            doc.setLineWidth(2);
-            doc.rect(5, 5, 200, 287);
+            doc.setLineWidth(1.5);
+            doc.rect(10, 10, 190, 277);
             
-            doc.setDrawColor(147, 112, 219);
-            doc.setLineWidth(0.5);
-            doc.rect(8, 8, 194, 279);
+            doc.setDrawColor(138, 43, 226);
+            doc.setLineWidth(0.8);
+            doc.rect(14, 14, 182, 269);
             
-            doc.setDrawColor(221, 160, 221);
+            doc.setDrawColor(186, 85, 211);
             doc.setLineWidth(0.3);
-            doc.rect(11, 11, 188, 273);
+            doc.rect(18, 18, 174, 261);
             
             doc.setFont('helvetica', 'normal');
             doc.setFontSize(10);
-            doc.setTextColor(0, 0, 0);
-            doc.text('Rua Francisco Martineli, 492', 20, 25);
-            doc.text('Palmital – Marília, SP', 20, 32);
-            doc.text('(14) 99663.8056', 20, 39);
+            doc.setTextColor(60, 60, 60);
+            doc.text('Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', 105, 28, { align: 'center' });
             
-            doc.setFont('World of Water', 'normal');
-            doc.setFontSize(24);
+            if (customFont) {
+                doc.addFileVFS('WorldDiscovery.ttf', customFont);
+                doc.addFont('WorldDiscovery.ttf', 'WorldDiscovery', 'normal');
+                doc.setFont('WorldDiscovery', 'normal');
+            } else {
+                doc.setFont('helvetica', 'bold');
+            }
+            doc.setFontSize(22);
             doc.setTextColor(128, 0, 128);
-            doc.text('Espaço Cre Bortoli', 190, 25, { align: 'right' });
+            doc.text('Espaço Cre Bortoli', 105, 38, { align: 'center' });
             
             doc.setFont('helvetica', 'normal');
-            doc.setFontSize(12);
-            doc.setTextColor(0, 0, 0);
-            doc.text('Estética & Depilação', 190, 34, { align: 'right' });
+            doc.setFontSize(11);
+            doc.setTextColor(60, 60, 60);
+            doc.text('Estética & Depilação', 105, 46, { align: 'center' });
             
-            doc.setDrawColor(147, 112, 219);
+            doc.setDrawColor(186, 85, 211);
             doc.setLineWidth(0.5);
-            doc.line(15, 50, 195, 50);
+            doc.line(25, 55, 195, 55);
             
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(16);
             doc.setTextColor(128, 0, 128);
-            doc.text('INDICAÇÃO TERAPÊUTICA', 105, 65, { align: 'center' });
+            doc.text('INDICAÇÃO TERAPÊUTICA', 105, 70, { align: 'center' });
             
             doc.setDrawColor(147, 112, 219);
             doc.setLineWidth(0.3);
-            doc.line(60, 70, 150, 70);
+            doc.line(60, 75, 150, 75);
             
             doc.setFont('helvetica', 'bold');
             doc.setFontSize(12);
             doc.setTextColor(0, 0, 0);
-            doc.text('Paciente:', 20, 85);
+            doc.text('Paciente:', 25, 90);
             doc.setFont('helvetica', 'normal');
-            doc.text(paciente, 50, 85);
+            doc.text(paciente, 55, 90);
             
             doc.setFont('helvetica', 'bold');
-            doc.text('Data:', 140, 85);
+            doc.text('Data:', 140, 90);
             doc.setFont('helvetica', 'normal');
-            doc.text(dataFormatada, 158, 85);
+            doc.text(dataFormatada, 158, 90);
             
             doc.setDrawColor(200, 200, 200);
             doc.setLineWidth(0.1);
-            doc.line(20, 92, 190, 92);
+            doc.line(25, 97, 195, 97);
             
             const splitIndicacao = doc.splitTextToSize(indicacao, 170);
-            doc.text(splitIndicacao, 20, 105);
+            doc.text(splitIndicacao, 25, 110);
             
-            let yPos = 105 + (splitIndicacao.length * 7) + 15;
+            let yPos = 110 + (splitIndicacao.length * 7) + 15;
             
             if (observacoes) {
                 if (yPos > 230) {
