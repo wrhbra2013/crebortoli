@@ -89,6 +89,52 @@
         .btn-secondary:hover {
             background: #444;
         }
+        .historico-section {
+            margin-top: 2rem;
+        }
+        .historico-section h2 {
+            color: #e91e63;
+            margin-bottom: 1rem;
+        }
+        .table-container {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+        th {
+            background: #f5f5f5;
+            font-weight: 600;
+            color: #333;
+        }
+        tr:hover {
+            background: #fafafa;
+        }
+        .btn-download {
+            background: #e91e63;
+            color: white;
+            padding: 6px 12px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 0.875rem;
+        }
+        .btn-download:hover {
+            background: #c2185b;
+        }
+        .empty-message {
+            text-align: center;
+            color: #666;
+            padding: 2rem;
+        }
     </style>
 </head>
 <body>
@@ -125,15 +171,36 @@
                     </div>
 
                     <div class="btn-group">
-                        <button type="button" class="btn btn-primary" onclick="gerarPDF()">&#128196; Gerar PDF</button>
+                        <button type="button" class="btn btn-primary" onclick="gerarPDF()"> Gerar PDF</button>
                         <button type="button" class="btn btn-secondary" onclick="limparForm()">Limpar</button>
                     </div>
                 </form>
+            </div>
+
+            <div class="historico-section">
+                <h2>Receitas Geradas</h2>
+                <div class="table-container">
+                    <table id="historicoTable">
+                        <thead>
+                            <tr>
+                                <th>Nome da Receita</th>
+                                <th>Data</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historicoBody">
+                            <tr>
+                                <td colspan="3" class="empty-message">Nenhuma receita gerada ainda.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </main>
 
     <div id="footer-placeholder"></div>
+    <script type="module">import '../static/js/pocketbase-api.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
@@ -151,6 +218,87 @@
             }
         }
         loadFont();
+
+        async function getReceitas() {
+            try {
+                return await pb.collection('receitas').getFullList({ sort: '-created' });
+            } catch (e) {
+                console.warn('Erro ao buscar receitas:', e);
+                return [];
+            }
+        }
+        
+        async function saveReceita(receita) {
+            try {
+                await pb.collection('receitas').create({
+                    paciente: receita.paciente,
+                    data: receita.data,
+                    dataFormatada: receita.dataFormatada,
+                    pdfData: receita.pdfData,
+                    nomeArquivo: receita.nomeArquivo
+                });
+            } catch (e) {
+                console.warn('Erro ao salvar receita:', e);
+            }
+        }
+        
+        async function renderHistorico() {
+            const receitas = await getReceitas();
+            const tbody = document.getElementById('historicoBody');
+            
+            if (receitas.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty-message">Nenhuma receita gerada ainda.</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = receitas.map(r => `
+                <tr>
+                    <td>${r.paciente}</td>
+                    <td>${r.dataFormatada}</td>
+                    <td>
+                        <button class="btn-download" onclick="downloadPDF('${r.id}')">Download</button>
+                        <button class="btn-download" style="background:#666" onclick="excluirReceita('${r.id}')">Excluir</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+        
+        async function downloadPDF(id) {
+            const receitas = await getReceitas();
+            const receita = receitas.find(r => r.id === id);
+            if (receita && receita.pdfData) {
+                const blob = base64ToBlob(receita.pdfData, 'application/pdf');
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = receita.nomeArquivo;
+                a.click();
+                URL.revokeObjectURL(url);
+            }
+        }
+        
+        async function excluirReceita(id) {
+            if (confirm('Deseja excluir esta receita?')) {
+                try {
+                    await pb.collection('receitas').delete(id);
+                    renderHistorico();
+                } catch (e) {
+                    console.warn('Erro ao excluir receita:', e);
+                }
+            }
+        }
+        
+        function base64ToBlob(base64, mimeType) {
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: mimeType });
+        }
+        
+        renderHistorico();
 
         function limparForm() {
             document.getElementById('receituarioForm').reset();
@@ -256,7 +404,19 @@
             }
             
             const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${data}.pdf`;
-            doc.save(nomeArquivo);
+            const pdfData = doc.output('datauristring').split(',')[1];
+            
+            saveReceita({
+                id: Date.now().toString(),
+                paciente: paciente,
+                data: data,
+                dataFormatada: dataFormatada,
+                pdfData: pdfData,
+                nomeArquivo: nomeArquivo
+            });
+            
+            renderHistorico();
+            alert('Receita gerada com sucesso!');
         }
     </script>
 </body>
