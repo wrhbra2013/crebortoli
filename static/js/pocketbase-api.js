@@ -1,4 +1,4 @@
-import PocketBase from 'https://unpkg.com/pocketbase@0.21.0/dist/pocketbase.esm.mjs';
+import PocketBase from 'https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.4/pocketbase.es.mjs';
 
 const pb = new PocketBase('https://www.crebortoli.com.br');
 
