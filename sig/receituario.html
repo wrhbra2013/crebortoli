@@ -338,26 +338,45 @@
                 const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
 
                 const docDefinition = {
+                    defaultStyle: {
+                        font: 'WorldWater'
+                    },
+                    fonts: {
+                        WorldWater: {
+                            normal: 'static/fonts/World_Discovery_Five_PERSONAL_Regular.otf'
+                        }
+                    },
+                    header: {
+                        stack: [
+                            {
+                                columns: [
+                                    {
+                                        width: 80,
+                                        image: 'static/css/image/crebortoli.png',
+                                        width: 70
+                                    },
+                                    {
+                                        width: '*',
+                                        stack: [
+                                            { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', font: 'WorldWater' },
+                                            { text: 'Estética & Depilação', fontSize: 10, color: '#666', margin: [0, 2, 0, 0] }
+                                        ],
+                                        margin: [10, 0, 0, 0]
+                                    },
+                                    {
+                                        width: '*',
+                                        text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
+                                        fontSize: 9,
+                                        color: '#666',
+                                        alignment: 'right'
+                                    }
+                                ],
+                                margin: [20, 10, 20, 10]
+                            },
+                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 595, y2: 0, lineWidth: 2, lineColor: '#e91e63' }], margin: [0, 0, 0, 5] }
+                        ]
+                    },
                     content: [
-                        {
-                            text: 'Espaço Cre Bortoli',
-                            fontSize: 20,
-                            color: '#800080',
-                            alignment: 'center',
-                            margin: [0, 0, 0, 5]
-                        },
-                        {
-                            columns: [
-                                { text: 'Estética & Depilação', fontSize: 10, color: '#3c3c3c' },
-                                { text: 'Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', fontSize: 10, color: '#3c3c3c', alignment: 'right' }
-                            ],
-                            margin: [0, 0, 0, 5]
-                        },
-                        {
-                            canvas: [{ type: 'line', x1: 25, y1: 0, x2: 195, y2: 0, lineWidth: 0.5, lineColor: '#b855d3' }],
-                            margin: [0, 5, 0, 10]
-                        },
-                        {
                             text: 'INDICAÇÃO TERAPÊUTICA',
                             fontSize: 16,
                             bold: true,

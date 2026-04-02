@@ -511,19 +511,46 @@
             const docDefinition = {
                 pageSize: 'A4',
                 pageMargins: [20, 20, 20, 20],
+                defaultStyle: {
+                    font: 'WorldWater'
+                },
+                fonts: {
+                    WorldWater: {
+                        normal: 'static/fonts/World_Discovery_Five_PERSONAL_Regular.otf'
+                    }
+                },
+                header: {
+                    stack: [
+                        {
+                            columns: [
+                                {
+                                    width: 80,
+                                    image: 'static/css/image/crebortoli.png',
+                                    width: 70
+                                },
+                                {
+                                    width: '*',
+                                    stack: [
+                                        { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', font: 'WorldWater' },
+                                        { text: 'Estética & Depilação', fontSize: 10, color: '#666', margin: [0, 2, 0, 0] }
+                                    ],
+                                    margin: [10, 0, 0, 0]
+                                },
+                                {
+                                    width: '*',
+                                    text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
+                                    fontSize: 9,
+                                    color: '#666',
+                                    alignment: 'right'
+                                }
+                            ],
+                            margin: [20, 10, 20, 10]
+                        },
+                        { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 595, y2: 0, lineWidth: 2, lineColor: '#e91e63' }], margin: [0, 0, 0, 5] }
+                    ]
+                },
                 content: [
-                    {
-                        canvas: [
-                            { type: 'rect', x: 10, y: 10, w: 190, h: 277, r: 0, lineWidth: 1, lineColor: '#800080' },
-                            { type: 'rect', x: 14, y: 14, w: 182, h: 269, r: 0, lineWidth: 0.8, lineColor: '#8a2be2' },
-                            { type: 'rect', x: 18, y: 18, w: 174, h: 261, r: 0, lineWidth: 0.3, lineColor: '#b855d3' }
-                        ]
-                    },
-                    { text: 'Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', fontSize: 10, color: '#3c3c3c', alignment: 'center', margin: [0, 28, 0, 0] },
-                    { text: 'Espaço Cre Bortoli', fontSize: 22, color: '#800080', alignment: 'center', margin: [0, 8, 0, 0], bold: true },
-                    { text: 'Estética & Depilação', fontSize: 11, color: '#3c3c3c', alignment: 'center', margin: [0, 5, 0, 0] },
-                    { canvas: [{ type: 'line', x1: 25, y1: 55, x2: 195, y2: 55, lineWidth: 0.5, lineColor: '#b855d3' }], margin: [0, 5, 0, 0] },
-                    { text: titulo, fontSize: 14, bold: true, alignment: 'center', margin: [0, 10, 0, 0] },
+                    { text: titulo, fontSize: 14, bold: true, alignment: 'center', margin: [0, 15, 0, 0] },
                     { text: `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, fontSize: 10, alignment: 'center', margin: [0, 5, 0, 0] },
                     {
                         columns: [
@@ -544,15 +571,14 @@
                             headerRows: 1,
                             widths: ['auto', '*', 'auto', 'auto', 'auto'],
                             body: [
-                                [{ text: 'Data', fillColor: '#800080', color: 'white' }, { text: 'Cliente', fillColor: '#800080', color: 'white' }, { text: 'Serviço', fillColor: '#800080', color: 'white' }, { text: 'Valor', fillColor: '#800080', color: 'white' }, { text: 'Status', fillColor: '#800080', color: 'white' }],
+                                [{ text: 'Data', fillColor: '#e91e63', color: 'white' }, { text: 'Cliente', fillColor: '#e91e63', color: 'white' }, { text: 'Serviço', fillColor: '#e91e63', color: 'white' }, { text: 'Valor', fillColor: '#e91e63', color: 'white' }, { text: 'Status', fillColor: '#e91e63', color: 'white' }],
                                 ...tableData.map(row => row.map(cell => ({ text: cell, fontSize: 8 })))
                             ]
                         },
                         layout: { fillColor: (rowIndex) => rowIndex === 0 ? null : (rowIndex % 2 === 0 ? '#f5e4ec' : null) },
                         margin: [0, 15, 0, 0]
                     }
-                ],
-                defaultStyle: { font: 'Helvetica', fontSize: 10 }
+                ]
             };
 
             const nomeArquivo = `relatorio-crebortoli-${ano}${tipoPeriodo === 'mensal' ? '-' + (mes + 1).toString().padStart(2, '0') : ''}.pdf`;
