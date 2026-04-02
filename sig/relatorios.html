@@ -15,6 +15,30 @@
             font-weight: normal;
             font-style: normal;
         }
+        .clinic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: #fff;
+            border-bottom: 2px solid #e91e63;
+            margin-bottom: 1rem;
+        }
+        .clinic-logo {
+            font-family: 'World of Water', cursive;
+            font-size: 1.8rem;
+            color: #e91e63;
+        }
+        .clinic-tagline {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        .clinic-address {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: right;
+        }
         .relatorios-container {
             max-width: 1000px;
             margin: 2rem auto;
@@ -182,11 +206,21 @@
 </head>
 <body>
     <div id="header-placeholder"></div>
+    <div class="clinic-header">
+        <div>
+            <div class="clinic-logo">Espaço Cre Bortoli</div>
+            <div class="clinic-tagline">Estética & Depilação</div>
+        </div>
+        <div class="clinic-address">
+            Rua Francisco Martineli, 492 - Palmital<br>
+            Marília, SP | (14) 99663.8056
+        </div>
+    </div>
 
     <main>
         <div class="relatorios-container">
             <div class="relatorios-header">
-                <h1 style="font-family: 'World of Water', cursive;">Cre Bortoli</h1>
+                <h1>Relatórios</h1>
                 <p>Análise de vendas de serviços por período</p>
             </div>
 

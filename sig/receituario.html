@@ -15,6 +15,30 @@
             font-weight: normal;
             font-style: normal;
         }
+        .clinic-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: #fff;
+            border-bottom: 2px solid #e91e63;
+            margin-bottom: 1rem;
+        }
+        .clinic-logo {
+            font-family: 'World of Water', cursive;
+            font-size: 1.8rem;
+            color: #e91e63;
+        }
+        .clinic-tagline {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.25rem;
+        }
+        .clinic-address {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: right;
+        }
         .receituario-container {
             max-width: 800px;
             margin: 2rem auto;
@@ -139,6 +163,16 @@
 </head>
 <body>
     <div id="header-placeholder"></div>
+    <div class="clinic-header">
+        <div>
+            <div class="clinic-logo">Espaço Cre Bortoli</div>
+            <div class="clinic-tagline">Estética & Depilação</div>
+        </div>
+        <div class="clinic-address">
+            Rua Francisco Martineli, 492 - Palmital<br>
+            Marília, SP | (14) 99663.8056
+        </div>
+    </div>
 
     <main>
         <div class="receituario-container">
@@ -202,7 +236,10 @@
     <div id="footer-placeholder"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script type="module">import '../static/js/pb-db.js';</script>
+    <script type="module">
+        import { receitas } from '../static/js/pb-db.js';
+        window.receitas = receitas;
+    </script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         document.getElementById('data').valueAsDate = new Date();
@@ -336,7 +373,6 @@
                         { columns: [{ text: 'Data: ', bold: true }, { text: dataFormatada }], margin: [0, 5, 0, 10] },
                         { text: indicacao, lineHeight: 1.5 }
                     ],
-                    defaultStyle: { font: 'Helvetica', fontSize: 11 },
                     pageSize: 'A4',
                     pageMargins: [20, 20, 20, 20]
                 };
