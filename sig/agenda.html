@@ -367,13 +367,9 @@
     </div>
 
     <div id="footer-placeholder"></div>
-    <script type="module">import '../static/js/pocketbase-api.js';</script>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
+    <script type="module">import '../static/js/pb-db.js';</script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
-        function getServicos() {
-            return ServicosStore.getAll();
-        }
-
         const Horarios = [
             '08:00', '09:00', '10:00', '11:00',
             '13:00', '14:00', '15:00', '16:00', '17:00'
@@ -384,9 +380,21 @@
 
         let dataAtual = new Date();
         let visualizacao = 'semana';
+        let servicosCache = null;
+        let agendamentosCache = null;
+
+        async function loadData() {
+            servicosCache = await servicos.getAll();
+            agendamentosCache = await agendamentos.getAll();
+            renderizarCalendario();
+        }
+
+        function getServicos() {
+            return servicosCache || [];
+        }
 
         function getAgendamentos() {
-            return AgendamentoStore.getAll();
+            return agendamentosCache || [];
         }
 
         function getAgendamentosPorData(data) {
@@ -553,9 +561,9 @@
             if (!id) return;
             
             if (confirm('Tem certeza que deseja excluir este agendamento?')) {
-                AgendamentoStore.delete(id);
+                await agendamentos.delete(id);
+                await loadData();
                 fecharModal();
-                renderizarCalendario();
             }
         }
 
@@ -636,20 +644,16 @@
             };
             
             if (id) {
-                AgendamentoStore.update(id, agendamento);
+                await agendamentos.update(id, agendamento);
             } else {
-                AgendamentoStore.save(agendamento);
+                await agendamentos.create(agendamento);
             }
             
+            await loadData();
             fecharModal();
-            renderizarCalendario();
         });
 
-        renderizarCalendario();
-        
-        AgendamentoStore.syncFromServer().then(() => {
-            renderizarCalendario();
-        });
+        loadData();
     </script>
 </body>
 </html>

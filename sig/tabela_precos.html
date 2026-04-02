@@ -191,7 +191,7 @@
 
             <button class="btn-adicionar" onclick="adicionarServico()">+ Novo Serviço</button>
             <button class="btn-editar" id="btn-modo-edicao" onclick="toggleEdicao()">&#9998; Editar Preços</button>
-            <button class="btn-sync" onclick="ServicosStore.downloadJson()" title="Baixar JSON para atualizar no servidor">&#8595; Exportar JSON</button>
+            <button class="btn-sync" onclick="exportJson()" title="Baixar JSON para atualizar no servidor">&#8595; Exportar JSON</button>
             <button class="btn-sync" onclick="document.getElementById('import-file').click()" title="Importar JSON do servidor">&#8593; Importar JSON</button>
             <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarJson(this)">
             
@@ -221,19 +221,15 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
+    <script type="module">import '../static/js/pb-db.js';</script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
+        let servicosCache = null;
+
         async function init() {
-            await ServicosStore.init();
-            renderTabela();
-        }
-        
-        const ServicosStore = {
-            KEY: 'servicos',
-            getAll() {
-                const saved = DataStore.load(this.KEY);
-                if (saved) return saved;
-                return [
+            servicosCache = await servicos.getAll();
+            if (!servicosCache || servicosCache.length === 0) {
+                servicosCache = [
                     { id: 'dep_perna', nome: 'Depilação Perna', preco: 25, categoria: 'Depilação' },
                     { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: 50, categoria: 'Depilação' },
                     { id: 'dep_buco', nome: 'Depilação Buço', preco: 15, categoria: 'Depilação' },
@@ -243,34 +239,33 @@
                     { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: 100, categoria: 'Tratamento' },
                     { id: 'massagem', nome: 'Massagem Relaxante', preco: 50, categoria: 'Massagem' }
                 ];
-            },
-            saveAll(servicos) {
-                DataStore.save(this.KEY, servicos);
-            },
-            add(servico) {
-                const servicos = this.getAll();
-                servico.id = 'serv_' + Date.now();
-                servicos.push(servico);
-                this.saveAll(servicos);
-            },
-            update(id, dados) {
-                const servicos = this.getAll();
-                const index = servicos.findIndex(s => s.id === id);
-                if (index !== -1) {
-                    servicos[index] = { ...servicos[index], ...dados };
-                    this.saveAll(servicos);
-                }
-            },
-            delete(id) {
-                const servicos = this.getAll().filter(s => s.id !== id);
-                this.saveAll(servicos);
             }
-        };
+            renderTabela();
+        }
+
+        function getAll() {
+            return servicosCache || [];
+        }
+
+        async function addServico(servico) {
+            await servicos.create(servico);
+            servicosCache = await servicos.getAll();
+        }
+
+        async function updateServico(id, dados) {
+            await servicos.update(id, dados);
+            servicosCache = await servicos.getAll();
+        }
+
+        async function deleteServico(id) {
+            await servicos.delete(id);
+            servicosCache = await servicos.getAll();
+        }
 
         let modoEdicao = false;
 
         function renderTabela() {
-            const servicos = ServicosStore.getAll();
+            const servicos = getAll();
             const tbody = document.getElementById('tabela-corpo');
             tbody.classList.toggle('editing', modoEdicao);
             
@@ -318,41 +313,66 @@
             renderTabela();
         }
 
-        function salvarAlteracoes() {
+        async function salvarAlteracoes() {
             const inputs = document.querySelectorAll('.editing input, .editing select');
-            inputs.forEach(input => {
+            for (const input of inputs) {
                 const id = input.dataset.id;
                 const campo = input.dataset.campo;
                 let valor = input.value;
                 if (campo === 'preco') valor = parseFloat(valor);
-                ServicosStore.update(id, { [campo]: valor });
-            });
+                await updateServico(id, { [campo]: valor });
+            }
+            renderTabela();
             alert('Preços salvos com sucesso!');
         }
 
-        function adicionarServico() {
+        async function adicionarServico() {
             const nome = prompt('Nome do serviço:');
             if (!nome) return;
             const preco = parseFloat(prompt('Preço (R$):') || '0');
             const categoria = prompt('Categoria (Depilação/Tratamento/Massagem):') || 'Depilação';
-            ServicosStore.add({ nome, preco, categoria });
+            await addServico({ nome, preco, categoria });
             renderTabela();
         }
 
-        function excluirServico(id) {
+        async function excluirServico(id) {
             if (confirm('Excluir este serviço?')) {
-                ServicosStore.delete(id);
+                await deleteServico(id);
                 renderTabela();
             }
+        }
+
+        function exportJson() {
+            const servicos = getAll();
+            const data = { servicos, ultimaAtualizacao: new Date().toISOString().split('T')[0] };
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'servicos.json';
+            a.click();
+            URL.revokeObjectURL(url);
         }
 
         function importarJson(input) {
             const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = function(e) {
-                ServicosStore.importJson(e.target.result);
-                renderTabela();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.servicos && Array.isArray(data.servicos)) {
+                        for (const s of data.servicos) {
+                            await servicos.create(s);
+                        }
+                        servicosCache = await servicos.getAll();
+                        renderTabela();
+                        alert('Importado com sucesso!');
+                    }
+                } catch (err) {
+                    alert('Erro ao importar: ' + err.message);
+                }
             };
             reader.readAsText(file);
             input.value = '';

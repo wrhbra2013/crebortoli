@@ -261,54 +261,34 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
+    <script type="module">import '../static/js/pb-db.js';</script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script>
         const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         
-        let dadosServidor = { agendamentos: [] };
-        let agendamentosCarregados = false;
+        let agendamentosCache = null;
 
-        async function carregarDadosServidor() {
-            try {
-                const response = await fetch('../data.json?t=' + Date.now());
-                if (response.ok) {
-                    dadosServidor = await response.json();
-                    if (!dadosServidor.agendamentos) {
-                        dadosServidor.agendamentos = [];
-                    }
-                }
-            } catch (e) {
-                console.warn('Erro ao carregar data.json:', e);
-                dadosServidor = { agendamentos: [] };
+        async function carregarAgendamentosPB() {
+            agendamentosCache = await agendamentos.getAll();
+        }
+
+        async function obterAgendamentos() {
+            if (!agendamentosCache) {
+                await carregarAgendamentosPB();
             }
-            agendamentosCarregados = true;
+            return agendamentosCache || [];
         }
 
-        function obterAgendamentos() {
-            const local = AgendamentoStore.getAll();
-            const servidor = dadosServidor.agendamentos || [];
-            const mesclado = [...servidor];
-            
-            local.forEach(item => {
-                if (!mesclado.find(a => a.id === item.id)) {
-                    mesclado.push(item);
-                }
-            });
-            
-            return mesclado;
-        }
-
-        function init() {
+        async function init() {
+            await carregarAgendamentosPB();
             preencherAnos();
             const hoje = new Date();
             document.getElementById('mes').value = hoje.getMonth();
             document.getElementById('ano').value = hoje.getFullYear();
             
-            carregarDadosServidor().then(() => {
-                gerarRelatorio();
-            });
+            gerarRelatorio();
         }
 
         function preencherAnos() {

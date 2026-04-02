@@ -200,84 +200,26 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script type="module">import '../static/js/pocketbase-api.js';</script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script type="module">import '../static/js/pb-db.js';</script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         document.getElementById('data').valueAsDate = new Date();
         
-        const RECEITAS_KEY = 'crebortoli_receitas';
-        
-        function getReceitas() {
-            const data = localStorage.getItem(RECEITAS_KEY);
-            return data ? JSON.parse(data) : [];
+        async function getReceitas() {
+            return await receitas.getAll();
         }
         
-        function saveReceitaLocal(receita) {
-            const receitas = getReceitas();
-            receitas.unshift(receita);
-            localStorage.setItem(RECEITAS_KEY, JSON.stringify(receitas));
+        async function saveReceita(receita) {
+            return await receitas.create(receita);
         }
         
-        function deleteReceitaLocal(id) {
-            let receitas = getReceitas();
-            receitas = receitas.filter(r => r.id !== id);
-            localStorage.setItem(RECEITAS_KEY, JSON.stringify(receitas));
+        async function deleteReceita(id) {
+            return await receitas.delete(id);
         }
         
-        async function syncReceitasToServer() {
-            if (typeof pb === 'undefined') return;
-            try {
-                const locais = getReceitas();
-                for (const r of locais) {
-                    if (!r.synced) {
-                        await pb.collection('receitas').create({
-                            paciente: r.paciente,
-                            data: r.data,
-                            dataFormatada: r.dataFormatada,
-                            pdfData: r.pdfData,
-                            nomeArquivo: r.nomeArquivo,
-                            localId: r.id
-                        });
-                        r.synced = true;
-                    }
-                }
-                localStorage.setItem(RECEITAS_KEY, JSON.stringify(locais));
-            } catch (e) {
-                console.warn('Erro ao sincronizar com servidor:', e);
-            }
-        }
-        
-        async function syncReceitasFromServer() {
-            if (typeof pb === 'undefined') return;
-            try {
-                const remotos = await pb.collection('receitas').getFullList({ sort: '-created' });
-                const locais = getReceitas();
-                const localIds = new Set(locais.map(r => r.localId || r.id));
-                
-                remotos.forEach(r => {
-                    if (!localIds.has(r.id)) {
-                        locais.unshift({
-                            id: r.id,
-                            localId: r.id,
-                            paciente: r.paciente,
-                            data: r.data,
-                            dataFormatada: r.dataFormatada,
-                            pdfData: r.pdfData,
-                            nomeArquivo: r.nomeArquivo,
-                            synced: true
-                        });
-                    }
-                });
-                
-                localStorage.setItem(RECEITAS_KEY, JSON.stringify(locais));
-            } catch (e) {
-                console.warn('Erro ao buscar receitas do servidor:', e);
-            }
-        }
-        
-        function renderHistorico() {
-            const receitas = getReceitas();
+        async function renderHistorico() {
+            const receitas = await getReceitas();
             const tbody = document.getElementById('historicoBody');
             
             if (receitas.length === 0) {
@@ -298,30 +240,40 @@
         }
         
         function downloadPDF(id) {
-            const receitas = getReceitas();
-            const receita = receitas.find(r => r.id === id);
-            if (receita && receita.pdfData) {
-                const blob = base64ToBlob(receita.pdfData, 'application/pdf');
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = receita.nomeArquivo;
-                a.click();
-                URL.revokeObjectURL(url);
-            }
+            getReceitas().then(receitas => {
+                const receita = receitas.find(r => r.id === id);
+                if (receita && receita.pdfData) {
+                    const blob = base64ToBlob(receita.pdfData, 'application/pdf');
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = receita.nomeArquivo;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                }
+            });
         }
         
-        function excluirReceita(id) {
+        async function excluirReceita(id) {
             if (confirm('Deseja excluir esta receita?')) {
-                deleteReceitaLocal(id);
-                if (typeof pb !== 'undefined') {
-                    pb.collection('receitas').delete(id).catch(() => {});
-                }
-                renderHistorico();
+                await deleteReceita(id);
+                await renderHistorico();
             }
         }
         
         function base64ToBlob(base64, mimeType) {
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: mimeType });
+        }
+
+        (async () => {
+            await renderHistorico();
+        })();
             const byteCharacters = atob(base64);
             const byteNumbers = new Array(byteCharacters.length);
             for (let i = 0; i < byteCharacters.length; i++) {
@@ -429,18 +381,15 @@
 
                 const pdfData = doc.output('datauristring').split(',')[1];
 
-                saveReceitaLocal({
-                    id: Date.now().toString(),
+                await saveReceita({
                     paciente: paciente,
                     data: data,
                     dataFormatada: dataFormatada,
                     pdfData: pdfData,
-                    nomeArquivo: nomeArquivo,
-                    synced: false
+                    nomeArquivo: nomeArquivo
                 });
 
-                renderHistorico();
-                syncReceitasToServer();
+                await renderHistorico();
 
                 alert('Receita gerada com sucesso!');
 

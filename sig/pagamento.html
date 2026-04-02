@@ -190,14 +190,29 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
+    <script type="module">import '../static/js/pb-db.js';</script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');</script>
     <script>
-        function copiarChave() {
-            const chave = '14996638056';
-            navigator.clipboard.writeText(chave).then(() => {
-                alert('Chave PIX copiada!');
-            });
+        let agendamentosCache = null;
+
+        async function loadAgendamentos() {
+            agendamentosCache = await agendamentos.getAll();
         }
+
+        function getAgendamentosPendentes() {
+            return (agendamentosCache || [])
+                .filter(a => !a.pago && a.status !== 'CONCLUIDO')
+                .sort((a, b) => new Date(a.data) - new Date(b.data));
+        }
+
+        function renderAgendamentos() {
+            const agendamentos = getAgendamentosPendentes();
+            const container = document.getElementById('lista-agendamentos');
+            
+            if (agendamentos.length === 0) {
+                container.innerHTML = '<p style="color: #666;">Nenhum agendamento pendente de pagamento.</p>';
+                return;
+            }
 
         function renderAgendamentos() {
             const agendamentos = AgendamentoStore.getAll()
@@ -233,15 +248,19 @@
             return data.toLocaleDateString('pt-BR');
         }
 
-        function marcarPago(id) {
+        async function marcarPago(id) {
             if (confirm('Confirmar pagamento deste agendamento?')) {
-                AgendamentoStore.update(id, { pago: true, status: 'PAGO' });
+                await agendamentos.update(id, { pago: true, status: 'PAGO' });
+                await loadAgendamentos();
                 renderAgendamentos();
                 alert('Pagamento confirmado com sucesso!');
             }
         }
 
-        renderAgendamentos();
+        (async () => {
+            await loadAgendamentos();
+            renderAgendamentos();
+        })();
     </script>
 </body>
 </html>
