@@ -200,7 +200,8 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script type="module">import '../static/js/pb-db.js';</script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
@@ -305,87 +306,68 @@
                 return;
             }
 
-            if (!window.jspdf) {
-                alert('Biblioteca jsPDF não carregou. Aguarde um momento e tente novamente.');
+            if (!window.pdfMake) {
+                alert('Biblioteca pdfMake não carregou. Aguarde um momento e tente novamente.');
                 return;
             }
 
             try {
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
                 const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
 
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(20);
-                doc.setTextColor(128, 0, 128);
-                doc.text('Espaço Cre Bortoli', 105, 25, { align: 'center' });
-
-                doc.setFont('helvetica', 'normal');
-                doc.setFontSize(10);
-                doc.setTextColor(60, 60, 60);
-                doc.text('Estética & Depilação', 20, 35);
-                doc.text('Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', 190, 35, { align: 'right' });
-
-                doc.setDrawColor(186, 85, 211);
-                doc.setLineWidth(0.5);
-                doc.line(20, 42, 190, 42);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(16);
-                doc.setTextColor(128, 0, 128);
-                doc.text('INDICAÇÃO TERAPÊUTICA', 105, 55, { align: 'center' });
-
-                doc.setDrawColor(147, 112, 219);
-                doc.setLineWidth(0.3);
-                doc.line(60, 60, 150, 60);
-
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(12);
-                doc.setTextColor(0, 0, 0);
-                doc.text('Paciente:', 20, 75);
-                doc.setFont('helvetica', 'normal');
-                doc.text(paciente, 45, 75);
-
-                doc.setFont('helvetica', 'bold');
-                doc.text('Data:', 140, 75);
-                doc.setFont('helvetica', 'normal');
-                doc.text(dataFormatada, 160, 75);
-
-                doc.setDrawColor(200, 200, 200);
-                doc.setLineWidth(0.1);
-                doc.line(20, 82, 190, 82);
-
-                const splitIndicacao = doc.splitTextToSize(indicacao, 170);
-                doc.text(splitIndicacao, 20, 95);
-
-                let yPos = 95 + (splitIndicacao.length * 7) + 15;
+                const docDefinition = {
+                    content: [
+                        {
+                            text: 'Espaço Cre Bortoli',
+                            fontSize: 20,
+                            color: '#800080',
+                            alignment: 'center',
+                            margin: [0, 0, 0, 5]
+                        },
+                        {
+                            columns: [
+                                { text: 'Estética & Depilação', fontSize: 10, color: '#3c3c3c' },
+                                { text: 'Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', fontSize: 10, color: '#3c3c3c', alignment: 'right' }
+                            ],
+                            margin: [0, 0, 0, 5]
+                        },
+                        {
+                            canvas: [{ type: 'line', x1: 25, y1: 0, x2: 195, y2: 0, lineWidth: 0.5, lineColor: '#b855d3' }],
+                            margin: [0, 5, 0, 10]
+                        },
+                        {
+                            text: 'INDICAÇÃO TERAPÊUTICA',
+                            fontSize: 16,
+                            bold: true,
+                            color: '#800080',
+                            alignment: 'center',
+                            margin: [0, 10, 0, 3]
+                        },
+                        {
+                            canvas: [{ type: 'line', x1: 60, y1: 0, x2: 150, y2: 0, lineWidth: 0.3, lineColor: '#9370db' }],
+                            margin: [0, 0, 0, 15]
+                        },
+                        { columns: [{ text: 'Paciente: ', bold: true }, { text: paciente }] },
+                        { columns: [{ text: 'Data: ', bold: true }, { text: dataFormatada }], margin: [0, 5, 0, 10] },
+                        { text: indicacao, lineHeight: 1.5 }
+                    ],
+                    defaultStyle: { font: 'Helvetica', fontSize: 11 },
+                    pageSize: 'A4',
+                    pageMargins: [20, 20, 20, 20]
+                };
 
                 if (observacoes) {
-                    if (yPos > 230) {
-                        doc.addPage();
-                        yPos = 30;
-                    }
-
-                    doc.setFont('helvetica', 'bold');
-                    doc.setFontSize(12);
-                    doc.text('Observações:', 20, yPos);
-
-                    doc.setFont('helvetica', 'normal');
-                    const splitObs = doc.splitTextToSize(observacoes, 170);
-                    doc.text(splitObs, 20, yPos + 7);
+                    docDefinition.content.push({ text: 'Observações:', bold: true, margin: [0, 15, 0, 5] });
+                    docDefinition.content.push({ text: observacoes, lineHeight: 1.5 });
                 }
 
                 const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${data}.pdf`;
 
-                doc.save(nomeArquivo);
-
-                const pdfData = doc.output('datauristring').split(',')[1];
+                pdfMake.createPdf(docDefinition).download(nomeArquivo);
 
                 await saveReceita({
                     paciente: paciente,
                     data: data,
                     dataFormatada: dataFormatada,
-                    pdfData: pdfData,
                     nomeArquivo: nomeArquivo
                 });
 

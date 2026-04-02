@@ -261,10 +261,10 @@
     </main>
 
     <div id="footer-placeholder"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <script type="module">import '../static/js/pb-db.js';</script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
     <script>
         const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
         
@@ -435,16 +435,11 @@
         }
 
         async function gerarPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-            
-            const fontBase64 = await fetch('../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf')
-                .then(r => r.arrayBuffer())
-                .then(buf => btoa(String.fromCharCode(...new Uint8Array(buf))));
-            doc.addFileToVFS('WorldDiscovery.ttf', fontBase64);
-            doc.addFont('WorldDiscovery.ttf', 'WorldDiscovery', 'normal');
-            doc.setFont('WorldDiscovery');
-            
+            if (!window.pdfMake) {
+                alert('Biblioteca pdfMake não carregou.');
+                return;
+            }
+
             const tipoPeriodo = document.getElementById('tipo-periodo').value;
             const mes = parseInt(document.getElementById('mes').value);
             const ano = parseInt(document.getElementById('ano').value);
@@ -456,56 +451,10 @@
                 titulo = `Relatório Anual - ${ano}`;
             }
 
-            doc.setDrawColor(128, 0, 128);
-            doc.setLineWidth(1.5);
-            doc.rect(10, 10, 190, 277);
-            
-            doc.setDrawColor(138, 43, 226);
-            doc.setLineWidth(0.8);
-            doc.rect(14, 14, 182, 269);
-            
-            doc.setDrawColor(186, 85, 211);
-            doc.setLineWidth(0.3);
-            doc.rect(18, 18, 174, 261);
-            
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.setTextColor(60, 60, 60);
-            doc.text('Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', 105, 28, { align: 'center' });
-            
-            doc.setFont('WorldDiscovery', 'normal');
-            doc.setFontSize(22);
-            doc.setTextColor(128, 0, 128);
-            doc.text('Espaço Cre Bortoli', 105, 38, { align: 'center' });
-            
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(11);
-            doc.setTextColor(60, 60, 60);
-            doc.text('Estética & Depilação', 105, 46, { align: 'center' });
-            
-            doc.setDrawColor(186, 85, 211);
-            doc.setLineWidth(0.5);
-            doc.line(25, 55, 195, 55);
-            
-            doc.setFontSize(14);
-            doc.setTextColor(0);
-            doc.setFont('helvetica', 'bold');
-            doc.text(titulo, 105, 68, { align: 'center' });
-            
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, 105, 76, { align: 'center' });
-
             const totalRecebido = document.getElementById('total-recebido').textContent;
             const totalPendente = document.getElementById('total-pendente').textContent;
             const qtdServicos = document.getElementById('qtd-servicos').textContent;
             const ticketMedio = document.getElementById('ticket-medio').textContent;
-
-            doc.setFontSize(10);
-            doc.text(`Total Recebido: ${totalRecebido}`, 25, 88);
-            doc.text(`Total Pendente: ${totalPendente}`, 110, 88);
-            doc.text(`Qtd. Serviços: ${qtdServicos}`, 25, 95);
-            doc.text(`Tíquete Médio: ${ticketMedio}`, 110, 95);
 
             const tableData = [];
             const rows = document.querySelectorAll('#tabela-corpo tr');
@@ -525,16 +474,55 @@
                 }
             });
 
-            doc.autoTable({
-                startY: 105,
-                head: [['Data', 'Cliente', 'Serviço', 'Valor', 'Status']],
-                body: tableData,
-                styles: { fontSize: 8 },
-                headStyles: { fillColor: [128, 0, 128] },
-                alternateRowStyles: { fillColor: [245, 228, 236] }
-            });
+            const docDefinition = {
+                pageSize: 'A4',
+                pageMargins: [20, 20, 20, 20],
+                content: [
+                    {
+                        canvas: [
+                            { type: 'rect', x: 10, y: 10, w: 190, h: 277, r: 0, lineWidth: 1, lineColor: '#800080' },
+                            { type: 'rect', x: 14, y: 14, w: 182, h: 269, r: 0, lineWidth: 0.8, lineColor: '#8a2be2' },
+                            { type: 'rect', x: 18, y: 18, w: 174, h: 261, r: 0, lineWidth: 0.3, lineColor: '#b855d3' }
+                        ]
+                    },
+                    { text: 'Rua Francisco Martineli, 492 - Palmital, Marília, SP | (14) 99663.8056', fontSize: 10, color: '#3c3c3c', alignment: 'center', margin: [0, 28, 0, 0] },
+                    { text: 'Espaço Cre Bortoli', fontSize: 22, color: '#800080', alignment: 'center', margin: [0, 8, 0, 0], bold: true },
+                    { text: 'Estética & Depilação', fontSize: 11, color: '#3c3c3c', alignment: 'center', margin: [0, 5, 0, 0] },
+                    { canvas: [{ type: 'line', x1: 25, y1: 55, x2: 195, y2: 55, lineWidth: 0.5, lineColor: '#b855d3' }], margin: [0, 5, 0, 0] },
+                    { text: titulo, fontSize: 14, bold: true, alignment: 'center', margin: [0, 10, 0, 0] },
+                    { text: `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, fontSize: 10, alignment: 'center', margin: [0, 5, 0, 0] },
+                    {
+                        columns: [
+                            { text: `Total Recebido: ${totalRecebido}`, width: '50%', fontSize: 10 },
+                            { text: `Total Pendente: ${totalPendente}`, width: '50%', fontSize: 10 }
+                        ],
+                        margin: [0, 15, 0, 0]
+                    },
+                    {
+                        columns: [
+                            { text: `Qtd. Serviços: ${qtdServicos}`, width: '50%', fontSize: 10 },
+                            { text: `Tíquete Médio: ${ticketMedio}`, width: '50%', fontSize: 10 }
+                        ],
+                        margin: [0, 5, 0, 0]
+                    },
+                    {
+                        table: {
+                            headerRows: 1,
+                            widths: ['auto', '*', 'auto', 'auto', 'auto'],
+                            body: [
+                                [{ text: 'Data', fillColor: '#800080', color: 'white' }, { text: 'Cliente', fillColor: '#800080', color: 'white' }, { text: 'Serviço', fillColor: '#800080', color: 'white' }, { text: 'Valor', fillColor: '#800080', color: 'white' }, { text: 'Status', fillColor: '#800080', color: 'white' }],
+                                ...tableData.map(row => row.map(cell => ({ text: cell, fontSize: 8 })))
+                            ]
+                        },
+                        layout: { fillColor: (rowIndex) => rowIndex === 0 ? null : (rowIndex % 2 === 0 ? '#f5e4ec' : null) },
+                        margin: [0, 15, 0, 0]
+                    }
+                ],
+                defaultStyle: { font: 'Helvetica', fontSize: 10 }
+            };
 
-            doc.save(`relatorio-crebortoli-${ano}${tipoPeriodo === 'mensal' ? '-' + (mes + 1).toString().padStart(2, '0') : ''}.pdf`);
+            const nomeArquivo = `relatorio-crebortoli-${ano}${tipoPeriodo === 'mensal' ? '-' + (mes + 1).toString().padStart(2, '0') : ''}.pdf`;
+            pdfMake.createPdf(docDefinition).download(nomeArquivo);
         }
 
         init();
