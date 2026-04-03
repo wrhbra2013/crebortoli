@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ativar Servidor PHP - Cre Bortoli</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; max-width: 600px; margin: 2rem auto; padding: 1rem; line-height: 1.6; }
+        h1 { color: #e91e63; }
+        h2 { color: #333; margin-top: 1.5rem; }
+        code { background: #f5f5f5; padding: 0.2rem 0.5rem; border-radius: 4px; }
+        pre { background: #263238; color: #aed581; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+        .step { background: #f9f9f9; padding: 1rem; margin: 1rem 0; border-radius: 8px; border-left: 4px solid #e91e63; }
+        .btn { display: inline-block; background: #e91e63; color: white; padding: 0.8rem 1.5rem; text-decoration: none; border-radius: 6px; margin: 0.5rem 0; }
+        .btn:hover { background: #c2185b; }
+        .note { background: #e3f2fd; padding: 1rem; border-radius: 8px; margin: 1rem 0; }
+    </style>
+</head>
+<body>
+    <h1>Ativar Servidor PHP</h1>
+    
+    <div class="step">
+        <h2>1. Verificar PHP</h2>
+        <pre>php --version</pre>
+        <p>Se não tiver, instale: <code>sudo apt install php php-sqlite3</code></p>
+    </div>
+    
+    <div class="step">
+        <h2>2. Iniciar Servidor</h2>
+        <p>Na pasta do projeto:</p>
+        <pre>php -S localhost:8080</pre>
+        <p>Ou para disponibilizar na rede:</p>
+        <pre>php -S 0.0.0.0:8080</pre>
+    </div>
+    
+    <div class="step">
+        <h2>3. Testar API</h2>
+        <p>Acesse no navegador:</p>
+        <a href="http://localhost:8080/api.php" class="btn">Testar API</a>
+        
+        <p>Ou via terminal:</p>
+        <pre>curl http://localhost:8080/api.php</pre>
+    </div>
+    
+    <div class="note">
+        <h3>Após ativar:</h3>
+        <ul>
+            <li>O <code>database.sqlite</code> será criado automaticamente</li>
+            <li>Os dados sincronizam entre dispositivos</li>
+            <li>O login QR funcionará</li>
+        </ul>
+    </div>
+    
+    <div class="step">
+        <h2>4. Hospedagem</h2>
+        <p>Para colocar online, basta um servidor com PHP:</p>
+        <ul>
+            <li>HostGator, LocaWeb, Hostinger</li>
+            <li>Vercel (com PHP adapter)</li>
+            <li>Railway, Render (PHP não suportado nativamente)</li>
+        </ul>
+    </div>
+</body>
+</html>

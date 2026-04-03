@@ -282,10 +282,16 @@
     </header>
 
     <div class="container">
-        <div class="card">
-            <h2>Visão Geral</h2>
+<div class="card">
+            <h2>Visão Geral do Sistema</h2>
+            <p>Veja também: <a href="arquitetura.html">Arquitetura Completa</a></p>
             <p>Sistema de agendamento de serviços de beleza com pagamento via PIX. Desenvolvido com HTML, CSS e JavaScript (ES6+), utilizando PHP com SQLite para persistência de dados.</p>
-            <p><strong>Versão:</strong> 1.0.0</p>
+            <p><strong>Características:</strong></p>
+            <ul>
+                <li>Funciona <strong>sem servidor</strong> (apenas localStorage)</li>
+                <li>Sync opcional com PHP/SQLite</li>
+                <li>Login QR para admin</li>
+            </ul>
         </div>
 
         <div class="card">
@@ -377,16 +383,16 @@
         <div class="card">
             <h2>Arquitetura do Sistema</h2>
             
-            <h3>Backend</h3>
-            <p><strong>PHP + SQLite</strong> - Servidor web com banco de dados leve:</p>
+            <h3>Persistência de Dados</h3>
+            <p><strong>PHP + SQLite</strong> - Servidor com API REST:</p>
             <ul>
-                <li>PHP 7.4+ com extensão PDO</li>
-                <li>SQLite (arquivo local)</li>
-                <li>API REST em api.php</li>
+                <li>Dados sincronizados via API PHP</li>
+                <li>InfinityFree (hospedagem gratuita com PHP + SQLite)</li>
+                <li>Múltiplos dispositivos acessam mesmo banco de dados</li>
             </ul>
             
-            <h3>Banco de Dados</h3>
-            <p>Tabelas disponíveis no SQLite:</p>
+            <h3>Tabelas do Banco de Dados</h3>
+            <p>5 tabelas no SQLite:</p>
             <table>
                 <thead>
                     <tr>
@@ -399,19 +405,14 @@
                     <tr><td>servicos</td><td>Catálogo de serviços disponíveis</td></tr>
                     <tr><td>clientes</td><td>Cadastro de clientes</td></tr>
                     <tr><td>receitas</td><td>Receitas de produtos</td></tr>
-                    <tr><td>qr_sessoes</td><td>Sessões de autenticação QR</td></tr>
+                    <tr><td>contatos</td><td>Mensagens de contato</td></tr>
                 </tbody>
             </table>
             
-            <h3>API REST</h3>
-            <p>API PHP em <code>api.php</code> com SQLite:</p>
-            <pre>GET  api.php?action=agendamentos  # Listar agendamentos
-POST api.php                      # Criar/atualizar dados</pre>
-            
             <h3>Autenticação QR</h3>
-            <p>O SIG usa autenticação via QR Code com backend PHP/SQLite:</p>
+            <p>O SIG usa autenticação via QR Code com localStorage:</p>
             <ul>
-                <li>Tabela <code>qr_sessoes</code> no SQLite armazena sessões</li>
+                <li>Sessão armazenada no navegador do admin</li>
                 <li>Usuário gera QR no computador</li>
                 <li>Celular escaneia e aprova com código</li>
             </ul>
@@ -512,7 +513,7 @@ POST api.php                      # Criar/atualizar dados</pre>
                     <p>API REST</p>
                 </div>
                 <div class="tech-item">
-                    <strong>SQLite</strong>
+                    <strong>Google Sheets</strong>
                     <p>Banco de dados</p>
                 </div>
                 <div class="tech-item">
@@ -532,7 +533,7 @@ POST api.php                      # Criar/atualizar dados</pre>
             <p><strong>Requisitos:</strong></p>
             <ul>
                 <li>JavaScript habilitado</li>
-                <li>Conexão com internet (para API PHP)</li>
+                <li>Conexão com internet (para Google Sheets)</li>
             </ul>
         </div>
 
@@ -550,8 +551,7 @@ POST api.php                      # Criar/atualizar dados</pre>
                     <tr><td>paginas/*.html</td><td>Páginas secundárias (agenda, servicos, etc)</td></tr>
                     <tr><td>sig/*.html</td><td>Painel administrativo (SIG)</td></tr>
                     <tr><td>servicos.json</td><td>Arquivo de preços estático</td></tr>
-                    <tr><td>api.php</td><td>API PHP com SQLite</td></tr>
-                    <tr><td>database.sqlite</td><td>Banco de dados SQLite</td></tr>
+                    <tr><td>static/js/storage.js</td><td>Sistema de persistência (Google Sheets)</td></tr>
                     <tr><td>static/css/</td><td>Arquivos de estilos</td></tr>
                     <tr><td>static/icon/</td><td>Ícones do site</td></tr>
                 </tbody>
