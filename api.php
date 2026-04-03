@@ -40,6 +40,11 @@ $db->exec("CREATE TABLE IF NOT EXISTS vendas_servicos (
     valor_total REAL, cliente TEXT, created_at TEXT
 )");
 
+$db->exec("CREATE TABLE IF NOT EXISTS sessoes (
+    id TEXT PRIMARY KEY, token TEXT, status TEXT, 
+    ip TEXT, user_agent TEXT, created_at TEXT, expires_at TEXT
+));
+
 $inserirServicosPadrao = $db->query("SELECT COUNT(*) as total FROM servicos");
 $totalServicos = $inserirServicosPadrao->fetchArray(SQLITE3_ASSOC);
 
@@ -165,8 +170,69 @@ switch ($action) {
         echo json_encode([
             'status' => 'ok',
             'database' => file_exists('database.sqlite') ? 'exists' : 'created',
-            'tables' => ['agendamentos', 'servicos', 'clientes', 'receitas', 'contatos', 'vendas_servicos']
+            'tables' => ['agendamentos', 'servicos', 'clientes', 'receitas', 'contatos', 'vendas_servicos', 'sessoes']
         ]);
+        break;
+        
+    case 'criar_sessao':
+        $token = SQLite3::escapeString($input['token'] ?? '');
+        $urlAprovacao = SQLite3::escapeString($input['urlAprovacao'] ?? '');
+        
+        if (!$token) {
+            echo json_encode(['sucesso' => false, 'erro' => 'Token inválido']);
+            break;
+        }
+        
+        $sessaoId = 'sessao_' . time();
+        $expiresAt = date('c', strtotime('+2 minutes'));
+        
+        $db->exec("INSERT INTO sessoes (id, token, status, created_at, expires_at) VALUES ('$sessaoId', '$token', 'aguardando', NOW(), '$expiresAt')");
+        
+        echo json_encode(['sucesso' => true, 'sessaoId' => $sessaoId, 'token' => $token]);
+        break;
+        
+    case 'verificar_sessao':
+        $token = SQLite3::escapeString($input['token'] ?? '');
+        
+        if (!$token) {
+            echo json_encode(['status' => 'invalid']);
+            break;
+        }
+        
+        $result = $db->query("SELECT status FROM sessoes WHERE token = '$token' ORDER BY created_at DESC LIMIT 1");
+        $sessao = $result->fetchArray(SQLITE3_ASSOC);
+        
+        if ($sessao) {
+            echo json_encode(['status' => $sessao['status']]);
+        } else {
+            echo json_encode(['status' => 'inexistente']);
+        }
+        break;
+        
+    case 'aprovar_sessao':
+        $token = SQLite3::escapeString($input['token'] ?? '');
+        
+        if (!$token) {
+            echo json_encode(['sucesso' => false]);
+            break;
+        }
+        
+        $db->exec("UPDATE sessoes SET status = 'aprovado' WHERE token = '$token'");
+        
+        echo json_encode(['sucesso' => true]);
+        break;
+        
+    case 'negar_sessao':
+        $token = SQLite3::escapeString($input['token'] ?? '');
+        
+        if (!$token) {
+            echo json_encode(['sucesso' => false]);
+            break;
+        }
+        
+        $db->exec("UPDATE sessoes SET status = 'negado' WHERE token = '$token'");
+        
+        echo json_encode(['sucesso' => true]);
         break;
         
     default:

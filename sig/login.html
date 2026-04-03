@@ -41,6 +41,12 @@
         .instructions h3 { font-size: 1rem; color: var(--cor-principal); margin-bottom: 0.5rem; }
         .instructions ol { margin: 0; padding-left: 1.2rem; }
         .instructions li { margin-bottom: 0.3rem; }
+        .btn-whatsapp {
+            width: 100%; padding: 1rem; background: #25d366; color: white;
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;
+            margin-top: 0.5rem; display: none;
+        }
+        .btn-whatsapp:hover { background: #20bd5c; }
         .btn-primary {
             width: 100%; padding: 1rem; background: var(--cor-principal); color: white;
             border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;
@@ -71,19 +77,23 @@
             <small>Código: <code id="token-display"></code></small>
         </div>
         <button class="btn-primary" id="btn-gerar" onclick="gerarQR()">Gerar QR Code</button>
+        <button class="btn-whatsapp" id="btn-whatsapp" onclick="compartilharQR()">📱 Compartilhar Código</button>
     </div>
 
     <script>
         const SESSION_KEY = 'sig_qr_session';
         const AUTH_KEY = 'sig_authenticated';
         const SESSION_TIMEOUT = 60;
+        const API_URL = 'https://crebortoli.free.nf/api.php';
         
         let currentToken = null;
         let countdownInterval = null;
         let pollTimeout = null;
         
+        const BASE_URL = 'https://crebortoli.free.nf';
+        
         function getBaseUrl() {
-            return window.location.protocol + '//' + window.location.host;
+            return BASE_URL;
         }
         
         function showStatus(msg, type) {
@@ -108,10 +118,10 @@
         
         async function apiRequest(acao, dados = {}) {
             try {
-                const response = await fetch(getBaseUrl() + '/api.php', {
+                const response = await fetch(API_URL, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acao, ...dados })
+                    body: JSON.stringify({ action: acao, ...dados })
                 });
                 return await response.json();
             } catch (e) {
@@ -215,11 +225,24 @@
             document.getElementById('token-display').textContent = currentToken;
             document.getElementById('session-info').style.display = 'block';
             
+            const btnWhatsapp = document.getElementById('btn-whatsapp');
+            btnWhatsapp.style.display = 'block';
+            btnWhatsapp.textContent = '📱 Compartilhar Código: ' + currentToken;
+            
             btn.disabled = false;
             btn.textContent = 'Gerar QR Code';
             
             startTimer();
             startPolling(currentToken);
+        }
+        
+        function compartilharQR() {
+            if (!currentToken) return;
+            
+            const url = getBaseUrl() + '/sig/aprovar.html?token=' + currentToken;
+            const mensagem = 'Acesse para aprovar o login: ' + url;
+            const whatsappUrl = 'https://wa.me/?text=' + encodeURIComponent(mensagem);
+            window.open(whatsappUrl, '_blank');
         }
         
         async function startPolling(token) {
