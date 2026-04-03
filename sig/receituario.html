@@ -236,12 +236,10 @@
     <div id="footer-placeholder"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><'+'/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><'+'/script>');</script>
     <script type="module">
         import { receitas } from '../static/js/pb-db.js';
-        window.receitas = receitas;
-    </script>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><'+'/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><'+'/script>');</script>
-    <script>
+        
         document.getElementById('data').valueAsDate = new Date();
         
         async function getReceitas() {
@@ -257,29 +255,34 @@
         }
         
         async function renderHistorico() {
-            const receitas = await getReceitas();
-            const tbody = document.getElementById('historicoBody');
-            
-            if (receitas.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="3" class="empty-message">Nenhuma receita gerada ainda.</td></tr>';
-                return;
+            try {
+                const listaReceitas = await getReceitas();
+                const tbody = document.getElementById('historicoBody');
+                
+                if (!listaReceitas || listaReceitas.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="3" class="empty-message">Nenhuma receita gerada ainda.</td></tr>';
+                    return;
+                }
+                
+                tbody.innerHTML = listaReceitas.map(r => `
+                    <tr>
+                        <td>${r.paciente}</td>
+                        <td>${r.dataFormatada}</td>
+                        <td>
+                            <button class="btn-download" onclick="downloadPDF('${r.id}')">Download</button>
+                            <button class="btn-download" style="background:#666" onclick="excluirReceita('${r.id}')">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Erro ao buscar receitas:', err);
+                document.getElementById('historicoBody').innerHTML = '<tr><td colspan="3" class="empty-message">Erro ao carregar receitas.</td></tr>';
             }
-            
-            tbody.innerHTML = receitas.map(r => `
-                <tr>
-                    <td>${r.paciente}</td>
-                    <td>${r.dataFormatada}</td>
-                    <td>
-                        <button class="btn-download" onclick="downloadPDF('${r.id}')">Download</button>
-                        <button class="btn-download" style="background:#666" onclick="excluirReceita('${r.id}')">Excluir</button>
-                    </td>
-                </tr>
-            `).join('');
         }
         
-        function downloadPDF(id) {
-            getReceitas().then(receitas => {
-                const receita = receitas.find(r => r.id === id);
+        window.downloadPDF = function(id) {
+            getReceitas().then(listaReceitas => {
+                const receita = listaReceitas.find(r => r.id === id);
                 if (receita && receita.pdfData) {
                     const blob = base64ToBlob(receita.pdfData, 'application/pdf');
                     const url = URL.createObjectURL(blob);
@@ -290,14 +293,14 @@
                     URL.revokeObjectURL(url);
                 }
             });
-        }
+        };
         
-        async function excluirReceita(id) {
+        window.excluirReceita = async function(id) {
             if (confirm('Deseja excluir esta receita?')) {
                 await deleteReceita(id);
                 await renderHistorico();
             }
-        }
+        };
         
         function base64ToBlob(base64, mimeType) {
             const byteCharacters = atob(base64);
@@ -308,40 +311,39 @@
             const byteArray = new Uint8Array(byteNumbers);
             return new Blob([byteArray], { type: mimeType });
         }
-
+        
         (async () => {
             await renderHistorico();
         })();
         
-        function limparForm() {
+        window.limparForm = function() {
             document.getElementById('receituarioForm').reset();
             document.getElementById('data').valueAsDate = new Date();
-        }
+        };
+        
+        window.gerarPDF = gerarPDF;
 
         function criarHeaderPDF() {
-            return {
-                stack: [
-                    {
-                        columns: [
-                            {
-                                width: '*',
-                                stack: [
-                                    { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', bold: true },
-                                    { text: 'Estética & Depilação', fontSize: 10, color: '#666', margin: [0, 2, 0, 0] }
-                                ]
-                            },
-                            {
-                                width: '*',
-                                text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
-                                fontSize: 9,
-                                color: '#666',
-                                alignment: 'right'
-                            }
-                        ],
-                        margin: [20, 10, 20, 10]
-                    },
-                    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 595, y2: 0, lineWidth: 2, lineColor: '#e91e63' }], margin: [0, 0, 0, 5] }
-                ]
+            return function(currentPage, pageCount, pageSize) {
+                return {
+                    columns: [
+                        {
+                            width: '*',
+                            stack: [
+                                { text: 'Espaço Cre Bortoli', fontSize: 18, color: '#e91e63', bold: true },
+                                { text: 'Estética & Depilação', fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
+                            ]
+                        },
+                        {
+                            width: '*',
+                            text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
+                            fontSize: 8,
+                            color: '#666',
+                            alignment: 'right'
+                        }
+                    ],
+                    margin: [20, 20, 20, 10]
+                };
             };
         }
 
@@ -384,7 +386,7 @@
                         { text: indicacao, lineHeight: 1.5 }
                     ],
                     pageSize: 'A4',
-                    pageMargins: [20, 20, 20, 20]
+                    pageMargins: [20, 60, 20, 20]
                 };
 
                 if (observacoes) {

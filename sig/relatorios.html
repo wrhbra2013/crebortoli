@@ -297,35 +297,33 @@
     <div id="footer-placeholder"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script type="module">import '../static/js/pb-db.js';</script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><'+'/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><'+'/script>');</script>
-    <script>
+    <script type="module">
+        import { agendamentos } from '../static/js/pb-db.js';
+        
         const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
         function criarHeaderPDF() {
-            return {
-                stack: [
-                    {
-                        columns: [
-                            {
-                                width: '*',
-                                stack: [
-                                    { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', bold: true },
-                                    { text: 'Estética & Depilação', fontSize: 10, color: '#666', margin: [0, 2, 0, 0] }
-                                ]
-                            },
-                            {
-                                width: '*',
-                                text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
-                                fontSize: 9,
-                                color: '#666',
-                                alignment: 'right'
-                            }
-                        ],
-                        margin: [20, 10, 20, 10]
-                    },
-                    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 595, y2: 0, lineWidth: 2, lineColor: '#e91e63' }], margin: [0, 0, 0, 5] }
-                ]
+            return function(currentPage, pageCount, pageSize) {
+                return {
+                    columns: [
+                        {
+                            width: '*',
+                            stack: [
+                                { text: 'Espaço Cre Bortoli', fontSize: 18, color: '#e91e63', bold: true },
+                                { text: 'Estética & Depilação', fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
+                            ]
+                        },
+                        {
+                            width: '*',
+                            text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
+                            fontSize: 8,
+                            color: '#666',
+                            alignment: 'right'
+                        }
+                    ],
+                    margin: [20, 20, 20, 10]
+                };
             };
         }
         
@@ -369,7 +367,7 @@
         }
 
         function gerarRelatorio() {
-            if (!agendamentosCarregados) {
+            if (!agendamentosCache) {
                 setTimeout(gerarRelatorio, 100);
                 return;
             }
@@ -537,7 +535,7 @@
 
             const docDefinition = {
                 pageSize: 'A4',
-                pageMargins: [20, 20, 20, 20],
+                pageMargins: [20, 60, 20, 20],
                 header: criarHeaderPDF(),
                 content: [
                     { text: titulo, fontSize: 14, bold: true, alignment: 'center', margin: [0, 15, 0, 0] },
