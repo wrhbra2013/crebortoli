@@ -212,7 +212,18 @@
             </div>
 
             <div class="historico-section">
-                <h2>Receitas Geradas</h2>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h2>Receitas Geradas</h2>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button class="btn-download" style="background:#ff9800;" onclick="setupJSONBin()">Configurar Sync</button>
+                        <button class="btn-download" style="background:#9c27b0;" onclick="mostrarStatusSync()">Status Sync</button>
+                        <button class="btn-download" onclick="exportarReceitas()">Exportar</button>
+                        <label class="btn-download" style="background:#2196f3; cursor: pointer;">
+                            Importar
+                            <input type="file" accept=".json" onchange="importarReceitas(event)" style="display: none;">
+                        </label>
+                    </div>
+                </div>
                 <div class="table-container">
                     <table id="historicoTable">
                         <thead>
@@ -242,21 +253,120 @@
         
         document.getElementById('data').valueAsDate = new Date();
         
-        async function getReceitas() {
-            return await receitas.getAll();
+        const SHEETS_URL = localStorage.getItem('sheets_url') || '';
+        
+        function getReceitas() {
+            const data = localStorage.getItem('receitas');
+            return data ? JSON.parse(data) : [];
         }
         
-        async function saveReceita(receita) {
-            return await receitas.create(receita);
+        async function syncFromServer() {
+            if (!SHEETS_URL) return getReceitas();
+            try {
+                const response = await fetch(SHEETS_URL + '?action=read');
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result && Array.isArray(result)) {
+                        localStorage.setItem('receitas', JSON.stringify(result));
+                        return result;
+                    }
+                }
+            } catch (err) {
+                console.error('Erro ao buscar do servidor:', err);
+            }
+            return getReceitas();
         }
         
-        async function deleteReceita(id) {
-            return await receitas.delete(id);
+        async function syncToServer() {
+            if (!SHEETS_URL) return;
+            try {
+                const receitas = getReceitas();
+                await fetch(SHEETS_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'write', data: receitas })
+                });
+                console.log('Backup automático realizado!');
+            } catch (err) {
+                console.error('Erro no backup:', err);
+            }
+        }
+        
+        function saveReceita(receita) {
+            const receitas = getReceitas();
+            receita.id = Date.now().toString();
+            receitas.unshift(receita);
+            localStorage.setItem('receitas', JSON.stringify(receitas));
+            syncToServer();
+            return receita;
+        }
+        
+        function deleteReceita(id) {
+            let receitas = getReceitas();
+            receitas = receitas.filter(r => r.id !== id);
+            localStorage.setItem('receitas', JSON.stringify(receitas));
+            syncToServer();
+        }
+        
+        function exportarReceitas() {
+            const receitas = getReceitas();
+            if (receitas.length === 0) {
+                alert('Não há receitas para exportar.');
+                return;
+            }
+            const blob = new Blob([JSON.stringify(receitas, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `receitas-backup-${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            syncToServer();
+        }
+        
+        function setupJSONBin() {
+            const binId = prompt('Cole o BIN ID do JSONBin.io:');
+            const apiKey = prompt('Cole a API Key do JSONBin.io:');
+            if (binId && apiKey) {
+                localStorage.setItem('jsonbin_id', binId);
+                localStorage.setItem('jsonbin_key', apiKey);
+                location.reload();
+            }
+        }
+        
+        function mostrarStatusSync() {
+            if (JSONBIN_URL) {
+                alert('✅ Backup automático ATIVO\n\nBin ID: ' + JSONBIN_BIN_ID);
+            } else {
+                alert('⚠️ Backup automático NÃO configurado.\n\nClique em "Configurar Sync" para ativar.');
+            }
+        }
+        
+        function importarReceitas(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const receitas = JSON.parse(e.target.result);
+                    if (Array.isArray(receitas)) {
+                        localStorage.setItem('receitas', JSON.stringify(receitas));
+                        renderHistorico();
+                        alert(`Importadas ${receitas.length} receitas com sucesso!`);
+                    } else {
+                        alert('Formato de arquivo inválido.');
+                    }
+                } catch (err) {
+                    alert('Erro ao ler arquivo: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
         }
         
         async function renderHistorico() {
             try {
-                const listaReceitas = await getReceitas();
+                const listaReceitas = getReceitas();
                 const tbody = document.getElementById('historicoBody');
                 
                 if (!listaReceitas || listaReceitas.length === 0) {
@@ -281,26 +391,24 @@
         }
         
         window.downloadPDF = function(id) {
-            getReceitas().then(listaReceitas => {
-                const receita = listaReceitas.find(r => r.id === id);
-                if (receita && receita.pdfData) {
-                    const blob = base64ToBlob(receita.pdfData, 'application/pdf');
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = receita.nomeArquivo;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                }
-            });
-        };
-        
-        window.excluirReceita = async function(id) {
-            if (confirm('Deseja excluir esta receita?')) {
-                await deleteReceita(id);
-                await renderHistorico();
+            const listaReceitas = getReceitas();
+            const receita = listaReceitas.find(r => r.id === id);
+            if (receita) {
+                alert('PDF será baixado novamente.');
             }
         };
+        
+        window.excluirReceita = function(id) {
+            if (confirm('Deseja excluir esta receita?')) {
+                deleteReceita(id);
+                renderHistorico();
+            }
+        };
+        
+        window.exportarReceitas = exportarReceitas;
+        window.importarReceitas = importarReceitas;
+        window.setupJSONBin = setupJSONBin;
+        window.mostrarStatusSync = mostrarStatusSync;
         
         function base64ToBlob(base64, mimeType) {
             const byteCharacters = atob(base64);
@@ -313,33 +421,40 @@
         }
         
         (async () => {
-            await renderHistorico();
+            await syncFromServer();
+            renderHistorico();
         })();
         
         window.limparForm = function() {
             document.getElementById('receituarioForm').reset();
             document.getElementById('data').valueAsDate = new Date();
         };
-        
-        window.gerarPDF = gerarPDF;
 
         function criarHeaderPDF() {
             return function(currentPage, pageCount, pageSize) {
                 return {
-                    columns: [
+                    stack: [
                         {
-                            width: '*',
-                            stack: [
-                                { text: 'Espaço Cre Bortoli', fontSize: 18, color: '#e91e63', bold: true },
-                                { text: 'Estética & Depilação', fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
+                            columns: [
+                                {
+                                    width: '*',
+                                    stack: [
+                                        { text: 'Espaço Cre Bortoli', fontSize: 22, color: '#e91e63', bold: true, font: 'WorldOfWater' },
+                                        { text: 'Estética & Depilação', fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
+                                    ]
+                                },
+                                {
+                                    width: '*',
+                                    text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
+                                    fontSize: 9,
+                                    color: '#666',
+                                    alignment: 'right'
+                                }
                             ]
                         },
                         {
-                            width: '*',
-                            text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
-                            fontSize: 8,
-                            color: '#666',
-                            alignment: 'right'
+                            canvas: [{ type: 'line', x1: 0, y1: 5, x2: 555, y2: 5, lineWidth: 2, lineColor: '#e91e63' }],
+                            margin: [0, 10, 0, 0]
                         }
                     ],
                     margin: [20, 20, 20, 10]
@@ -347,7 +462,7 @@
             };
         }
 
-        async function gerarPDF() {
+        function gerarPDF() {
             const paciente = document.getElementById('paciente').value;
             const data = document.getElementById('data').value;
             const indicacao = document.getElementById('indicacao').value;
@@ -363,56 +478,61 @@
                 return;
             }
 
-            try {
-                const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
+            const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
 
-                const docDefinition = {
-                    header: criarHeaderPDF(),
-                    content: [
-                        {
-                            text: 'INDICAÇÃO TERAPÊUTICA',
-                            fontSize: 16,
-                            bold: true,
-                            color: '#800080',
-                            alignment: 'center',
-                            margin: [0, 10, 0, 3]
-                        },
-                        {
-                            canvas: [{ type: 'line', x1: 60, y1: 0, x2: 150, y2: 0, lineWidth: 0.3, lineColor: '#9370db' }],
-                            margin: [0, 0, 0, 15]
-                        },
-                        { columns: [{ text: 'Paciente: ', bold: true }, { text: paciente }] },
-                        { columns: [{ text: 'Data: ', bold: true }, { text: dataFormatada }], margin: [0, 5, 0, 10] },
-                        { text: indicacao, lineHeight: 1.5 }
-                    ],
-                    pageSize: 'A4',
-                    pageMargins: [20, 60, 20, 20]
-                };
+            const docDefinition = {
+                header: criarHeaderPDF(),
+                defaultStyle: {
+                    font: 'Helvetica'
+                },
+                fonts: {
+                    WorldOfWater: {
+                        normal: '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf',
+                        bold: '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf',
+                        italics: '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf',
+                        bolditalics: '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf'
+                    }
+                },
+                content: [
+                    {
+                        text: 'INDICAÇÃO TERAPÊUTICA',
+                        fontSize: 16,
+                        bold: true,
+                        color: '#800080',
+                        alignment: 'center',
+                        margin: [0, 10, 0, 3]
+                    },
+                    {
+                        canvas: [{ type: 'line', x1: 60, y1: 0, x2: 150, y2: 0, lineWidth: 0.3, lineColor: '#9370db' }],
+                        margin: [0, 0, 0, 15]
+                    },
+                    { columns: [{ text: 'Paciente: ', bold: true }, { text: paciente }] },
+                    { columns: [{ text: 'Data: ', bold: true }, { text: dataFormatada }], margin: [0, 5, 0, 10] },
+                    { text: indicacao, lineHeight: 1.5 }
+                ],
+                pageSize: 'A4',
+                pageMargins: [20, 60, 20, 20]
+            };
 
-                if (observacoes) {
-                    docDefinition.content.push({ text: 'Observações:', bold: true, margin: [0, 15, 0, 5] });
-                    docDefinition.content.push({ text: observacoes, lineHeight: 1.5 });
-                }
-
-                const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${data}.pdf`;
-
-                pdfMake.createPdf(docDefinition).download(nomeArquivo);
-
-                await saveReceita({
-                    paciente: paciente,
-                    data: data,
-                    dataFormatada: dataFormatada,
-                    nomeArquivo: nomeArquivo
-                });
-
-                await renderHistorico();
-
-                alert('Receita gerada com sucesso!');
-
-            } catch (err) {
-                console.error('Erro ao gerar PDF:', err);
-                alert('Erro ao gerar PDF: ' + err.message);
+            if (observacoes) {
+                docDefinition.content.push({ text: 'Observações:', bold: true, margin: [0, 15, 0, 5] });
+                docDefinition.content.push({ text: observacoes, lineHeight: 1.5 });
             }
+
+            const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${data}.pdf`;
+
+            pdfMake.createPdf(docDefinition).download(nomeArquivo);
+            
+            saveReceita({
+                paciente: paciente,
+                data: data,
+                dataFormatada: dataFormatada,
+                nomeArquivo: nomeArquivo
+            });
+
+            renderHistorico();
+
+            alert('Receita gerada com sucesso!');
         }
     </script>
 </body>
