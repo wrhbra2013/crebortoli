@@ -318,6 +318,33 @@
             document.getElementById('data').valueAsDate = new Date();
         }
 
+        function criarHeaderPDF() {
+            return {
+                stack: [
+                    {
+                        columns: [
+                            {
+                                width: '*',
+                                stack: [
+                                    { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', bold: true },
+                                    { text: 'Estética & Depilação', fontSize: 10, color: '#666', margin: [0, 2, 0, 0] }
+                                ]
+                            },
+                            {
+                                width: '*',
+                                text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
+                                fontSize: 9,
+                                color: '#666',
+                                alignment: 'right'
+                            }
+                        ],
+                        margin: [20, 10, 20, 10]
+                    },
+                    { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 595, y2: 0, lineWidth: 2, lineColor: '#e91e63' }], margin: [0, 0, 0, 5] }
+                ]
+            };
+        }
+
         async function gerarPDF() {
             const paciente = document.getElementById('paciente').value;
             const data = document.getElementById('data').value;
@@ -338,30 +365,7 @@
                 const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
 
                 const docDefinition = {
-                    header: {
-                        stack: [
-                            {
-                                columns: [
-                                    {
-                                        width: '*',
-                                        stack: [
-                                            { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', bold: true },
-                                            { text: 'Estética & Depilação', fontSize: 10, color: '#666', margin: [0, 2, 0, 0] }
-                                        ]
-                                    },
-                                    {
-                                        width: '*',
-                                        text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
-                                        fontSize: 9,
-                                        color: '#666',
-                                        alignment: 'right'
-                                    }
-                                ],
-                                margin: [20, 10, 20, 10]
-                            },
-                            { canvas: [{ type: 'line', x1: 0, y1: 0, x2: 595, y2: 0, lineWidth: 2, lineColor: '#e91e63' }], margin: [0, 0, 0, 5] }
-                        ]
-                    },
+                    header: criarHeaderPDF(),
                     content: [
                         {
                             text: 'INDICAÇÃO TERAPÊUTICA',
