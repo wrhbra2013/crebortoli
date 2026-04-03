@@ -42,7 +42,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS vendas_servicos (
 
 $db->exec("CREATE TABLE IF NOT EXISTS sessoes (
     id TEXT PRIMARY KEY, token TEXT, status TEXT, 
-    ip TEXT, user_agent TEXT, created_at TEXT, expires_at TEXT
+    ip TEXT, user_agent TEXT, created_at TEXT, expires_at TEXT, time_left INTEGER DEFAULT 60
 ));
 
 $inserirServicosPadrao = $db->query("SELECT COUNT(*) as total FROM servicos");
@@ -233,6 +233,38 @@ switch ($action) {
         $db->exec("UPDATE sessoes SET status = 'negado' WHERE token = '$token'");
         
         echo json_encode(['sucesso' => true]);
+        break;
+        
+    case 'sync_timer':
+        $token = SQLite3::escapeString($input['token'] ?? '');
+        $timeLeft = intval($input['timeLeft'] ?? 60);
+        
+        if (!$token) {
+            echo json_encode(['sucesso' => false]);
+            break;
+        }
+        
+        $db->exec("UPDATE sessoes SET time_left = $timeLeft WHERE token = '$token'");
+        
+        echo json_encode(['sucesso' => true]);
+        break;
+        
+    case 'get_timer':
+        $token = SQLite3::escapeString($input['token'] ?? '');
+        
+        if (!$token) {
+            echo json_encode(['timeLeft' => 60]);
+            break;
+        }
+        
+        $result = $db->query("SELECT time_left FROM sessoes WHERE token = '$token' ORDER BY created_at DESC LIMIT 1");
+        $sessao = $result->fetchArray(SQLITE3_ASSOC);
+        
+        if ($sessao && $sessao['time_left']) {
+            echo json_encode(['timeLeft' => intval($sessao['time_left'])]);
+        } else {
+            echo json_encode(['timeLeft' => 60]);
+        }
         break;
         
     default:
