@@ -7,9 +7,7 @@
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <link rel="stylesheet" href="../static/css/style2.css">
     <style>
-        :root {
-            --cor-principal: #8a4baf;
-        }
+        :root { --cor-principal: #8a4baf; }
         body {
             min-height: 100vh;
             display: flex;
@@ -27,20 +25,9 @@
             max-width: 400px;
             text-align: center;
         }
-        .icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-        }
-        h1 {
-            color: var(--cor-principal);
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
-        .subtitle {
-            color: #666;
-            font-size: 1rem;
-            margin-bottom: 1.5rem;
-        }
+        .icon { font-size: 4rem; margin-bottom: 1rem; }
+        h1 { color: var(--cor-principal); font-size: 1.8rem; margin-bottom: 0.5rem; }
+        .subtitle { color: #666; font-size: 1rem; margin-bottom: 1.5rem; }
         .code-display {
             background: #e8eaf6;
             padding: 1rem;
@@ -52,14 +39,8 @@
             color: var(--cor-principal);
             word-break: break-all;
         }
-        .input-container {
-            margin: 1.5rem 0;
-        }
-        .input-container label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-        }
+        .input-container { margin: 1.5rem 0; }
+        .input-container label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
         .input-container input {
             width: 100%;
             padding: 0.8rem 1rem;
@@ -70,15 +51,8 @@
             text-transform: uppercase;
             letter-spacing: 0.2rem;
         }
-        .input-container input:focus {
-            outline: none;
-            border-color: var(--cor-principal);
-        }
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1.5rem;
-        }
+        .input-container input:focus { outline: none; border-color: var(--cor-principal); }
+        .btn-group { display: flex; gap: 1rem; margin-top: 1.5rem; }
         .btn-primary {
             flex: 1;
             padding: 1rem;
@@ -90,9 +64,7 @@
             font-weight: 600;
             cursor: pointer;
         }
-        .btn-primary:hover {
-            background: #218838;
-        }
+        .btn-primary:hover { background: #218838; }
         .btn-danger {
             flex: 1;
             padding: 1rem;
@@ -104,34 +76,11 @@
             font-weight: 600;
             cursor: pointer;
         }
-        .btn-danger:hover {
-            background: #c82333;
-        }
-        .status-message {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-weight: 500;
-            display: none;
-        }
-        .status-message.sucesso {
-            background: #d4edda;
-            color: #155724;
-            border-left: 4px solid #28a745;
-            display: block;
-        }
-        .status-message.erro {
-            background: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #dc3545;
-            display: block;
-        }
-        .status-message.info {
-            background: #cce5ff;
-            color: #004085;
-            border-left: 4px solid #007bff;
-            display: block;
-        }
+        .btn-danger:hover { background: #c82333; }
+        .status-message { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; display: none; }
+        .status-message.sucesso { background: #d4edda; color: #155724; border-left: 4px solid #28a745; display: block; }
+        .status-message.erro { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; display: block; }
+        .status-message.info { background: #cce5ff; color: #004085; border-left: 4px solid #007bff; display: block; }
     </style>
 </head>
 <body>
@@ -154,23 +103,22 @@
             <button class="btn-danger" id="btn-cancelar" onclick="cancelarLogin()">✕ Cancelar</button>
         </div>
         
-        <p class="info-text" style="margin-top: 1.5rem; font-size: 0.9rem; color: #666;">
+        <p style="margin-top: 1.5rem; font-size: 0.9rem; color: #666;">
             O código deve ser digitado manualmente para confirmar o acesso.
         </p>
     </div>
 
-    <script type="module">
-        import PocketBase from 'https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.4/pocketbase.es.mjs';
-        import { qr_sessoes } from '../static/js/pb-db.js';
-        
-        const pb = new PocketBase('https://www.crebortoli.com.br');
-        
+    <script>
         let codigoLido = '';
-
-        async function init() {
+        
+        function getBaseUrl() {
+            return window.location.protocol + '//' + window.location.host;
+        }
+        
+        function init() {
             const urlParams = new URLSearchParams(window.location.search);
             codigoLido = urlParams.get('token') || '';
-
+            
             if (!codigoLido) {
                 mostrarStatus('Link inválido. Gere um novo código no computador.', 'erro');
                 document.getElementById('btn-confirmar').style.display = 'none';
@@ -179,21 +127,33 @@
                 document.getElementById('icon').textContent = '❌';
                 return;
             }
-
+            
             document.getElementById('codigo-lido').textContent = codigoLido;
             document.getElementById('codigo-digitado').focus();
         }
-
+        
         function mostrarStatus(mensagem, tipo) {
             const el = document.getElementById('approval-result');
-            el.innerHTML = `<div class="status-message ${tipo}">${mensagem}</div>`;
+            el.innerHTML = '<div class="status-message ' + tipo + '">' + mensagem + '</div>';
         }
-
+        
         function validarCodigo() {
-            const digitado = document.getElementById('codigo-digitado').value.toUpperCase().trim();
-            return digitado === codigoLido;
+            return document.getElementById('codigo-digitado').value.toUpperCase().trim() === codigoLido;
         }
-
+        
+        async function apiRequest(acao, dados = {}) {
+            try {
+                const response = await fetch(getBaseUrl() + '/api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao, ...dados })
+                });
+                return await response.json();
+            } catch (e) {
+                return { erro: e.message };
+            }
+        }
+        
         async function confirmarLogin() {
             if (!validarCodigo()) {
                 mostrarStatus('Código incorreto. Digite exatamente o código exibido acima.', 'erro');
@@ -201,43 +161,35 @@
                 document.getElementById('codigo-digitado').focus();
                 return;
             }
-
+            
             const btn = document.getElementById('btn-confirmar');
             btn.disabled = true;
             btn.textContent = 'Confirmando...';
-
-            try {
-                const result = await qr_sessoes.aprobar(codigoLido);
-                
-                if (result) {
-                    mostrarStatus('Login confirmado!', 'sucesso');
-                    document.getElementById('btn-confirmar').style.display = 'none';
-                    document.getElementById('btn-cancelar').style.display = 'none';
-                    document.getElementById('input-container').style.display = 'none';
-                    document.getElementById('icon').textContent = '✓';
-                    document.getElementById('titulo').textContent = 'Confirmado!';
-                    document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
-                } else {
-                    throw new Error('Erro ao confirmar');
-                }
-            } catch (e) {
-                mostrarStatus(e.message || 'Erro ao confirmar. Tente novamente.', 'erro');
+            
+            const result = await apiRequest('aprovar_sessao', { token: codigoLido });
+            
+            if (result.sucesso) {
+                mostrarStatus('Login confirmado!', 'sucesso');
+                document.getElementById('btn-confirmar').style.display = 'none';
+                document.getElementById('btn-cancelar').style.display = 'none';
+                document.getElementById('input-container').style.display = 'none';
+                document.getElementById('icon').textContent = '✓';
+                document.getElementById('titulo').textContent = 'Confirmado!';
+                document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
+            } else {
+                mostrarStatus('Erro ao confirmar. Tente novamente.', 'erro');
                 btn.disabled = false;
                 btn.textContent = '✓ Confirmar Login';
             }
         }
-
+        
         async function cancelarLogin() {
             const btn = document.getElementById('btn-cancelar');
             btn.disabled = true;
             btn.textContent = 'Cancelando...';
-
-            try {
-                await qr_sessoes.negar(codigoLido);
-            } catch (e) {
-                console.error('Erro ao cancelar:', e);
-            }
-
+            
+            await apiRequest('negar_sessao', { token: codigoLido });
+            
             mostrarStatus('Login cancelado.', 'info');
             document.getElementById('btn-confirmar').style.display = 'none';
             document.getElementById('btn-cancelar').style.display = 'none';
@@ -246,18 +198,16 @@
             document.getElementById('titulo').textContent = 'Cancelado';
             document.getElementById('subtitulo').textContent = 'O login foi cancelado.';
         }
-
+        
         document.getElementById('codigo-digitado').addEventListener('input', function() {
             this.value = this.value.toUpperCase();
             mostrarStatus('', '');
         });
-
+        
         document.getElementById('codigo-digitado').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                confirmarLogin();
-            }
+            if (e.key === 'Enter') confirmarLogin();
         });
-
+        
         init();
     </script>
 </body>

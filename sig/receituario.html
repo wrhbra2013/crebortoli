@@ -247,17 +247,14 @@
     <div id="footer-placeholder"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><'+'/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><'+'/script>');</script>
-    <script type="module">
-        import { receitas } from '../static/js/pb-db.js';
-        
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
+    <script>
         document.getElementById('data').valueAsDate = new Date();
         
         const SHEETS_URL = localStorage.getItem('sheets_url') || '';
         
         function getReceitas() {
-            const data = localStorage.getItem('receitas');
-            return data ? JSON.parse(data) : [];
+            return ReceitasStore.getAll();
         }
         
         async function syncFromServer() {

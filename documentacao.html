@@ -284,7 +284,7 @@
     <div class="container">
         <div class="card">
             <h2>Visão Geral</h2>
-            <p>Sistema de agendamento de serviços de beleza com pagamento via PIX. Desenvolvido com HTML, CSS e JavaScript (ES6+), utilizando PocketBase como backend para persistência de dados em nuvem.</p>
+            <p>Sistema de agendamento de serviços de beleza com pagamento via PIX. Desenvolvido com HTML, CSS e JavaScript (ES6+), utilizando PHP com SQLite para persistência de dados.</p>
             <p><strong>Versão:</strong> 1.0.0</p>
         </div>
 
@@ -325,7 +325,7 @@
                 <div class="number">2</div>
                 <div class="content">
                     <h4>Fazer Agendamento</h4>
-                    <p>Cliente clica em um dia disponível → Abre modal com formulário (nome, WhatsApp, serviço) → Clica em "Confirmar Agendamento" → Dados salvos no PocketBase → Abre WhatsApp com mensagem pré-preenchida.</p>
+                    <p>Cliente clica em um dia disponível → Abre modal com formulário (nome, WhatsApp, serviço) → Clica em "Confirmar Agendamento" → Dados salvos no localStorage + sync com servidor → Abre WhatsApp com mensagem pré-preenchida.</p>
                 </div>
             </div>
             
@@ -378,20 +378,19 @@
             <h2>Arquitetura do Sistema</h2>
             
             <h3>Backend</h3>
-            <p><strong>PocketBase</strong> (https://www.crebortoli.com.br) - Backend como Serviço (BaaS) que fornece:</p>
+            <p><strong>PHP + SQLite</strong> - Servidor web com banco de dados leve:</p>
             <ul>
-                <li>Banco de dados SQLite integrado</li>
-                <li>API REST automática</li>
-                <li>Autenticação de usuários</li>
-                <li>Realtime subscriptions</li>
+                <li>PHP 7.4+ com extensão PDO</li>
+                <li>SQLite (arquivo local)</li>
+                <li>API REST em api.php</li>
             </ul>
             
             <h3>Banco de Dados</h3>
-            <p>Collections disponíveis no PocketBase:</p>
+            <p>Tabelas disponíveis no SQLite:</p>
             <table>
                 <thead>
                     <tr>
-                        <th>Collection</th>
+                        <th>Tabela</th>
                         <th>Descrição</th>
                     </tr>
                 </thead>
@@ -400,19 +399,19 @@
                     <tr><td>servicos</td><td>Catálogo de serviços disponíveis</td></tr>
                     <tr><td>clientes</td><td>Cadastro de clientes</td></tr>
                     <tr><td>receitas</td><td>Receitas de produtos</td></tr>
-                    <tr><td>usuarios</td><td>Usuários do sistema (auth)</td></tr>
+                    <tr><td>qr_sessoes</td><td>Sessões de autenticação QR</td></tr>
                 </tbody>
             </table>
             
             <h3>API REST</h3>
-            <p>Todas as operações de dados são feitas via <strong>PocketBase SDK</strong>:</p>
-            <pre>import { agendamentos, servicos } from './static/js/pb-db.js';
-const lista = await agendamentos.getAll();</pre>
+            <p>API PHP em <code>api.php</code> com SQLite:</p>
+            <pre>GET  api.php?action=agendamentos  # Listar agendamentos
+POST api.php                      # Criar/atualizar dados</pre>
             
             <h3>Autenticação QR</h3>
-            <p>O SIG usa autenticação via QR Code com backend PocketBase:</p>
+            <p>O SIG usa autenticação via QR Code com backend PHP/SQLite:</p>
             <ul>
-                <li>Collection <code>qr_sessoes</code> no PocketBase armazena sessões</li>
+                <li>Tabela <code>qr_sessoes</code> no SQLite armazena sessões</li>
                 <li>Usuário gera QR no computador</li>
                 <li>Celular escaneia e aprova com código</li>
             </ul>
@@ -506,19 +505,19 @@ const lista = await agendamentos.getAll();</pre>
                 </div>
                 <div class="tech-item">
                     <strong>JavaScript</strong>
-                    <p>ES6+ (Módulos)</p>
-                </div>
-                <div class="tech-item">
-                    <strong>PocketBase</strong>
-                    <p>Backend</p>
-                </div>
-                <div class="tech-item">
-                    <strong>Fetch API</strong>
-                    <p>Requisições</p>
+                    <p>ES6+</p>
                 </div>
                 <div class="tech-item">
                     <strong>PHP</strong>
                     <p>API REST</p>
+                </div>
+                <div class="tech-item">
+                    <strong>SQLite</strong>
+                    <p>Banco de dados</p>
+                </div>
+                <div class="tech-item">
+                    <strong>localStorage</strong>
+                    <p>Cache local</p>
                 </div>
             </div>
         </div>
@@ -533,8 +532,7 @@ const lista = await agendamentos.getAll();</pre>
             <p><strong>Requisitos:</strong></p>
             <ul>
                 <li>JavaScript habilitado</li>
-                <li>Conexão com internet (para PocketBase)</li>
-                <li>Suporte a ES6 Modules</li>
+                <li>Conexão com internet (para API PHP)</li>
             </ul>
         </div>
 
@@ -552,7 +550,8 @@ const lista = await agendamentos.getAll();</pre>
                     <tr><td>paginas/*.html</td><td>Páginas secundárias (agenda, servicos, etc)</td></tr>
                     <tr><td>sig/*.html</td><td>Painel administrativo (SIG)</td></tr>
                     <tr><td>servicos.json</td><td>Arquivo de preços estático</td></tr>
-                    <tr><td>static/js/pb-db.js</td><td>Módulo de conexão PocketBase</td></tr>
+                    <tr><td>api.php</td><td>API PHP com SQLite</td></tr>
+                    <tr><td>database.sqlite</td><td>Banco de dados SQLite</td></tr>
                     <tr><td>static/css/</td><td>Arquivos de estilos</td></tr>
                     <tr><td>static/icon/</td><td>Ícones do site</td></tr>
                 </tbody>

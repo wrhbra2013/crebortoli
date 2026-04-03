@@ -300,10 +300,8 @@
     <div id="footer-placeholder"></div>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><'+'/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><'+'/script>');</script>
-    <script type="module">
-        import { agendamentos } from '../static/js/pb-db.js';
-        
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
+    <script>
         const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
 
         function criarHeaderPDF() {
@@ -337,22 +335,8 @@
                 };
             };
         }
-        
-        let agendamentosCache = null;
 
-        async function carregarAgendamentosPB() {
-            agendamentosCache = await agendamentos.getAll();
-        }
-
-        async function obterAgendamentos() {
-            if (!agendamentosCache) {
-                await carregarAgendamentosPB();
-            }
-            return agendamentosCache || [];
-        }
-
-        async function init() {
-            await carregarAgendamentosPB();
+        function init() {
             preencherAnos();
             const hoje = new Date();
             document.getElementById('mes').value = hoje.getMonth();
@@ -378,16 +362,11 @@
         }
 
         function gerarRelatorio() {
-            if (!agendamentosCache) {
-                setTimeout(gerarRelatorio, 100);
-                return;
-            }
-            
             const tipoPeriodo = document.getElementById('tipo-periodo').value;
             const mes = parseInt(document.getElementById('mes').value);
             const ano = parseInt(document.getElementById('ano').value);
             
-            let agendamentos = obterAgendamentos();
+            let agendamentos = AgendamentoStore.getAll();
             
             if (tipoPeriodo === 'mensal') {
                 agendamentos = agendamentos.filter(a => {

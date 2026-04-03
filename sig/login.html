@@ -8,9 +8,7 @@
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <link rel="stylesheet" href="../static/css/style2.css">
     <style>
-        :root {
-            --cor-principal: #8a4baf;
-        }
+        :root { --cor-principal: #8a4baf; }
         body {
             min-height: 100vh;
             display: flex;
@@ -28,202 +26,75 @@
             max-width: 400px;
             text-align: center;
         }
-        .logo h1 {
-            color: var(--cor-principal);
-            font-size: 2rem;
-            margin-bottom: 0.5rem;
-        }
-        .logo p {
-            color: #666;
-            font-size: 0.9rem;
-            margin-bottom: 1.5rem;
-        }
-        .qr-container {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .celular-icon {
-            font-size: 3rem;
-            margin-bottom: 0.5rem;
-        }
-        .qr-code {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 200px;
-        }
+        .logo h1 { color: var(--cor-principal); font-size: 2rem; margin-bottom: 0.5rem; }
+        .logo p { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        .qr-container { background: #f8f9fa; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .celular-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+        .qr-code { display: flex; justify-content: center; align-items: center; min-height: 200px; }
         .status-message {
-            padding: 1rem;
-            border-radius: 8px;
-            margin-bottom: 1rem;
-            font-weight: 500;
-            display: none;
+            padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
+            font-weight: 500; display: none;
         }
-        .status-message.aprovado {
-            background: #d4edda;
-            color: #155724;
-            border-left: 4px solid #28a745;
-            display: block;
-        }
-        .status-message.negado {
-            background: #f8d7da;
-            color: #721c24;
-            border-left: 4px solid #dc3545;
-            display: block;
-        }
-        .status-message.aguardo {
-            background: #fff3cd;
-            color: #856404;
-            border-left: 4px solid #ffc107;
-            display: block;
-        }
-        .instructions {
-            background: #e8eaf6;
-            border-radius: 10px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            text-align: left;
-            font-size: 0.9rem;
-        }
-        .instructions h3 {
-            font-size: 1rem;
-            color: var(--cor-principal);
-            margin-bottom: 0.5rem;
-        }
-        .instructions ol {
-            margin: 0;
-            padding-left: 1.2rem;
-        }
-        .instructions li {
-            margin-bottom: 0.3rem;
-        }
+        .status-message.aprovado { background: #d4edda; color: #155724; border-left: 4px solid #28a745; display: block; }
+        .status-message.negado { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; display: block; }
+        .instructions { background: #e8eaf6; border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; text-align: left; font-size: 0.9rem; }
+        .instructions h3 { font-size: 1rem; color: var(--cor-principal); margin-bottom: 0.5rem; }
+        .instructions ol { margin: 0; padding-left: 1.2rem; }
+        .instructions li { margin-bottom: 0.3rem; }
         .btn-primary {
-            width: 100%;
-            padding: 1rem;
-            background: var(--cor-principal);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.3s;
+            width: 100%; padding: 1rem; background: var(--cor-principal); color: white;
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;
         }
-        .btn-primary:hover {
-            background: #7a3bb0;
-        }
-        .btn-primary:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-        }
-        .timer {
-            display: none;
-            color: #666;
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-        }
-        .countdown {
-            font-weight: bold;
-            color: var(--cor-principal);
-        }
-        .session-info {
-            margin-top: 1rem;
-            color: #666;
-        }
-        .session-info code {
-            background: #e8eaf6;
-            padding: 0.2rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.85rem;
-        }
+        .btn-primary:hover { background: #7a3bb0; }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .timer { display: none; color: #666; font-size: 0.9rem; margin-top: 0.5rem; }
+        .countdown { font-weight: bold; color: var(--cor-principal); }
+        .session-info { margin-top: 1rem; color: #666; }
+        .session-info code { background: #e8eaf6; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.85rem; }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
             <h1>Painel Admin</h1>
-            <p>Escritório Cre Bortoli</p>
+            <p>Espaço Cre Bortoli</p>
         </div>
-
         <div id="status-message" class="status-message"></div>
-
-        <div id="approval-section" style="display: none;">
-            <div class="instructions">
-                <h3>Como confirmar o acesso:</h3>
-                <ol>
-                    <li>Escaneie o QR Code com o celular</li>
-                    <li>Na página de aprovação, digite o código abaixo</li>
-                    <li>Clique em "Confirmar Login"</li>
-                </ol>
+        <div class="qr-container">
+            <div class="celular-icon">📱</div>
+            <div id="qr-code" class="qr-code">
+                <p style="color: #999;">Clique em "Gerar QR Code" para iniciar</p>
             </div>
-            <p style="font-size: 1.2rem; font-weight: bold; margin: 1rem 0;">
-                Código: <span id="approval-code-display" style="color: var(--cor-principal);"></span>
-            </p>
-            <button class="btn-primary" onclick="gerarQR()">Gerar Novo Código</button>
         </div>
-
-        <div id="qr-section">
-            <div class="qr-container">
-                <div class="celular-icon">📱</div>
-                <div id="qr-code" class="qr-code">
-                    <p style="color: #999;">Clique em "Gerar QR Code" para iniciar</p>
-                </div>
-            </div>
-            
-            <div id="timer" class="timer">
-                Expira em: <span class="countdown" id="countdown">60</span>s
-            </div>
-            
-            <div class="session-info" id="session-info" style="display: none;">
-                <small>Código: <code id="token-display"></code></small>
-            </div>
-            
-            <button class="btn-primary" id="btn-gerar" onclick="gerarQR()">Gerar QR Code</button>
+        <div id="timer" class="timer">Expira em: <span class="countdown" id="countdown">60</span>s</div>
+        <div class="session-info" id="session-info" style="display: none;">
+            <small>Código: <code id="token-display"></code></small>
         </div>
+        <button class="btn-primary" id="btn-gerar" onclick="gerarQR()">Gerar QR Code</button>
     </div>
 
-    <script type="module">
-        import PocketBase from 'https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.4/pocketbase.es.mjs';
-        import { qr_sessoes } from '../static/js/pb-db.js';
-        
-        const pb = new PocketBase('https://www.crebortoli.com.br');
-        
+    <script>
         const SESSION_KEY = 'sig_qr_session';
         const AUTH_KEY = 'sig_authenticated';
         const SESSION_TIMEOUT = 60;
         
         let currentToken = null;
-        let pollInterval = null;
-        let pollIntervalId = null;
-        let isPolling = false;
+        let countdownInterval = null;
+        let pollTimeout = null;
         
         function getBaseUrl() {
             return window.location.protocol + '//' + window.location.host;
         }
         
-        function getElement(id) {
-            return document.getElementById(id);
-        }
-        
         function showStatus(msg, type) {
-            const el = getElement('status-message');
+            const el = document.getElementById('status-message');
             el.textContent = msg;
             el.className = 'status-message ' + type;
             el.style.display = 'block';
         }
         
         function hideStatus() {
-            getElement('status-message').style.display = 'none';
-        }
-        
-        function stopPolling() {
-            if (pollIntervalId) {
-                clearTimeout(pollIntervalId);
-                pollIntervalId = null;
-            }
-            isPolling = false;
+            document.getElementById('status-message').style.display = 'none';
         }
         
         function gerarToken() {
@@ -235,26 +106,32 @@
             return token;
         }
         
-        async function syncToServer(acao, token) {
+        async function apiRequest(acao, dados = {}) {
             try {
-                if (acao === 'criar') {
-                    const urlAprovacao = getBaseUrl() + '/sig/aprovar.html?token=' + token;
-                    const result = await qr_sessoes.criar(urlAprovacao);
-                    return { token: token, sucesso: !!result };
-                }
-                if (acao === 'aprovar') {
-                    const result = await qr_sessoes.aprovar(token);
-                    return { sucesso: !!result };
-                }
-                if (acao === 'negar') {
-                    const result = await qr_sessoes.negar(token);
-                    return { sucesso: !!result };
-                }
+                const response = await fetch(getBaseUrl() + '/api.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ acao, ...dados })
+                });
+                return await response.json();
             } catch (e) {
-                console.error('Erro na operação QR:', e);
-                return { sucesso: false };
+                console.error('Erro na API:', e);
+                return { erro: e.message };
             }
-            return { sucesso: false };
+        }
+        
+        function displayToken(token) {
+            const container = document.getElementById('qr-code');
+            container.innerHTML = '';
+            const qrUrl = getBaseUrl() + '/sig/aprovar.html?token=' + token;
+            new QRCode(container, {
+                text: qrUrl,
+                width: 180,
+                height: 180,
+                colorDark: '#8a4baf',
+                colorLight: '#ffffff',
+                correctLevel: QRCode.CorrectLevel.H
+            });
         }
         
         function saveSessionLocal(sessionData) {
@@ -267,76 +144,13 @@
         
         function loadSessionLocal() {
             const stored = localStorage.getItem(SESSION_KEY);
-            if (stored) {
-                return JSON.parse(stored);
-            }
-            return null;
+            return stored ? JSON.parse(stored) : null;
         }
-        
-        function displayToken(token) {
-            const container = getElement('qr-code');
-            container.innerHTML = '';
-            
-            const qrUrl = getBaseUrl() + '/sig/aprovar.html?token=' + token;
-            
-            new QRCode(container, {
-                text: qrUrl,
-                width: 180,
-                height: 180,
-                colorDark: '#8a4baf',
-                colorLight: '#ffffff',
-                correctLevel: QRCode.CorrectLevel.H
-            });
-        }
-        
-        async function approveLogin() {
-            const inputCode = getElement('approval-code');
-            const code = inputCode.value.toUpperCase().trim();
-            
-            if (!code) {
-                showStatus('Digite o código de acesso.', 'negado');
-                return;
-            }
-            
-            if (code !== currentToken) {
-                showStatus('Código incorreto. Tente novamente.', 'negado');
-                inputCode.value = '';
-                return;
-            }
-            
-            const result = await syncToServer('aprovar', code);
-            
-            if (result && result.sucesso) {
-                stopPolling();
-                stopTimer();
-                clearSessionLocal();
-                localStorage.setItem(AUTH_KEY, 'true');
-                localStorage.setItem('sig_user_email', 'qr-auth');
-                showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                setTimeout(() => { window.location.href = './index.html'; }, 1000);
-            } else {
-                const sessionData = loadSessionLocal();
-                if (sessionData && sessionData.token === code) {
-                    sessionData.status = 'aprovado';
-                    sessionData.aprovadoEm = Date.now();
-                    saveSessionLocal(sessionData);
-                }
-                stopPolling();
-                stopTimer();
-                clearSessionLocal();
-                localStorage.setItem(AUTH_KEY, 'true');
-                localStorage.setItem('sig_user_email', 'qr-auth');
-                showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                setTimeout(() => { window.location.href = './index.html'; }, 1000);
-            }
-        }
-        
-        let countdownInterval = null;
         
         function startTimer() {
             let countdown = SESSION_TIMEOUT;
-            const countdownEl = getElement('countdown');
-            const timerEl = getElement('timer');
+            const countdownEl = document.getElementById('countdown');
+            const timerEl = document.getElementById('timer');
             
             timerEl.style.display = 'block';
             countdownEl.textContent = countdown;
@@ -351,8 +165,7 @@
                     clearInterval(countdownInterval);
                     stopPolling();
                     clearSessionLocal();
-                    getElement('timer').style.display = 'none';
-                    getElement('approval-section').style.display = 'none';
+                    timerEl.style.display = 'none';
                     showStatus('Sessão expirada. Gere um novo código.', 'negado');
                 }
             }, 1000);
@@ -363,16 +176,20 @@
                 clearInterval(countdownInterval);
                 countdownInterval = null;
             }
-            getElement('timer').style.display = 'none';
+            document.getElementById('timer').style.display = 'none';
+        }
+        
+        function stopPolling() {
+            if (pollTimeout) {
+                clearTimeout(pollTimeout);
+                pollTimeout = null;
+            }
         }
         
         async function gerarQR() {
-            const btn = getElement('btn-gerar');
-            
-            if (btn) {
-                btn.disabled = true;
-                btn.textContent = 'Gerando...';
-            }
+            const btn = document.getElementById('btn-gerar');
+            btn.disabled = true;
+            btn.textContent = 'Gerando...';
             hideStatus();
             stopPolling();
             stopTimer();
@@ -380,62 +197,54 @@
             
             currentToken = gerarToken();
             
-            const result = await syncToServer('criar', currentToken);
+            const urlAprovacao = getBaseUrl() + '/sig/aprovar.html?token=' + currentToken;
+            const result = await apiRequest('criar_sessao', { token: currentToken, urlAprovacao });
             
-            if (!result || !result.sucesso) {
+            if (!result.sucesso) {
                 currentToken = gerarToken();
-                const sessionData = {
-                    token: currentToken,
-                    status: 'aguardando',
-                    created: Date.now()
-                };
-                saveSessionLocal(sessionData);
             }
+            
+            const sessionData = {
+                token: currentToken,
+                status: 'aguardando',
+                created: Date.now()
+            };
+            saveSessionLocal(sessionData);
             
             displayToken(currentToken);
-            getElement('token-display').textContent = currentToken;
-            getElement('session-info').style.display = 'block';
+            document.getElementById('token-display').textContent = currentToken;
+            document.getElementById('session-info').style.display = 'block';
             
-            if (btn) {
-                btn.disabled = false;
-                btn.textContent = 'Gerar QR Code';
-            }
+            btn.disabled = false;
+            btn.textContent = 'Gerar QR Code';
             
             startTimer();
             startPolling(currentToken);
         }
         
         async function startPolling(token) {
-            isPolling = true;
-            
             const checkApproval = async () => {
-                if (!isPolling) return;
+                const result = await apiRequest('verificar_sessao', { token });
                 
-                try {
-                    const sessao = await qr_sessoes.verificar(token);
-                    
-                    if (sessao && sessao.status === 'aprovado') {
-                        stopPolling();
-                        stopTimer();
-                        clearSessionLocal();
-                        localStorage.setItem(AUTH_KEY, 'true');
-                        localStorage.setItem('sig_user_email', 'qr-auth');
-                        showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                        setTimeout(() => { window.location.href = './index.html'; }, 1000);
-                        return;
-                    }
-                    
-                    if (sessao && sessao.status === 'negado') {
-                        stopPolling();
-                        stopTimer();
-                        showStatus('Login cancelado pelo administrador.', 'negado');
-                        return;
-                    }
-                } catch (e) {
-                    console.error('Erro ao verificar sessão:', e);
+                if (result && result.status === 'aprovado') {
+                    stopPolling();
+                    stopTimer();
+                    clearSessionLocal();
+                    localStorage.setItem(AUTH_KEY, 'true');
+                    localStorage.setItem('sig_user_email', 'qr-auth');
+                    showStatus('Login aprovado! Redirecionando...', 'aprovado');
+                    setTimeout(() => { window.location.href = './index.html'; }, 1000);
+                    return;
                 }
                 
-                pollIntervalId = setTimeout(checkApproval, 2000);
+                if (result && result.status === 'negado') {
+                    stopPolling();
+                    stopTimer();
+                    showStatus('Login cancelado pelo administrador.', 'negado');
+                    return;
+                }
+                
+                pollTimeout = setTimeout(checkApproval, 2000);
             };
             
             checkApproval();
@@ -446,15 +255,11 @@
             const idade = Date.now() - session.created;
             if (idade < 30000) {
                 localStorage.setItem(AUTH_KEY, 'true');
-                localStorage.setItem('sig_user_email', 'qr-auth');
                 window.location.href = './index.html';
             } else {
                 clearSessionLocal();
             }
         }
-        
-        window.gerarQR = gerarQR;
-        window.approveLogin = approveLogin;
     </script>
 </body>
 </html>
