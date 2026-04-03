@@ -511,30 +511,16 @@
             const docDefinition = {
                 pageSize: 'A4',
                 pageMargins: [20, 20, 20, 20],
-                defaultStyle: {
-                    font: 'WorldWater'
-                },
-                fonts: {
-                    WorldWater: {
-                        normal: 'static/fonts/World_Discovery_Five_PERSONAL_Regular.otf'
-                    }
-                },
                 header: {
                     stack: [
                         {
                             columns: [
                                 {
-                                    width: 80,
-                                    image: 'static/css/image/crebortoli.png',
-                                    width: 70
-                                },
-                                {
                                     width: '*',
                                     stack: [
-                                        { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', font: 'WorldWater' },
+                                        { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', bold: true },
                                         { text: 'Estética & Depilação', fontSize: 10, color: '#666', margin: [0, 2, 0, 0] }
-                                    ],
-                                    margin: [10, 0, 0, 0]
+                                    ]
                                 },
                                 {
                                     width: '*',

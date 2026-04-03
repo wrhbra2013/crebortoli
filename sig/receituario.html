@@ -178,7 +178,7 @@
         <div class="receituario-container">
             <div class="receituario-header">
                 <h1>Receituário</h1>
-                <p>Crie indicationes terapéuticas para seus clientes</p>
+                <p>Crie indicações terapêuticas para seus clientes</p>
             </div>
 
             <div class="form-card">
@@ -240,7 +240,7 @@
         import { receitas } from '../static/js/pb-db.js';
         window.receitas = receitas;
     </script>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
+    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><'+'/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><'+'/script>');</script>
     <script>
         document.getElementById('data').valueAsDate = new Date();
         
@@ -338,30 +338,16 @@
                 const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
 
                 const docDefinition = {
-                    defaultStyle: {
-                        font: 'WorldWater'
-                    },
-                    fonts: {
-                        WorldWater: {
-                            normal: 'static/fonts/World_Discovery_Five_PERSONAL_Regular.otf'
-                        }
-                    },
                     header: {
                         stack: [
                             {
                                 columns: [
                                     {
-                                        width: 80,
-                                        image: 'static/css/image/crebortoli.png',
-                                        width: 70
-                                    },
-                                    {
                                         width: '*',
                                         stack: [
-                                            { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', font: 'WorldWater' },
+                                            { text: 'Espaço Cre Bortoli', fontSize: 20, color: '#e91e63', bold: true },
                                             { text: 'Estética & Depilação', fontSize: 10, color: '#666', margin: [0, 2, 0, 0] }
-                                        ],
-                                        margin: [10, 0, 0, 0]
+                                        ]
                                     },
                                     {
                                         width: '*',
@@ -377,6 +363,7 @@
                         ]
                     },
                     content: [
+                        {
                             text: 'INDICAÇÃO TERAPÊUTICA',
                             fontSize: 16,
                             bold: true,
