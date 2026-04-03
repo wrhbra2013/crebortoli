@@ -77,4 +77,59 @@ export const usuarios = {
     getUser: () => pb.authStore.model
 };
 
+export const qr_sessoes = {
+    async criar(urlAprovacao) {
+        const token = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const sessao = {
+            token: token,
+            status: 'aguardando',
+            urlAprovacao: urlAprovacao,
+            created: new Date().toISOString()
+        };
+        return await db.create('qr_sessoes', sessao);
+    },
+
+    async verificar(token) {
+        const sessoes = await db.getCollection('qr_sessoes');
+        const sessao = sessoes.find(s => s.token === token);
+        return sessao || null;
+    },
+
+    async aprobar(token) {
+        const sessoes = await db.getCollection('qr_sessoes');
+        const sessao = sessoes.find(s => s.token === token && s.status === 'aguardando');
+        if (sessao) {
+            return await db.update('qr_sessoes', sessao.id, { 
+                status: 'aprovado',
+                aprovadoEm: new Date().toISOString()
+            });
+        }
+        return null;
+    },
+
+    async negar(token) {
+        const sessoes = await db.getCollection('qr_sessoes');
+        const sessao = sessoes.find(s => s.token === token);
+        if (sessao) {
+            return await db.update('qr_sessoes', sessao.id, { 
+                status: 'negado',
+                negadoEm: new Date().toISOString()
+            });
+        }
+        return null;
+    },
+
+    async limparExpiradas() {
+        const sessoes = await db.getCollection('qr_sessoes');
+        const agora = new Date().getTime();
+        for (const sessao of sessoes) {
+            const created = new Date(sessao.created).getTime();
+            const idade = agora - created;
+            if (idade > 60000 && sessao.status === 'aguardando') {
+                await db.update('qr_sessoes', sessao.id, { status: 'expirado' });
+            }
+        }
+    }
+};
+
 export default pb;

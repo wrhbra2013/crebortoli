@@ -1,11 +1,3 @@
-function getSigBasePath() {
-    const path = window.location.pathname;
-    if (path.includes('/sig/')) {
-        return './';
-    }
-    return '../';
-}
-
 function checkAuth(required = true) {
     const isAuthenticated = localStorage.getItem('sig_authenticated') === 'true';
     
@@ -19,8 +11,7 @@ function checkAuth(required = true) {
 
 function logout() {
     localStorage.removeItem('sig_authenticated');
-    localStorage.removeItem('sig_session_token');
-    localStorage.removeItem('sig_qr_session');
+    localStorage.removeItem('sig_user_email');
     window.location.href = 'login.html';
 }
 

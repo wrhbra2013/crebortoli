@@ -1,148 +1,83 @@
 /**
- * Sistema de Persistência com LocalStorage + Sync via Servidor
- * Compartilha dados entre dispositivos via api.php (JSON file)
+ * Sistema de Persistência Local (LocalStorage)
+ * Usado para dados temporários do usuário no navegador.
+ * Para dados persistentes, use pb-db.js (PocketBase).
  */
 
-const DataSync = {
-    serverUrl: 'api.php',
+const DataStore = {
     storageKey: 'crebortoli_data',
-    lastSync: 0,
     
-    getLocalData() {
+    load(key) {
         const data = localStorage.getItem(this.storageKey);
-        return data ? JSON.parse(data) : {
-            agendamentos: [],
-            servicos: [],
-            clientes: [],
-            colaboradores: [],
-            compras: [],
-            vendas_servicos: [],
-            vendas_produtos: [],
-            insumos: [],
-            custos_fixos: [],
-            relatorios_mei: [],
-            anamnese: []
-        };
+        const parsed = data ? JSON.parse(data) : {};
+        return key ? parsed[key] : parsed;
     },
     
-    saveLocalData(data) {
+    save(key, value) {
+        const data = this.load() || {};
+        data[key] = value;
         data._updated = Date.now();
         localStorage.setItem(this.storageKey, JSON.stringify(data));
     },
     
-    async fetchFromServer() {
-        try {
-            const response = await fetch(this.serverUrl + '?t=' + Date.now());
-            if (!response.ok) return null;
-            return await response.json();
-        } catch (e) {
-            console.warn('Erro ao buscar do servidor:', e);
-            return null;
-        }
+    remove(key) {
+        const data = this.load() || {};
+        delete data[key];
+        localStorage.setItem(this.storageKey, JSON.stringify(data));
     },
     
-    async pushToServer(data) {
-        try {
-            await fetch(this.serverUrl, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ full_data: data })
-            });
-        } catch (e) {
-            console.warn('Erro ao enviar para servidor:', e);
-        }
-    },
-    
-    async sync() {
-        const serverData = await this.fetchFromServer();
-        const localData = this.getLocalData();
-        
-        if (!serverData) {
-            console.log('Servidor indisponível, usando dados locais');
-            return localData;
-        }
-        
-        const merged = this.mergeData(localData, serverData);
-        this.saveLocalData(merged);
-        await this.pushToServer(merged);
-        
-        console.log('Sincronizado:', {
-            agendamentos: merged.agendamentos?.length || 0,
-            servicos: merged.servicos?.length || 0,
-            clientes: merged.clientes?.length || 0,
-            colaboradores: merged.colaboradores?.length || 0
-        });
-        
-        return merged;
-    },
-    
-    mergeData(local, server) {
-        const mergeArrays = (localArr, serverArr, key = 'id') => {
-            const map = new Map();
-            (localArr || []).forEach(item => map.set(item[key], item));
-            (serverArr || []).forEach(item => map.set(item[key], item));
-            return Array.from(map.values());
-        };
-        
-        return {
-            agendamentos: mergeArrays(local.agendamentos, server.agendamentos),
-            servicos: mergeArrays(local.servicos, server.servicos),
-            clientes: mergeArrays(local.clientes, server.clientes),
-            colaboradores: mergeArrays(local.colaboradores, server.colaboradores),
-            compras: mergeArrays(local.compras, server.compras),
-            vendas_servicos: mergeArrays(local.vendas_servicos, server.vendas_servicos),
-            vendas_produtos: mergeArrays(local.vendas_produtos, server.vendas_produtos),
-            insumos: mergeArrays(local.insumos, server.insumos),
-            custos_fixos: mergeArrays(local.custos_fixos, server.custos_fixos),
-            relatorios_mei: mergeArrays(local.relatorios_mei, server.relatorios_mei),
-            anamnese: mergeArrays(local.anamnese, server.anamnese)
-        };
-    },
-    
-    getTimestamp() {
-        const data = this.getLocalData();
-        return data._updated || 0;
-    },
-    
-    getAllData() {
-        return this.getLocalData();
+    clear() {
+        localStorage.removeItem(this.storageKey);
     }
 };
 
 function createEntityStore(entityName) {
     return {
+        async init() {
+            if (entityName === 'servicos') {
+                try {
+                    const response = await fetch('servicos.json');
+                    const data = await response.json();
+                    this._data = data.servicos || [];
+                } catch (e) {
+                    console.warn('Erro ao carregar servicos.json, usando cache local:', e);
+                    this._data = DataStore.load(entityName) || [];
+                }
+            }
+            return this;
+        },
+        
         getAll() {
-            const data = DataSync.getLocalData();
-            return data[entityName] || [];
+            if (this._data) return this._data;
+            return DataStore.load(entityName) || [];
         },
         
         save(item) {
-            const fullData = DataSync.getLocalData();
+            const items = this.getAll();
             item.id = item.id || entityName + '_' + Date.now();
             item.created_at = item.created_at || new Date().toISOString();
-            fullData[entityName].push(item);
-            DataSync.saveLocalData(fullData);
-            DataSync.pushToServer(fullData);
+            items.push(item);
+            this._data = items;
+            DataStore.save(entityName, items);
             return item;
         },
         
         update(id, dados) {
-            const fullData = DataSync.getLocalData();
-            const idx = fullData[entityName].findIndex(item => item.id === id);
+            const items = this.getAll();
+            const idx = items.findIndex(item => item.id === id);
             if (idx >= 0) {
-                fullData[entityName][idx] = { ...fullData[entityName][idx], ...dados, updated_at: new Date().toISOString() };
-                DataSync.saveLocalData(fullData);
-                DataSync.pushToServer(fullData);
-                return fullData[entityName][idx];
+                items[idx] = { ...items[idx], ...dados, updated_at: new Date().toISOString() };
+                this._data = items;
+                DataStore.save(entityName, items);
+                return items[idx];
             }
             return null;
         },
         
         delete(id) {
-            const fullData = DataSync.getLocalData();
-            fullData[entityName] = fullData[entityName].filter(item => item.id !== id);
-            DataSync.saveLocalData(fullData);
-            DataSync.pushToServer(fullData);
+            const items = this.getAll().filter(item => item.id !== id);
+            this._data = items;
+            DataStore.save(entityName, items);
         },
         
         getById(id) {
@@ -179,7 +114,7 @@ const AnamneseStore = createEntityStore('anamnese');
 const AgendamentoStore = AgendamentosStore;
 
 if (typeof window !== 'undefined') {
-    window.DataSync = DataSync;
+    window.DataStore = DataStore;
     window.AgendamentosStore = AgendamentosStore;
     window.AgendamentoStore = AgendamentoStore;
     window.ServicosStore = ServicosStore;
@@ -192,7 +127,4 @@ if (typeof window !== 'undefined') {
     window.CustosFixosStore = CustosFixosStore;
     window.RelatoriosMeiStore = RelatoriosMeiStore;
     window.AnamneseStore = AnamneseStore;
-    
-    DataSync.sync();
-    setInterval(() => DataSync.sync(), 60000);
 }

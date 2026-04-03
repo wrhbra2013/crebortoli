@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup PocketBase - Cre Bortoli</title>
+    <style>
+        body { font-family: system-ui; max-width: 600px; margin: 2rem auto; padding: 1rem; }
+        h1 { color: #e91e63; }
+        .step { background: #f5f5f5; padding: 1rem; margin: 1rem 0; border-radius: 8px; }
+        .step h3 { margin-top: 0; }
+        code { background: #e0e0e0; padding: 0.2rem 0.4rem; border-radius: 4px; }
+        pre { background: #263238; color: #aed581; padding: 1rem; border-radius: 8px; overflow-x: auto; }
+        .btn { background: #e91e63; color: white; padding: 0.8rem 1.5rem; border: none; border-radius: 6px; cursor: pointer; font-size: 1rem; }
+        .btn:hover { background: #c2185b; }
+        .btn:disabled { background: #ccc; cursor: not-allowed; }
+        #log { margin-top: 1rem; white-space: pre-wrap; }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+    </style>
+</head>
+<body>
+    <h1>Setup PocketBase</h1>
+    <p>Configure as collections necessárias para o sistema.</p>
+    
+    <div class="step">
+        <h3>1. Acesse o Admin do PocketBase</h3>
+        <p>Vá até: <a href="https://www.crebortoli.com.br/_/" target="_blank">https://www.crebortoli.com.br/_/</a></p>
+    </div>
+    
+    <div class="step">
+        <h3>2. Crie as Collections</h3>
+        <p>No painel admin, crie cada collection com os campos abaixo:</p>
+        
+        <h4>agendamentos</h4>
+        <pre>Campos:
+- data (date)
+- hora (text)
+- cliente (text)
+- telefone (text)
+- servico (text)
+- servicoNome (text)
+- valor (number)
+- status (select: PENDENTE, PAGO, CONCLUIDO)
+- pago (bool)</pre>
+        
+        <h4>servicos</h4>
+        <pre>Campos:
+- nome (text)
+- preco (number)
+- categoria (text)
+- ativo (bool)</pre>
+        
+        <h4>clientes</h4>
+        <pre>Campos:
+- nome (text)
+- telefone (text)
+- email (email)
+- anamnese (json)</pre>
+        
+        <h4>receitas</h4>
+        <pre>Campos:
+- nome (text)
+- produtos (json)
+- instrucoes (text)</pre>
+        
+        <h4>qr_sessoes</h4>
+        <pre>Campos:
+- token (text)
+- status (select: aguardando, aprovado, negado, expirado)
+- urlAprovacao (url)
+- created (date)
+- aprovadoEm (date)
+- negadoEm (date)</pre>
+    </div>
+    
+    <div class="step">
+        <h3>3. Configure API Rules</h3>
+        <p>Para cada collection, defina as regras de API (em "Settings" > "API rules"):</p>
+        
+        <h4>List/View:</h4>
+        <pre>@request.auth.id != ""</pre>
+        
+        <h4>Create:</h4>
+        <pre>@request.auth.id != ""</pre>
+        
+        <h4>Update:</h4>
+        <pre>@request.auth.id != ""</pre>
+        
+        <h4>Delete:</h4>
+        <pre>@request.auth.id != ""</pre>
+    </div>
+    
+    <div class="step">
+        <h3>4. Criar Usuário Admin</h3>
+        <p>Em "Collections" > "users", adicione usuários em "Admin panel".</p>
+    </div>
+    
+    <button class="btn" onclick="testarConexao()">Testar Conexão</button>
+    <div id="log"></div>
+    
+    <script type="module">
+        import PocketBase from 'https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.4/pocketbase.es.mjs';
+        
+        const pb = new PocketBase('https://www.crebortoli.com.br');
+        
+        window.testarConexao = async () => {
+            const log = document.getElementById('log');
+            log.textContent = 'Testando...';
+            
+            try {
+                const health = await pb.health();
+                log.innerHTML = '<span class="success">✓ Conexão OK! Servidor está rodando.</span>';
+                console.log('Health:', health);
+            } catch (e) {
+                log.innerHTML = '<span class="error">✗ Erro: ' + e.message + '</span>';
+            }
+        };
+    </script>
+</body>
+</html>

@@ -3,16 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cre Bortoli</title>
+    <title>Aprovar Login - SIG Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <link rel="stylesheet" href="../static/css/style2.css">
     <style>
-        @font-face {
-            font-family: 'World of Water';
-            src: url('/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('opentype');
-            font-weight: normal;
-            font-style: normal;
-        }
         :root {
             --cor-principal: #8a4baf;
         }
@@ -24,7 +18,7 @@
             background: linear-gradient(135deg, #f7f8fc 0%, #e8eaf6 100%);
             padding: 1rem;
         }
-        .aprovar-container {
+        .approval-container {
             background: white;
             padding: 2rem;
             border-radius: 16px;
@@ -33,413 +27,236 @@
             max-width: 400px;
             text-align: center;
         }
-        .logo h1 {
-            color: var(--cor-principal);
-            font-size: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
         .icon {
             font-size: 4rem;
             margin-bottom: 1rem;
         }
-        .token-info {
+        h1 {
+            color: var(--cor-principal);
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .code-display {
             background: #e8eaf6;
             padding: 1rem;
-            border-radius: 10px;
-            margin-bottom: 1.5rem;
-        }
-        .token-info .label {
-            font-size: 0.85rem;
-            color: #666;
-            margin-bottom: 0.3rem;
-        }
-        .token-info .token {
-            font-family: 'Courier New', monospace;
+            border-radius: 8px;
+            margin: 1.5rem 0;
             font-size: 1.5rem;
             font-weight: bold;
+            letter-spacing: 0.3rem;
             color: var(--cor-principal);
-            letter-spacing: 2px;
+            word-break: break-all;
         }
         .input-container {
-            margin-bottom: 1.5rem;
+            margin: 1.5rem 0;
         }
         .input-container label {
             display: block;
-            font-size: 0.9rem;
-            color: #666;
             margin-bottom: 0.5rem;
-            text-align: left;
+            font-weight: 500;
         }
         .input-container input {
             width: 100%;
-            padding: 0.8rem;
-            font-size: 1.2rem;
-            font-family: 'Courier New', monospace;
-            text-align: center;
-            letter-spacing: 4px;
-            border: 2px solid #ddd;
+            padding: 0.8rem 1rem;
+            border: 2px solid #e0e0e0;
             border-radius: 8px;
+            font-size: 1.2rem;
+            text-align: center;
             text-transform: uppercase;
-            box-sizing: border-box;
+            letter-spacing: 0.2rem;
         }
         .input-container input:focus {
             outline: none;
             border-color: var(--cor-principal);
         }
-        .btn {
-            width: 100%;
-            padding: 1rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            cursor: pointer;
-            margin-bottom: 0.8rem;
-            transition: all 0.3s;
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1.5rem;
         }
-        .btn-aprovar {
+        .btn-primary {
+            flex: 1;
+            padding: 1rem;
             background: #28a745;
             color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
         }
-        .btn-aprovar:hover {
+        .btn-primary:hover {
             background: #218838;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
-        .btn-negar {
+        .btn-danger {
+            flex: 1;
+            padding: 1rem;
             background: #dc3545;
             color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
         }
-        .btn-negar:hover {
+        .btn-danger:hover {
             background: #c82333;
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
         }
         .status-message {
             padding: 1rem;
             border-radius: 8px;
             margin-bottom: 1rem;
             font-weight: 500;
+            display: none;
         }
         .status-message.sucesso {
             background: #d4edda;
             color: #155724;
             border-left: 4px solid #28a745;
+            display: block;
         }
         .status-message.erro {
             background: #f8d7da;
             color: #721c24;
             border-left: 4px solid #dc3545;
+            display: block;
         }
         .status-message.info {
-            background: #fff3cd;
-            color: #856404;
-            border-left: 4px solid #ffc107;
-        }
-        .info-text {
-            font-size: 0.85rem;
-            color: #666;
-            margin-top: 1rem;
-        }
-        .timer {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-        }
-        .timer span {
-            font-weight: bold;
-            font-size: 1.2rem;
-            color: var(--cor-principal);
-        }
-        .timer.expirando {
-            color: #dc3545;
-        }
-        .timer.expirando span {
-            color: #dc3545;
-        }
-        .expired-message {
-            display: none;
-            padding: 1rem;
-            background: #f8d7da;
-            border-radius: 8px;
-            color: #721c24;
-            margin-bottom: 1rem;
-        }
-        .back-link {
-            margin-top: 1.5rem;
-        }
-        .back-link a {
-            color: var(--cor-principal);
-            text-decoration: none;
-            font-size: 0.9rem;
-        }
-        .back-link a:hover {
-            text-decoration: underline;
-        }
-        h2 {
-            color: var(--cor-principal);
-            margin-bottom: 0.5rem;
-        }
-        p {
-            color: #666;
-            margin-bottom: 1.5rem;
+            background: #cce5ff;
+            color: #004085;
+            border-left: 4px solid #007bff;
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="aprovar-container">
-        <div class="logo">
-            <h1 style="font-family: 'World of Water', cursive;">Cre Bortoli</h1>
-        </div>
-        
-        <div id="status-message" class="status-message" style="display: none;"></div>
-        
+    <div class="approval-container">
         <div class="icon" id="icon">🔐</div>
+        <h1 id="titulo">Aprovar Login</h1>
+        <p class="subtitle" id="subtitulo">Digite o código exibido no computador para confirmar o acesso.</p>
         
-        <h2 id="titulo">Aprovar Acesso</h2>
-        <p id="subtitulo">Alguém está tentando acessar o sistema SIG</p>
+        <div id="approval-result"></div>
         
-        <div class="token-info">
-            <div class="label">Código da sessão</div>
-            <div class="token" id="token-display">-</div>
+        <div class="code-display" id="codigo-lido"></div>
+        
+        <div id="input-container" class="input-container">
+            <label for="codigo-digitado">Digite o código:</label>
+            <input type="text" id="codigo-digitado" placeholder="XXXXXXXX" maxlength="8" autocomplete="off">
         </div>
         
-        <div class="timer" id="timer">
-            ⏱️ Expira em: <span id="countdown">30</span>s
+        <div class="btn-group" id="btn-group">
+            <button class="btn-primary" id="btn-confirmar" onclick="confirmarLogin()">✓ Confirmar Login</button>
+            <button class="btn-danger" id="btn-cancelar" onclick="cancelarLogin()">✕ Cancelar</button>
         </div>
         
-        <div class="expired-message" id="expired-message">
-            ⚠️ Tempo expirado! Solicite um novo QR Code no computador.
-        </div>
-        
-        <p class="info-text">
-            Digite o código no dispositivo principal para confirmar o acesso.
+        <p class="info-text" style="margin-top: 1.5rem; font-size: 0.9rem; color: #666;">
+            O código deve ser digitado manualmente para confirmar o acesso.
         </p>
-        
-        <div class="back-link">
-            <a href="../index.html">← Voltar ao site</a>
-        </div>
     </div>
 
-    <script>
-        const SESSION_KEY = 'sig_qr_session';
-        const SESSION_TIMEOUT = 30;
+    <script type="module">
+        import PocketBase from 'https://cdnjs.cloudflare.com/ajax/libs/pocketbase/0.21.4/pocketbase.es.mjs';
+        import { qr_sessoes } from '../static/js/pb-db.js';
+        
+        const pb = new PocketBase('https://www.crebortoli.com.br');
+        
+        let codigoLido = '';
 
-        function getBaseUrl() {
-            const path = window.location.pathname;
-            const basePath = path.substring(0, path.lastIndexOf('/sig/'));
-            return window.location.origin + basePath;
-        }
-
-        async function syncToServer(acao, token) {
-            try {
-                const response = await fetch(getBaseUrl() + '/api_session.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acao, token })
-                });
-                return await response.json();
-            } catch (e) {
-                return null;
-            }
-        }
-
-        let tokenUrl = '';
-        let countdown = 30;
-        let countdownInterval = null;
-        let verificarInterval = null;
-
-        function startCountdown() {
-            countdown = SESSION_TIMEOUT;
-            const countdownEl = document.getElementById('countdown');
-            const timerEl = document.getElementById('timer');
-            
-            countdownInterval = setInterval(() => {
-                countdown--;
-                countdownEl.textContent = countdown;
-                
-                if (countdown <= 10) {
-                    timerEl.classList.add('expirando');
-                }
-                
-                if (countdown <= 0) {
-                    clearInterval(countdownInterval);
-                    showExpired();
-                }
-            }, 1000);
-        }
-
-        function showExpired() {
-            clearInterval(verificarInterval);
-            document.getElementById('timer').style.display = 'none';
-            document.getElementById('expired-message').style.display = 'block';
-            document.getElementById('btn-aprovar').style.display = 'none';
-            document.getElementById('btn-negar').style.display = 'none';
-            document.getElementById('icon').textContent = '⏰';
-            document.getElementById('titulo').textContent = 'Expirado';
-            document.getElementById('subtitulo').textContent = 'O tempo para aprovar expirou.';
-            document.querySelector('.info-text').style.display = 'none';
-        }
-
-        function loadSession() {
-            const stored = localStorage.getItem(SESSION_KEY);
-            if (stored) {
-                return JSON.parse(stored);
-            }
-            return null;
-        }
-
-        function saveSession(sessionData) {
-            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-        }
-
-        function init() {
+        async function init() {
             const urlParams = new URLSearchParams(window.location.search);
-            tokenUrl = urlParams.get('token') || '';
+            codigoLido = urlParams.get('token') || '';
 
-            if (!tokenUrl) {
-                mostrarStatus('Link inválido. Escaneie o QR Code novamente.', 'erro');
-                document.getElementById('btn-aprovar').style.display = 'none';
-                document.getElementById('btn-negar').style.display = 'none';
+            if (!codigoLido) {
+                mostrarStatus('Link inválido. Gere um novo código no computador.', 'erro');
+                document.getElementById('btn-confirmar').style.display = 'none';
+                document.getElementById('btn-cancelar').style.display = 'none';
+                document.getElementById('input-container').style.display = 'none';
                 document.getElementById('icon').textContent = '❌';
                 return;
             }
 
-            const sessionData = loadSession();
-            if (sessionData && sessionData.token === tokenUrl && sessionData.status === 'aprovado') {
-                mostrarStatus('Este login já foi aprovado!', 'sucesso');
-                document.getElementById('btn-aprovar').style.display = 'none';
-                document.getElementById('btn-negar').style.display = 'none';
-                document.getElementById('icon').textContent = '✓';
-                document.getElementById('titulo').textContent = 'Aprovado!';
-                document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
+            document.getElementById('codigo-lido').textContent = codigoLido;
+            document.getElementById('codigo-digitado').focus();
+        }
+
+        function mostrarStatus(mensagem, tipo) {
+            const el = document.getElementById('approval-result');
+            el.innerHTML = `<div class="status-message ${tipo}">${mensagem}</div>`;
+        }
+
+        function validarCodigo() {
+            const digitado = document.getElementById('codigo-digitado').value.toUpperCase().trim();
+            return digitado === codigoLido;
+        }
+
+        async function confirmarLogin() {
+            if (!validarCodigo()) {
+                mostrarStatus('Código incorreto. Digite exatamente o código exibido acima.', 'erro');
+                document.getElementById('codigo-digitado').value = '';
+                document.getElementById('codigo-digitado').focus();
                 return;
             }
 
-            document.getElementById('token-display').textContent = tokenUrl;
-            startCountdown();
-            verificarStatus(tokenUrl);
-        }
-
-        async function verificarStatus(token) {
-            const sessionData = loadSession();
-            
-            if (sessionData && sessionData.token === token) {
-                const age = (Date.now() - sessionData.criadoEm) / 1000;
-                if (age >= SESSION_TIMEOUT) {
-                    showExpired();
-                    return;
-                }
-
-                if (sessionData.status === 'aprovado') {
-                    clearInterval(countdownInterval);
-                    clearInterval(verificarInterval);
-                    mostrarStatus('Aprovado!', 'sucesso');
-                    document.getElementById('btn-aprovar').style.display = 'none';
-                    document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('timer').style.display = 'none';
-                    document.getElementById('icon').textContent = '✓';
-                    document.getElementById('titulo').textContent = 'Aprovado!';
-                    document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
-                    return;
-                }
-
-                if (sessionData.status === 'negado') {
-                    clearInterval(countdownInterval);
-                    clearInterval(verificarInterval);
-                    mostrarStatus('Login negado.', 'info');
-                    document.getElementById('btn-aprovar').style.display = 'none';
-                    document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('timer').style.display = 'none';
-                    return;
-                }
-            }
-
-            const serverResult = await syncToServer('verificar', token);
-            if (serverResult) {
-                if (serverResult.status === 'aprovado') {
-                    clearInterval(countdownInterval);
-                    clearInterval(verificarInterval);
-                    if (sessionData) {
-                        sessionData.status = 'aprovado';
-                        saveSession(sessionData);
-                    }
-                    mostrarStatus('Aprovado!', 'sucesso');
-                    document.getElementById('btn-aprovar').style.display = 'none';
-                    document.getElementById('btn-negar').style.display = 'none';
-                    document.getElementById('timer').style.display = 'none';
-                    document.getElementById('icon').textContent = '✓';
-                    document.getElementById('titulo').textContent = 'Aprovado!';
-                    document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
-                    return;
-                }
-                if (serverResult.status === 'nao_encontrada' || serverResult.status === 'expirada') {
-                    showExpired();
-                    return;
-                }
-            }
-
-            verificarInterval = setTimeout(() => verificarStatus(token), 2000);
-        }
-
-        async function approveLogin() {
-            const btn = document.getElementById('btn-aprovar');
+            const btn = document.getElementById('btn-confirmar');
             btn.disabled = true;
             btn.textContent = 'Confirmando...';
 
-            const sessionData = loadSession();
-            if (sessionData && sessionData.token === tokenUrl) {
-                sessionData.status = 'aprovado';
-                sessionData.aprovadoEm = Date.now();
-                saveSession(sessionData);
+            try {
+                const result = await qr_sessoes.aprobar(codigoLido);
+                
+                if (result) {
+                    mostrarStatus('Login confirmado!', 'sucesso');
+                    document.getElementById('btn-confirmar').style.display = 'none';
+                    document.getElementById('btn-cancelar').style.display = 'none';
+                    document.getElementById('input-container').style.display = 'none';
+                    document.getElementById('icon').textContent = '✓';
+                    document.getElementById('titulo').textContent = 'Confirmado!';
+                    document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
+                } else {
+                    throw new Error('Erro ao confirmar');
+                }
+            } catch (e) {
+                mostrarStatus(e.message || 'Erro ao confirmar. Tente novamente.', 'erro');
+                btn.disabled = false;
+                btn.textContent = '✓ Confirmar Login';
             }
-
-            await syncToServer('aprovar', tokenUrl);
-
-            clearInterval(countdownInterval);
-            clearInterval(verificarInterval);
-            
-            mostrarStatus('Aprovado!', 'sucesso');
-            document.getElementById('btn-aprovar').style.display = 'none';
-            document.getElementById('btn-negar').style.display = 'none';
-            document.getElementById('timer').style.display = 'none';
-            document.getElementById('icon').textContent = '✓';
-            document.getElementById('titulo').textContent = 'Confirmado!';
-            document.getElementById('subtitulo').textContent = 'Acesso liberado no computador.';
         }
 
-        async function negarLogin() {
-            clearInterval(countdownInterval);
-            clearInterval(verificarInterval);
+        async function cancelarLogin() {
+            const btn = document.getElementById('btn-cancelar');
+            btn.disabled = true;
+            btn.textContent = 'Cancelando...';
 
-            const sessionData = loadSession();
-            if (sessionData && sessionData.token === tokenUrl) {
-                sessionData.status = 'negado';
-                sessionData.negadoEm = Date.now();
-                saveSession(sessionData);
+            try {
+                await qr_sessoes.negar(codigoLido);
+            } catch (e) {
+                console.error('Erro ao cancelar:', e);
             }
 
-            await syncToServer('negar', tokenUrl);
-
-            mostrarStatus('Cancelado.', 'info');
-            document.getElementById('btn-aprovar').style.display = 'none';
-            document.getElementById('btn-negar').style.display = 'none';
-            document.getElementById('timer').style.display = 'none';
+            mostrarStatus('Login cancelado.', 'info');
+            document.getElementById('btn-confirmar').style.display = 'none';
+            document.getElementById('btn-cancelar').style.display = 'none';
+            document.getElementById('input-container').style.display = 'none';
             document.getElementById('icon').textContent = '✕';
             document.getElementById('titulo').textContent = 'Cancelado';
             document.getElementById('subtitulo').textContent = 'O login foi cancelado.';
         }
 
-        function mostrarStatus(mensagem, tipo) {
-            const el = document.getElementById('status-message');
-            el.textContent = mensagem;
-            el.className = 'status-message ' + tipo;
-            el.style.display = mensagem ? 'block' : 'none';
-        }
+        document.getElementById('codigo-digitado').addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+            mostrarStatus('', '');
+        });
+
+        document.getElementById('codigo-digitado').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                confirmarLogin();
+            }
+        });
 
         init();
     </script>

@@ -284,7 +284,8 @@
     <div class="container">
         <div class="card">
             <h2>Visão Geral</h2>
-            <p>Sistema de agendamento de serviços de beleza com pagamento via PIX. Desenvolvido com HTML, CSS e JavaScript puro, usando <code>localStorage</code> para persistência de dados.</p>
+            <p>Sistema de agendamento de serviços de beleza com pagamento via PIX. Desenvolvido com HTML, CSS e JavaScript (ES6+), utilizando PocketBase como backend para persistência de dados em nuvem.</p>
+            <p><strong>Versão:</strong> 1.0.0</p>
         </div>
 
         <div class="card">
@@ -316,7 +317,7 @@
                 <div class="number">1</div>
                 <div class="content">
                     <h4>Acesso ao Site</h4>
-                    <p>Cliente acessa a página de agenda e visualiza o calendário do mês atual. A lista "Meus Agendamentos" mostra os agendamentos já realizados (vazia inicialmente).</p>
+                    <p>Cliente acessa a página de agenda e visualiza o calendário do mês atual. A lista "Meus Agendamentos" mostra os agendamentos já realizados.</p>
                 </div>
             </div>
             
@@ -324,7 +325,7 @@
                 <div class="number">2</div>
                 <div class="content">
                     <h4>Fazer Agendamento</h4>
-                    <p>Cliente clica em um dia disponível → Abre modal com formulário (nome, WhatsApp, serviço) → Clica em "Confirmar Agendamento" → Dados salvos no localStorage → Abre WhatsApp com mensagem pré-preenchida.</p>
+                    <p>Cliente clica em um dia disponível → Abre modal com formulário (nome, WhatsApp, serviço) → Clica em "Confirmar Agendamento" → Dados salvos no PocketBase → Abre WhatsApp com mensagem pré-preenchida.</p>
                 </div>
             </div>
             
@@ -332,7 +333,7 @@
                 <div class="number">3</div>
                 <div class="content">
                     <h4>Pagamento via PIX</h4>
-                    <p>Cliente clica em "Pagar PIX" na lista → Abre modal com chave PIX e valor → Copia chave ou escaneia QR Code → Após pagar, clica em "Já fiz o pagamento" → Status atualizado no localStorage.</p>
+                    <p>Cliente clica em "Pagar PIX" na lista → Abre modal com chave PIX e valor → Copia chave ou escaneia QR Code → Após pagar, clica em "Já fiz o pagamento" → Status atualizado no sistema.</p>
                 </div>
             </div>
             
@@ -349,7 +350,7 @@
             <h2>Fluxo do Administrador (SIG)</h2>
             
             <h3>1. Acesso ao Painel</h3>
-            <p>URL: <a href="sig/index.html">sig/</a> - Dashboard com 3 opções: Agenda, Tabela de Preços, Pagamentos.</p>
+            <p>URL: <a href="sig/index.html">sig/</a> - Dashboard com múltiplas opções: Agenda, Tabela de Preços, Pagamentos, Receituário, Relatórios.</p>
             
             <h3>2. Gestão de Agendamentos</h3>
             <p>Visualização semanal ou mensal. Agendamentos mostrados com badges coloridos:</p>
@@ -360,36 +361,69 @@
             </ul>
             
             <h3>3. Tabela de Preços</h3>
-            <p>Modo edição permite alterar preços. Exportar/Importar JSON para sincronizar com servidor.</p>
+            <p>Modo edição permite alterar preços dos serviços. Sincronização via servicos.json no servidor.</p>
             
             <h3>4. Gestão de Pagamentos</h3>
             <p>Lista de agendamentos pendentes, dados PIX, confirmar pagamento, link WhatsApp.</p>
+            
+            <h3>5. Módulos Adicionais</h3>
+            <ul>
+                <li><strong>Receituário:</strong> Controle de produtos e receitas</li>
+                <li><strong>Relatórios:</strong> Dados do MEI, vendas, custos</li>
+                <li><strong>Aprovar/Confirmar:</strong> Aprovação de agendamentos pendentes</li>
+            </ul>
         </div>
 
         <div class="card">
-            <h2>Estrutura de Dados</h2>
+            <h2>Arquitetura do Sistema</h2>
             
-            <h3>servicos.json (Servidor)</h3>
+            <h3>Backend</h3>
+            <p><strong>PocketBase</strong> (https://www.crebortoli.com.br) - Backend como Serviço (BaaS) que fornece:</p>
+            <ul>
+                <li>Banco de dados SQLite integrado</li>
+                <li>API REST automática</li>
+                <li>Autenticação de usuários</li>
+                <li>Realtime subscriptions</li>
+            </ul>
+            
+            <h3>Banco de Dados</h3>
+            <p>Collections disponíveis no PocketBase:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Collection</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>agendamentos</td><td>Agendamentos de serviços</td></tr>
+                    <tr><td>servicos</td><td>Catálogo de serviços disponíveis</td></tr>
+                    <tr><td>clientes</td><td>Cadastro de clientes</td></tr>
+                    <tr><td>receitas</td><td>Receitas de produtos</td></tr>
+                    <tr><td>usuarios</td><td>Usuários do sistema (auth)</td></tr>
+                </tbody>
+            </table>
+            
+            <h3>API REST</h3>
+            <p>Todas as operações de dados são feitas via <strong>PocketBase SDK</strong>:</p>
+            <pre>import { agendamentos, servicos } from './static/js/pb-db.js';
+const lista = await agendamentos.getAll();</pre>
+            
+            <h3>Autenticação QR</h3>
+            <p>O SIG usa autenticação via QR Code com backend PocketBase:</p>
+            <ul>
+                <li>Collection <code>qr_sessoes</code> no PocketBase armazena sessões</li>
+                <li>Usuário gera QR no computador</li>
+                <li>Celular escaneia e aprova com código</li>
+            </ul>
+            
+            <h3>Arquivo servicos.json</h3>
+            <p>Arquivo estático para sincronização de preços:</p>
             <pre>{
     <span class="key">"servicos"</span>: [
-        { <span class="key">"id"</span>: <span class="string">"dep_perna"</span>, <span class="key">"nome"</span>: <span class="string">"Depilação Perna"</span>, <span class="key">"preco"</span>: <span class="number">25</span>, <span class="key">"categoria"</span>: <span class="string">"Depilação"</span> },
-        ...
+        { <span class="key">"id"</span>: <span class="string">"dep_perna"</span>, <span class="key">"nome"</span>: <span class="string">"Depilação Perna"</span>, <span class="key">"preco"</span>: <span class="number">25</span>, <span class="key">"categoria"</span>: <span class="string">"Depilação"</span> }
     ],
     <span class="key">"ultimaAtualizacao"</span>: <span class="string">"2026-03-23"</span>
-}</pre>
-            
-            <h3>localStorage: crebortoli_agendamentos</h3>
-            <pre>{
-    <span class="key">"id"</span>: <span class="string">"1742734567890"</span>,
-    <span class="key">"data"</span>: <span class="string">"2026-03-25"</span>,
-    <span class="key">"hora"</span>: <span class="string">"A confirmar"</span>,
-    <span class="key">"cliente"</span>: <span class="string">"Maria Silva"</span>,
-    <span class="key">"telefone"</span>: <span class="string">"14999999999"</span>,
-    <span class="key">"servico"</span>: <span class="string">"dep_perna"</span>,
-    <span class="key">"servicoNome"</span>: <span class="string">"Depilação Perna"</span>,
-    <span class="key">"valor"</span>: <span class="number">25</span>,
-    <span class="key">"status"</span>: <span class="string">"PENDENTE"</span>,
-    <span class="key">"pago"</span>: <span class="number">false</span>
 }</pre>
         </div>
 
@@ -460,23 +494,6 @@
         </div>
 
         <div class="card">
-            <h2>Sincronização de Preços</h2>
-            <div class="alert alert-warning">
-                <strong>Problema:</strong> localStorage é individual por navegador/dispositivo.
-            </div>
-            <div class="alert alert-info">
-                <strong>Solução:</strong> Arquivo <code>servicos.json</code> hospedado no servidor permite que todos vejam os mesmos preços.
-            </div>
-            <h3>Fluxo de Atualização</h3>
-            <ol>
-                <li>Admin edita preços no SIG (<code>sig/tabela_precos.html</code>)</li>
-                <li>Clica em "⬇ Exportar JSON"</li>
-                <li>Atualiza <code>servicos.json</code> no GitHub/servidor</li>
-                <li>Todos os usuários recebem novos preços ao recarregar</li>
-            </ol>
-        </div>
-
-        <div class="card">
             <h2>Tecnologias Utilizadas</h2>
             <div class="tech-grid">
                 <div class="tech-item">
@@ -489,15 +506,19 @@
                 </div>
                 <div class="tech-item">
                     <strong>JavaScript</strong>
-                    <p>ES6+</p>
+                    <p>ES6+ (Módulos)</p>
                 </div>
                 <div class="tech-item">
-                    <strong>localStorage</strong>
-                    <p>Persistência</p>
+                    <strong>PocketBase</strong>
+                    <p>Backend</p>
                 </div>
                 <div class="tech-item">
                     <strong>Fetch API</strong>
-                    <p>Carregar JSON</p>
+                    <p>Requisições</p>
+                </div>
+                <div class="tech-item">
+                    <strong>PHP</strong>
+                    <p>API REST</p>
                 </div>
             </div>
         </div>
@@ -512,9 +533,30 @@
             <p><strong>Requisitos:</strong></p>
             <ul>
                 <li>JavaScript habilitado</li>
-                <li>localStorage disponível</li>
-                <li>Conexão com internet (para carregar JSON)</li>
+                <li>Conexão com internet (para PocketBase)</li>
+                <li>Suporte a ES6 Modules</li>
             </ul>
+        </div>
+
+        <div class="card">
+            <h2>Arquivos do Projeto</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Arquivo/Diretório</th>
+                        <th>Descrição</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>index.html</td><td>Página principal do site</td></tr>
+                    <tr><td>paginas/*.html</td><td>Páginas secundárias (agenda, servicos, etc)</td></tr>
+                    <tr><td>sig/*.html</td><td>Painel administrativo (SIG)</td></tr>
+                    <tr><td>servicos.json</td><td>Arquivo de preços estático</td></tr>
+                    <tr><td>static/js/pb-db.js</td><td>Módulo de conexão PocketBase</td></tr>
+                    <tr><td>static/css/</td><td>Arquivos de estilos</td></tr>
+                    <tr><td>static/icon/</td><td>Ícones do site</td></tr>
+                </tbody>
+            </table>
         </div>
 
         <div class="card">
