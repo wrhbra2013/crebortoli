@@ -219,8 +219,31 @@ const ContatosStore = createEntityStore('contatos');
 
 const AgendamentoStore = AgendamentosStore;
 
+const DataStore = {
+    load(key) {
+        try {
+            return JSON.parse(localStorage.getItem(key));
+        } catch {
+            return null;
+        }
+    },
+    save(key, value) {
+        localStorage.setItem(key, JSON.stringify(value));
+    }
+};
+
 if (typeof window !== 'undefined') {
     window.DataSync = DataSync;
+    window.DataStore = DataStore;
+    window.AgendamentosStore = AgendamentosStore;
+    window.AgendamentoStore = AgendamentoStore;
+    window.ServicosStore = ServicosStore;
+    window.ClientesStore = ClientesStore;
+    window.ReceitasStore = ReceitasStore;
+    window.ContatosStore = ContatosStore;
+    
+    DataSync.sync();
+}
     window.AgendamentosStore = AgendamentosStore;
     window.AgendamentoStore = AgendamentoStore;
     window.ServicosStore = ServicosStore;
