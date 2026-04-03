@@ -1,14 +1,5 @@
 {
   "agendamentos": [],
-  "clientes": [],
-  "colaboradores": [],
-  "compras": [],
-  "vendas_servicos": [],
-  "vendas_produtos": [],
-  "insumos": [],
-  "custos_fixos": [],
-  "relatorios_mei": [],
-  "anamnese": [],
   "servicos": [
     {"id": "dep_perna", "nome": "Depilação Perna", "preco": 25, "categoria": "Depilação"},
     {"id": "dep_virilha", "nome": "Depilação Virilha Completa", "preco": 50, "categoria": "Depilação"},
@@ -19,5 +10,13 @@
     {"id": "limpeza_pele", "nome": "Limpeza de Pele", "preco": 100, "categoria": "Tratamento"},
     {"id": "massagem", "nome": "Massagem Relaxante", "preco": 50, "categoria": "Massagem"}
   ],
-  "ultimaAtualizacao": "2026-03-24"
+  "clientes": [],
+  "colaboradores": [],
+  "compras": [],
+  "vendas_servicos": [],
+  "vendas_produtos": [],
+  "insumos": [],
+  "custos_fixos": [],
+  "relatorios_mei": [],
+  "anamnese": []
 }

@@ -13,7 +13,15 @@ const DataSync = {
         return data ? JSON.parse(data) : {
             agendamentos: [],
             servicos: [],
-            clientes: []
+            clientes: [],
+            colaboradores: [],
+            compras: [],
+            vendas_servicos: [],
+            vendas_produtos: [],
+            insumos: [],
+            custos_fixos: [],
+            relatorios_mei: [],
+            anamnese: []
         };
     },
     
@@ -59,9 +67,10 @@ const DataSync = {
         await this.pushToServer(merged);
         
         console.log('Sincronizado:', {
-            agendamentos: merged.agendamentos.length,
-            servicos: merged.servicos.length,
-            clientes: merged.clientes.length
+            agendamentos: merged.agendamentos?.length || 0,
+            servicos: merged.servicos?.length || 0,
+            clientes: merged.clientes?.length || 0,
+            colaboradores: merged.colaboradores?.length || 0
         });
         
         return merged;
@@ -78,148 +87,111 @@ const DataSync = {
         return {
             agendamentos: mergeArrays(local.agendamentos, server.agendamentos),
             servicos: mergeArrays(local.servicos, server.servicos),
-            clientes: mergeArrays(local.clientes, server.clientes)
+            clientes: mergeArrays(local.clientes, server.clientes),
+            colaboradores: mergeArrays(local.colaboradores, server.colaboradores),
+            compras: mergeArrays(local.compras, server.compras),
+            vendas_servicos: mergeArrays(local.vendas_servicos, server.vendas_servicos),
+            vendas_produtos: mergeArrays(local.vendas_produtos, server.vendas_produtos),
+            insumos: mergeArrays(local.insumos, server.insumos),
+            custos_fixos: mergeArrays(local.custos_fixos, server.custos_fixos),
+            relatorios_mei: mergeArrays(local.relatorios_mei, server.relatorios_mei),
+            anamnese: mergeArrays(local.anamnese, server.anamnese)
         };
     },
     
     getTimestamp() {
         const data = this.getLocalData();
         return data._updated || 0;
+    },
+    
+    getAllData() {
+        return this.getLocalData();
     }
 };
 
-const AgendamentosStore = {
-    KEY: 'agendamentos',
-    
-    getAll() {
-        return DataSync.getLocalData().agendamentos || [];
-    },
-    
-    save(agendamento) {
-        const data = DataSync.getLocalData();
-        agendamento.id = agendamento.id || 'ag_' + Date.now();
-        agendamento.created_at = agendamento.created_at || new Date().toISOString();
-        agendamento.status = agendamento.status || 'pendente';
-        data.agendamentos.push(agendamento);
-        DataSync.saveLocalData(data);
-        DataSync.pushToServer(data);
-        return agendamento;
-    },
-    
-    update(id, dados) {
-        const data = DataSync.getLocalData();
-        const idx = data.agendamentos.findIndex(a => a.id === id);
-        if (idx >= 0) {
-            data.agendamentos[idx] = { ...data.agendamentos[idx], ...dados, updated_at: new Date().toISOString() };
-            DataSync.saveLocalData(data);
-            DataSync.pushToServer(data);
-            return data.agendamentos[idx];
+function createEntityStore(entityName) {
+    return {
+        getAll() {
+            const data = DataSync.getLocalData();
+            return data[entityName] || [];
+        },
+        
+        save(item) {
+            const fullData = DataSync.getLocalData();
+            item.id = item.id || entityName + '_' + Date.now();
+            item.created_at = item.created_at || new Date().toISOString();
+            fullData[entityName].push(item);
+            DataSync.saveLocalData(fullData);
+            DataSync.pushToServer(fullData);
+            return item;
+        },
+        
+        update(id, dados) {
+            const fullData = DataSync.getLocalData();
+            const idx = fullData[entityName].findIndex(item => item.id === id);
+            if (idx >= 0) {
+                fullData[entityName][idx] = { ...fullData[entityName][idx], ...dados, updated_at: new Date().toISOString() };
+                DataSync.saveLocalData(fullData);
+                DataSync.pushToServer(fullData);
+                return fullData[entityName][idx];
+            }
+            return null;
+        },
+        
+        delete(id) {
+            const fullData = DataSync.getLocalData();
+            fullData[entityName] = fullData[entityName].filter(item => item.id !== id);
+            DataSync.saveLocalData(fullData);
+            DataSync.pushToServer(fullData);
+        },
+        
+        getById(id) {
+            return this.getAll().find(item => item.id === id);
+        },
+        
+        search(term) {
+            const lower = term.toLowerCase();
+            return this.getAll().filter(item => 
+                Object.values(item).some(val => 
+                    typeof val === 'string' && val.toLowerCase().includes(lower)
+                )
+            );
+        },
+        
+        getByField(field, value) {
+            return this.getAll().filter(item => item[field] === value);
         }
-        return null;
-    },
-    
-    delete(id) {
-        const data = DataSync.getLocalData();
-        data.agendamentos = data.agendamentos.filter(a => a.id !== id);
-        DataSync.saveLocalData(data);
-        DataSync.pushToServer(data);
-    },
-    
-    getByStatus(status) {
-        return this.getAll().filter(a => a.status === status);
-    }
-};
+    };
+}
 
-const ServicosStore = {
-    KEY: 'servicos',
-    
-    getAll() {
-        return DataSync.getLocalData().servicos || [];
-    },
-    
-    save(servico) {
-        const data = DataSync.getLocalData();
-        servico.id = servico.id || 'srv_' + Date.now();
-        data.servicos.push(servico);
-        DataSync.saveLocalData(data);
-        DataSync.pushToServer(data);
-        return servico;
-    },
-    
-    update(id, dados) {
-        const data = DataSync.getLocalData();
-        const idx = data.servicos.findIndex(s => s.id === id);
-        if (idx >= 0) {
-            data.servicos[idx] = { ...data.servicos[idx], ...dados };
-            DataSync.saveLocalData(data);
-            DataSync.pushToServer(data);
-            return data.servicos[idx];
-        }
-        return null;
-    },
-    
-    delete(id) {
-        const data = DataSync.getLocalData();
-        data.servicos = data.servicos.filter(s => s.id !== id);
-        DataSync.saveLocalData(data);
-        DataSync.pushToServer(data);
-    },
-    
-    getByCategoria(categoria) {
-        return this.getAll().filter(s => s.categoria === categoria);
-    }
-};
+const AgendamentosStore = createEntityStore('agendamentos');
+const ServicosStore = createEntityStore('servicos');
+const ClientesStore = createEntityStore('clientes');
+const ColaboradoresStore = createEntityStore('colaboradores');
+const ComprasStore = createEntityStore('compras');
+const VendasServicosStore = createEntityStore('vendas_servicos');
+const VendasProdutosStore = createEntityStore('vendas_produtos');
+const InsumosStore = createEntityStore('insumos');
+const CustosFixosStore = createEntityStore('custos_fixos');
+const RelatoriosMeiStore = createEntityStore('relatorios_mei');
+const AnamneseStore = createEntityStore('anamnese');
 
-const ClientesStore = {
-    KEY: 'clientes',
-    
-    getAll() {
-        return DataSync.getLocalData().clientes || [];
-    },
-    
-    save(cliente) {
-        const data = DataSync.getLocalData();
-        cliente.id = cliente.id || 'cli_' + Date.now();
-        cliente.created_at = cliente.created_at || new Date().toISOString();
-        data.clientes.push(cliente);
-        DataSync.saveLocalData(data);
-        DataSync.pushToServer(data);
-        return cliente;
-    },
-    
-    update(id, dados) {
-        const data = DataSync.getLocalData();
-        const idx = data.clientes.findIndex(c => c.id === id);
-        if (idx >= 0) {
-            data.clientes[idx] = { ...data.clientes[idx], ...dados };
-            DataSync.saveLocalData(data);
-            DataSync.pushToServer(data);
-            return data.clientes[idx];
-        }
-        return null;
-    },
-    
-    delete(id) {
-        const data = DataSync.getLocalData();
-        data.clientes = data.clientes.filter(c => c.id !== id);
-        DataSync.saveLocalData(data);
-        DataSync.pushToServer(data);
-    },
-    
-    search(term) {
-        const lower = term.toLowerCase();
-        return this.getAll().filter(c => 
-            (c.nome && c.nome.toLowerCase().includes(lower)) ||
-            (c.telefone && c.telefone.includes(term))
-        );
-    }
-};
+const AgendamentoStore = AgendamentosStore;
 
 if (typeof window !== 'undefined') {
     window.DataSync = DataSync;
     window.AgendamentosStore = AgendamentosStore;
+    window.AgendamentoStore = AgendamentoStore;
     window.ServicosStore = ServicosStore;
     window.ClientesStore = ClientesStore;
+    window.ColaboradoresStore = ColaboradoresStore;
+    window.ComprasStore = ComprasStore;
+    window.VendasServicosStore = VendasServicosStore;
+    window.VendasProdutosStore = VendasProdutosStore;
+    window.InsumosStore = InsumosStore;
+    window.CustosFixosStore = CustosFixosStore;
+    window.RelatoriosMeiStore = RelatoriosMeiStore;
+    window.AnamneseStore = AnamneseStore;
     
     DataSync.sync();
     setInterval(() => DataSync.sync(), 60000);

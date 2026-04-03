@@ -15,42 +15,52 @@ function loadData() {
     global $DATA_FILE;
     if (file_exists($DATA_FILE)) {
         $content = file_get_contents($DATA_FILE);
-        return json_decode($content, true) ?: [
-            'agendamentos' => [],
-            'servicos' => [],
-            'clientes' => []
-        ];
+        return json_decode($content, true) ?: getDefaultData();
     }
+    return getDefaultData();
+}
+
+function getDefaultData() {
     return [
         'agendamentos' => [],
         'servicos' => [],
-        'clientes' => []
+        'clientes' => [],
+        'colaboradores' => [],
+        'compras' => [],
+        'vendas_servicos' => [],
+        'vendas_produtos' => [],
+        'insumos' => [],
+        'custos_fixos' => [],
+        'relatorios_mei' => [],
+        'anamnese' => []
     ];
 }
 
 function saveData($data) {
     global $DATA_FILE;
+    $data['_updated'] = time();
     file_put_contents($DATA_FILE, json_encode($data, JSON_PRETTY_PRINT));
+}
+
+function mergeEntity($existing, $new, $key = 'id') {
+    $map = [];
+    foreach ($existing as $item) {
+        $map[$item[$key]] = $item;
+    }
+    foreach ($new as $item) {
+        $map[$item[$key]] = $item;
+    }
+    return array_values($map);
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
 
-if ($method === 'GET' && $action === 'agendamentos') {
-    $data = loadData();
-    echo json_encode($data['agendamentos']);
-    exit;
-}
+$entities = ['agendamentos', 'servicos', 'clientes', 'colaboradores', 'compras', 'vendas_servicos', 'vendas_produtos', 'insumos', 'custos_fixos', 'relatorios_mei', 'anamnese'];
 
-if ($method === 'GET' && $action === 'servicos') {
+if ($method === 'GET' && in_array($action, $entities)) {
     $data = loadData();
-    echo json_encode($data['servicos']);
-    exit;
-}
-
-if ($method === 'GET' && $action === 'clientes') {
-    $data = loadData();
-    echo json_encode($data['clientes']);
+    echo json_encode($data[$action] ?? []);
     exit;
 }
 
@@ -77,32 +87,25 @@ if (!$dadosRecebidos) {
 
 $data = loadData();
 
-if (isset($dadosRecebidos['agendamentos'])) {
-    foreach ($dadosRecebidos['agendamentos'] as $agendamento) {
-        $agendamento['id'] = $agendamento['id'] ?? uniqid();
-        $agendamento['created_at'] = $agendamento['created_at'] ?? date('Y-m-d H:i:s');
-        $agendamento['status'] = $agendamento['status'] ?? 'pendente';
-        $data['agendamentos'][] = $agendamento;
-    }
-}
-
-if (isset($dadosRecebidos['servicos'])) {
-    foreach ($dadosRecebidos['servicos'] as $servico) {
-        $servico['id'] = $servico['id'] ?? uniqid();
-        $data['servicos'][] = $servico;
-    }
-}
-
-if (isset($dadosRecebidos['clientes'])) {
-    foreach ($dadosRecebidos['clientes'] as $cliente) {
-        $cliente['id'] = $cliente['id'] ?? uniqid();
-        $cliente['created_at'] = $cliente['created_at'] ?? date('Y-m-d H:i:s');
-        $data['clientes'][] = $cliente;
-    }
-}
-
 if (isset($dadosRecebidos['full_data'])) {
-    $data = $dadosRecebidos['full_data'];
+    foreach ($entities as $entity) {
+        if (isset($dadosRecebidos['full_data'][$entity])) {
+            $data[$entity] = mergeEntity(
+                $data[$entity] ?? [],
+                $dadosRecebidos['full_data'][$entity]
+            );
+        }
+    }
+} else {
+    foreach ($entities as $entity) {
+        if (isset($dadosRecebidos[$entity]) && is_array($dadosRecebidos[$entity])) {
+            foreach ($dadosRecebidos[$entity] as $item) {
+                $item['id'] = $item['id'] ?? uniqid();
+                $item['created_at'] = $item['created_at'] ?? date('Y-m-d H:i:s');
+                $data[$entity] = mergeEntity($data[$entity] ?? [], [$item]);
+            }
+        }
+    }
 }
 
 saveData($data);
