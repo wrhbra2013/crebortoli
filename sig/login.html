@@ -97,14 +97,9 @@
         const SESSION_KEY = 'sig_qr_session';
         const AUTH_KEY = 'sig_authenticated';
         const SESSION_TIMEOUT = 60;
-        const API_URL = 'https://crebortoli.free.nf/api.php';
+const API_URL = '/api.php';
         
-        let currentToken = null;
-        let countdownInterval = null;
-        let pollTimeout = null;
-        let remainingTime = SESSION_TIMEOUT;
-        
-        const BASE_URL = 'https://crebortoli.free.nf';
+        const BASE_URL = window.location.origin;
         
         function getBaseUrl() {
             return BASE_URL;
@@ -263,6 +258,23 @@
             window.open(whatsappUrl, '_blank');
         }
         
+        function secureLogin() {
+            sessionStorage.setItem('sig_authenticated', 'true');
+            sessionStorage.setItem('sig_auth_time', Date.now().toString());
+            
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            const secureToken = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+            
+            let hash = 0;
+            for (let i = 0; i < secureToken.length; i++) {
+                const char = secureToken.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            sessionStorage.setItem('sig_token', hash.toString(16));
+        }
+        
         async function startPolling(token) {
             const checkApproval = async () => {
                 const result = await apiRequest('verificar_sessao', { token });
@@ -271,8 +283,7 @@
                     stopPolling();
                     stopTimer();
                     clearSessionLocal();
-                    localStorage.setItem(AUTH_KEY, 'true');
-                    localStorage.setItem('sig_user_email', 'qr-auth');
+                    secureLogin();
                     showStatus('Login aprovado! Redirecionando...', 'aprovado');
                     setTimeout(() => { window.location.href = './index.html'; }, 1000);
                     return;
@@ -295,7 +306,7 @@
         if (session && session.status === 'aprovado') {
             const idade = Date.now() - session.created;
             if (idade < 30000) {
-                localStorage.setItem(AUTH_KEY, 'true');
+                secureLogin();
                 window.location.href = './index.html';
             } else {
                 clearSessionLocal();
@@ -314,8 +325,7 @@
                 stopPolling();
                 stopTimer();
                 clearSessionLocal();
-                localStorage.setItem(AUTH_KEY, 'true');
-                localStorage.setItem('sig_user_email', 'manual-auth');
+                secureLogin();
                 showStatus('Login aprovado! Redirecionando...', 'aprovado');
                 setTimeout(() => { window.location.href = './index.html'; }, 1000);
             } else {

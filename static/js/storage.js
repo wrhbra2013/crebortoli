@@ -1,8 +1,11 @@
-/**
- * Sistema de Persistência via API PHP + SQLite
- */
+const API_URL = localStorage.getItem('api_url') || 'http://201.23.76.59';
+const API_PROJECT = 'crebortoli';
+const API_TOKEN = localStorage.getItem('api_token') || 'crebortoli-api-token-2024';
 
-const API_URL = 'https://crebortoli.free.nf/api.php';
+const getAuthHeaders = () => ({
+    'Content-Type': 'application/json',
+    'Authorization': `Bearer ${API_TOKEN}`
+});
 
 const DataSync = {
     storageKey: 'crebortoli_data',
@@ -31,13 +34,14 @@ const DataSync = {
         
         for (const table of tables) {
             try {
-                const response = await fetch(API_URL + '?action=read', {
+                const response = await fetch(`${API_URL}/read`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ table })
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ project: API_PROJECT, table, limit: 1000 })
                 });
                 if (response.ok) {
-                    data[table] = await response.json();
+                    const result = await response.json();
+                    data[table] = result.data || [];
                 } else {
                     data[table] = [];
                 }
@@ -58,7 +62,7 @@ const DataSync = {
         this.saveLocalData(merged);
         this.isLoaded = true;
         
-        console.log('Sincronizado com servidor PHP:', {
+        console.log('Sincronizado com servidor Node API:', {
             agendamentos: merged.agendamentos?.length || 0,
             servicos: merged.servicos?.length || 0,
             clientes: merged.clientes?.length || 0,
@@ -99,20 +103,27 @@ const DataSync = {
         item.created_at = item.created_at || new Date().toISOString();
         
         try {
-            const response = await fetch(API_URL + '?action=write', {
+            const response = await fetch(`${API_URL}/create`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ table: entity, data: item })
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ project: API_PROJECT, table: entity, data: item })
             });
-            const result = await response.json();
-            if (result.id) {
-                item.id = result.id;
+            if (response.ok) {
+                const result = await response.json();
+                if (result.data?.id) {
+                    item.id = result.data.id;
+                }
             }
         } catch (e) {
             console.warn('Erro ao salvar no servidor, salvando localmente:', e);
         }
         
-        items.push(item);
+        const idx = items.findIndex(i => i.id === item.id);
+        if (idx >= 0) {
+            items[idx] = item;
+        } else {
+            items.push(item);
+        }
         fullData[entity] = items;
         this.saveLocalData(fullData);
         return item;
@@ -124,10 +135,10 @@ const DataSync = {
         const items = (fullData[entity] || []).filter(i => i.id !== item.id);
         
         try {
-            await fetch(API_URL + '?action=delete', {
+            await fetch(`${API_URL}/delete`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ table: entity, id: item.id })
+                headers: getAuthHeaders(),
+                body: JSON.stringify({ project: API_PROJECT, table: entity, id: item.id })
             });
         } catch (e) {
             console.warn('Erro ao excluir do servidor:', e);
@@ -147,10 +158,10 @@ const DataSync = {
             fullData[entity] = items;
             
             try {
-                await fetch(API_URL + '?action=update', {
+                await fetch(`${API_URL}/update`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ table: entity, id, data: items[idx] })
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({ project: API_PROJECT, table: entity, id, data: items[idx] })
                 });
             } catch (e) {
                 console.warn('Erro ao atualizar no servidor:', e);
@@ -235,15 +246,6 @@ const DataStore = {
 if (typeof window !== 'undefined') {
     window.DataSync = DataSync;
     window.DataStore = DataStore;
-    window.AgendamentosStore = AgendamentosStore;
-    window.AgendamentoStore = AgendamentoStore;
-    window.ServicosStore = ServicosStore;
-    window.ClientesStore = ClientesStore;
-    window.ReceitasStore = ReceitasStore;
-    window.ContatosStore = ContatosStore;
-    
-    DataSync.sync();
-}
     window.AgendamentosStore = AgendamentosStore;
     window.AgendamentoStore = AgendamentoStore;
     window.ServicosStore = ServicosStore;

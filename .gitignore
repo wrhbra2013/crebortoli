@@ -1,0 +1,32 @@
+# Environment files
+.env
+.env.local
+.env.production
+
+# Credentials
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Logs
+*.log
+logs/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Uploads (if any)
+uploads/*
+!uploads/.gitkeep
+
+# Deploy configs (usar na VM)
+deploy/
+
