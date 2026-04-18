@@ -14,13 +14,22 @@ const { Pool } = pg;
 
 const fastify = Fastify({ logger: true });
 
+const logOperations = (operation, details) => {
+  const log = {
+    timestamp: new Date().toISOString(),
+    operation,
+    ...details
+  };
+  fastify.log.info(log);
+};
+
 const PROJECTS = {
   crebortoli: {
-    host: process.env.CREBORTOLI_DB_HOST || '201.23.76.59',
+    host: process.env.CREBORTOLI_DB_HOST,
     port: parseInt(process.env.CREBORTOLI_DB_PORT || '5432'),
-    user: process.env.CREBORTOLI_DB_USER || 'postgres',
-    password: process.env.CREBORTOLI_DB_PASS || 'wander',
-    database: process.env.CREBORTOLI_DB_NAME || 'crebortoli',
+    user: process.env.CREBORTOLI_DB_USER,
+    password: process.env.CREBORTOLI_DB_PASS,
+    database: process.env.CREBORTOLI_DB_NAME,
     root: path.join(__dirname, '..'),
   },
 };
@@ -32,6 +41,8 @@ const TABLES = {
     { name: 'clientes', columns: 'id UUID PRIMARY KEY, nome TEXT, telefone TEXT, email TEXT, cpf TEXT, endereco TEXT, observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'receitas', columns: 'id UUID PRIMARY KEY, cliente_id UUID, diagnostico TEXT, prescricao TEXT, validado BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'contatos', columns: 'id UUID PRIMARY KEY, nome TEXT, email TEXT, telefone TEXT, mensagem TEXT, lido BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()' },
+    { name: 'sessoes', columns: 'id UUID PRIMARY KEY, token TEXT UNIQUE, url_aprovacao TEXT, status TEXT DEFAULT \'pendente\', last_sync TIMESTAMP, created_at TIMESTAMP DEFAULT NOW()' },
+    { name: 'usuarios', columns: 'id UUID PRIMARY KEY, email TEXT UNIQUE, senha TEXT, nome TEXT, nivel TEXT DEFAULT \'user\', created_at TIMESTAMP DEFAULT NOW()' },
   ]
 };
 
@@ -40,9 +51,38 @@ for (const [name, config] of Object.entries(PROJECTS)) {
   pools[name] = new Pool(config);
 }
 
-const API_TOKEN = process.env.API_TOKEN || 'dev-token-change-me';
+const API_TOKEN = process.env.API_TOKEN;
 
-await fastify.register(cors, { origin: process.env.ALLOWED_ORIGINS?.split(',') || false });
+if (!API_TOKEN) {
+  console.error('ERRO: API_TOKEN não definido. Defina via variável de ambiente.');
+  process.exit(1);
+}
+
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map(o => o.trim())
+  .filter(Boolean);
+
+const isOriginAllowed = (origin) => {
+  if (!ALLOWED_ORIGINS.length) return false;
+  if (ALLOWED_ORIGINS.includes('*')) return true;
+  return ALLOWED_ORIGINS.includes(origin);
+};
+
+await fastify.register(cors, { 
+  origin: (origin, cb) => {
+    if (!origin) {
+      cb(null, true);
+      return;
+    }
+    if (isOriginAllowed(origin)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Origin not allowed'), false);
+    }
+  },
+  credentials: true 
+});
 await fastify.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
 await fastify.register(rateLimit, { max: 100, timeWindow: '1 minute', keyGenerator: (req) => req.ip });
 
@@ -79,6 +119,42 @@ fastify.get('/health', async () => {
 
 fastify.get('/ping', async () => ({ pong: true }));
 
+fastify.post('/api.php', async (req, res) => {
+  const { action, ...data } = req.body || {};
+  
+  switch (action) {
+    case 'criar_sessao': {
+      const { token, urlAprovacao } = data;
+      await query('crebortoli', `INSERT INTO "sessoes" (token, url_aprovacao, status, created_at) VALUES ($1, $2, 'aguardando', NOW()) ON CONFLICT (token) DO UPDATE SET url_aprovacao = $2, status = 'aguardando'`, [token, urlAprovacao]);
+      return { sucesso: true, token };
+    }
+    case 'verificar_sessao': {
+      const { token } = data;
+      const result = await query('crebortoli', `SELECT status FROM "sessoes" WHERE token = $1`, [token]);
+      if (!result.rows.length) return { sucesso: false, erro: 'Token não encontrado' };
+      const row = result.rows[0];
+      if (row.status === 'aprovado') {
+        await query('crebortoli', `UPDATE "sessoes" SET status = 'usada' WHERE token = $1`, [token]);
+        return { sucesso: true, aprovado: true };
+      }
+      return { sucesso: true, aprovado: false };
+    }
+    case 'sync_timer': {
+      const { token } = data;
+      await query('crebortoli', `UPDATE "sessoes" SET last_sync = NOW() WHERE token = $1`, [token]);
+      return { sucesso: true };
+    }
+    case 'login': {
+      const { email, senha } = data;
+      const result = await query('crebortoli', `SELECT * FROM "usuarios" WHERE email = $1 AND senha = $2`, [email, senha]);
+      if (!result.rows.length) return { sucesso: false, erro: 'Credenciais inválidas' };
+      return { sucesso: true, usuario: result.rows[0] };
+    }
+    default:
+      return { erro: 'Ação desconhecida: ' + action };
+  }
+});
+
 fastify.get('/api/projects', { preHandler: authMiddleware }, async () => 
   Object.keys(PROJECTS).map(name => ({ name, database: PROJECTS[name].database })));
 
@@ -95,10 +171,10 @@ fastify.post('/api/project/create', { preHandler: authMiddleware }, async (req, 
   }
 
   const adminPool = new Pool({
-    host: process.env.CREBORTOLI_DB_HOST || '201.23.76.59',
+    host: process.env.CREBORTOLI_DB_HOST,
     port: parseInt(process.env.CREBORTOLI_DB_PORT || '5432'),
-    user: process.env.CREBORTOLI_DB_USER || 'postgres',
-    password: process.env.CREBORTOLI_DB_PASS || 'wander',
+    user: process.env.CREBORTOLI_DB_USER,
+    password: process.env.CREBORTOLI_DB_PASS,
     database: 'postgres',
   });
 
@@ -110,10 +186,10 @@ fastify.post('/api/project/create', { preHandler: authMiddleware }, async (req, 
   finally { await adminPool.end(); }
 
   const projectPool = new Pool({
-    host: process.env.CREBORTOLI_DB_HOST || '201.23.76.59',
+    host: process.env.CREBORTOLI_DB_HOST,
     port: parseInt(process.env.CREBORTOLI_DB_PORT || '5432'),
-    user: process.env.CREBORTOLI_DB_USER || 'postgres',
-    password: process.env.CREBORTOLI_DB_PASS || 'wander',
+    user: process.env.CREBORTOLI_DB_USER,
+    password: process.env.CREBORTOLI_DB_PASS,
     database: name,
   });
 
@@ -127,10 +203,10 @@ fastify.post('/api/project/create', { preHandler: authMiddleware }, async (req, 
   await projectPool.end();
 
   PROJECTS[name] = {
-    host: process.env.CREBORTOLI_DB_HOST || '201.23.76.59',
+    host: process.env.CREBORTOLI_DB_HOST,
     port: parseInt(process.env.CREBORTOLI_DB_PORT || '5432'),
-    user: process.env.CREBORTOLI_DB_USER || 'postgres',
-    password: process.env.CREBORTOLI_DB_PASS || 'wander',
+    user: process.env.CREBORTOLI_DB_USER,
+    password: process.env.CREBORTOLI_DB_PASS,
     database: name,
     root: path.join(__dirname, '..'),
   };
@@ -181,6 +257,7 @@ fastify.post('/api/read', { preHandler: authMiddleware }, async (req, res) => {
 });
 
 fastify.post('/api/create', { preHandler: authMiddleware }, async (req, res) => {
+  logOperations('create', { project, table, data: req.body?.data });
   const { project, table, data } = req.body || {};
   if (!project || !PROJECTS[project] || !validateTableName(table) || !data) {
     return res.code(400).send({ error: 'Invalid request' });
@@ -200,6 +277,7 @@ fastify.post('/api/create', { preHandler: authMiddleware }, async (req, res) => 
 });
 
 fastify.post('/api/update', { preHandler: authMiddleware }, async (req, res) => {
+  logOperations('update', { project, table, id: req.body?.id });
   const { project, table, id, data } = req.body || {};
   if (!project || !PROJECTS[project] || !validateTableName(table) || !validateId(id) || !data) {
     return res.code(400).send({ error: 'Invalid request' });
@@ -219,6 +297,7 @@ fastify.post('/api/update', { preHandler: authMiddleware }, async (req, res) => 
 });
 
 fastify.post('/api/delete', { preHandler: authMiddleware }, async (req, res) => {
+  logOperations('delete', { project, table, id: req.body?.id });
   const { project, table, id } = req.body || {};
   if (!project || !PROJECTS[project] || !validateTableName(table) || !validateId(id)) {
     return res.code(400).send({ error: 'Invalid request' });
@@ -271,6 +350,17 @@ fastify.setNotFoundHandler(async (req, res) => {
 });
 
 const start = async () => {
+  for (const [name, config] of Object.entries(PROJECTS)) {
+    const pool = pools[name];
+    try {
+      for (const table of TABLES.default) {
+        await pool.query(`CREATE TABLE IF NOT EXISTS "${table.name}" (${table.columns})`);
+        console.log(`Tabela "${table.name}" verificada/criada em ${name}`);
+      }
+    } catch (e) {
+      console.error(`Erro ao criar tabelas em ${name}:`, e.message);
+    }
+  }
   await fastify.listen({ port: 3000, host: '0.0.0.0' });
   console.log('Server: http://0.0.0.0:3000');
 };

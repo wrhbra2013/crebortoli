@@ -3,8 +3,10 @@
 ## Visão Geral
 
 ```
-[Usuário] --> [Páginas Estáticas] --> [API Node.js] --> [PostgreSQL]
-                 (nginx)                  (port 3000)      (5432)
+[Usuário] --> [Nginx] --> [Páginas Estáticas]
+                       --> [API Node.js] (PM2)
+                              --> [PostgreSQL]
+                  (port 80)        (port 3000)      (5432)
 ```
 
 ## Componentes
@@ -12,24 +14,29 @@
 ### 1. Páginas Estáticas (Frontend)
 - **Local**: `/var/www/crebortoli/`
 - **Arquivos**: `index.html`, `paginas/*.html`, `static/`
-- **Servidor**: Nginx (porta 80/443)
-- **Interação**: Chamadas AJAX para API Node.js
+- **Servidor**: Nginx (porta 80)
+- **Interação**: Chamadas AJAX para API Node.js via `/api/`
 
 ### 2. API Node.js (Backend)
 - **Local**: `/var/www/crebortoli/api/`
+- **Gerenciador**: PM2 (crebortoli-api)
 - **Porta**: 3000
 - **Endpoints**:
   - `GET /health` - Health check
+  - `GET /ping` - Ping simples
   - `POST /api/read` - Ler dados
   - `POST /api/create` - Criar registro
   - `POST /api/update` - Atualizar registro
   - `POST /api/delete` - Deletar registro
+  - `POST /api/upload` - Upload de arquivos
 
 ### 3. Banco de Dados
 - **Tipo**: PostgreSQL
 - **Host**: 127.0.0.1 (localhost)
 - **Porta**: 5432
 - **Banco**: crebortoli
+- **Usuário**: postgres
+- **Senha**: wander
 
 ## Configuração
 
@@ -38,62 +45,58 @@
 CREBORTOLI_DB_HOST=127.0.0.1
 CREBORTOLI_DB_PORT=5432
 CREBORTOLI_DB_USER=postgres
-CREBORTOLI_DB_PASS=senha_forte
+CREBORTOLI_DB_PASS=wander
 CREBORTOLI_DB_NAME=crebortoli
-API_TOKEN=dev-token-change-me
+API_TOKEN=crebortoli-api-token-2024
 ALLOWED_ORIGINS=*
+UPLOAD_DIR=uploads
 ```
 
 ### Frontend (storage.js)
 O `static/js/storage.js` está configurado para:
-- API_URL: `/api`
+- API_URL: `/api` (via Nginx proxy)
 - Projeto: `crebortoli`
 - Token: definido em `localStorage` ou valor padrão
 
-## Deploy
+## Deploy na VM
 
-### 1. Preparar a VM
+### Requisitos
+- VM Debian com Nginx + PM2 + PostgreSQL
+- IP: 201.23.76.59
+- Usuário: debian
+
+### Scripts Disponíveis
+
+#### Install VM (instalação completa)
 ```bash
-# Na VM (como root)
-apt update && apt upgrade -y
-apt install -y nginx postgresql nodejs npm
+chmod +x install-vm.sh
+./install-vm.sh
 ```
 
-### 2. Criar banco de dados
+#### Deploy (deploy incremental)
 ```bash
-sudo -u postgres psql
-CREATE DATABASE crebortoli;
-\q
+chmod +x deploy/deploy-pm2.sh
+./deploy/deploy-pm2.sh
 ```
 
-### 3. Deploy das páginas estáticas
+### Acesso SSH
 ```bash
-rsync -avz --exclude='.env' --exclude='api' ./ user@vm:/var/www/crebortoli/
+ssh debian@201.23.76.59
 ```
 
-### 4. Deploy da API
+### Comandos PM2
 ```bash
-# Copiar pasta api
-rsync -avz --exclude='node_modules' ./api/ user@vm:/var/www/crebortoli/api/
-
-# Na VM
-cd /var/www/crebortoli/api
-npm install
-
-# Criar .env com as credenciais do banco
+pm2 status                 # Ver status
+pm2 logs crebortoli-api    # Ver logs
+pm2 restart crebortoli-api # Reiniciar
+pm2 save                   # Salvar configuração
 ```
 
-### 5. Configurar Nginx
+### Comandos Nginx
 ```bash
-cp deploy/nginx-static.conf /etc/nginx/sites-available/crebortoli
-ln -s /etc/nginx/sites-available/crebortoli /etc/nginx/sites-enabled/
-nginx -t && systemctl reload nginx
-```
-
-### 6. Iniciar API
-```bash
-systemctl enable crebortoli-api
-systemctl start crebortoli-api
+sudo nginx -t              # Testar config
+sudo systemctl reload nginx
+sudo systemctl status nginx
 ```
 
 ## Tabelas do Banco
@@ -104,3 +107,26 @@ O sistema usa as seguintes tabelas:
 - `clientes` - Cadastro de clientes
 - `receitas` - Receitas médicas
 - `contatos` - Mensagens de contato
+
+## Testes
+
+### Health Check
+```bash
+curl http://201.23.76.59/api/health
+```
+
+### Ler dados
+```bash
+curl -X POST http://201.23.76.59/api/read \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer crebortoli-api-token-2024" \
+  -d '{"project":"crebortoli","table":"agendamentos"}'
+```
+
+### Criar registro
+```bash
+curl -X POST http://201.23.76.59/api/create \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer crebortoli-api-token-2024" \
+  -d '{"project":"crebortoli","table":"contatos","data":{"nome":"Teste","email":"teste@email.com"}}'
+```

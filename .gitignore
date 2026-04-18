@@ -30,3 +30,8 @@ uploads/*
 # Deploy configs (usar na VM)
 deploy/
 
+
+# API environment (never commit)
+api/.env
+api/.env.local
+api/.env.*

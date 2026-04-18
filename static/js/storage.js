@@ -1,11 +1,20 @@
-const API_URL = localStorage.getItem('api_url') || 'http://201.23.76.59';
+const API_URL = localStorage.getItem('api_url') || '';
 const API_PROJECT = 'crebortoli';
-const API_TOKEN = localStorage.getItem('api_token') || 'crebortoli-api-token-2024';
 
-const getAuthHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${API_TOKEN}`
-});
+const getAuthHeaders = () => {
+    const token = localStorage.getItem('api_token') || sessionStorage.getItem('sig_api_token');
+    if (!token) {
+        console.warn('Token não configurado. Configure via: localStorage.setItem("api_token", "seu-token")');
+    }
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
+};
+
+const isAuthenticated = () => {
+    return !!(localStorage.getItem('api_token') || sessionStorage.getItem('sig_api_token'));
+};
 
 const DataSync = {
     storageKey: 'crebortoli_data',
@@ -29,6 +38,17 @@ const DataSync = {
     },
     
     async fetchFromServer() {
+        if (!isAuthenticated()) {
+            console.warn('API não configurada. Configure via login ou localStorage.setItem("api_token", "token")');
+            return {};
+        }
+        
+        const apiUrl = API_URL || '';
+        if (!apiUrl) {
+            console.warn('API URL não configurada. Configure via localStorage.setItem("api_url", "http://servidor:3000")');
+            return {};
+        }
+        
         const tables = ['agendamentos', 'servicos', 'clientes', 'receitas', 'contatos'];
         const data = {};
         
