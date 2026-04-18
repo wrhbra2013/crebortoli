@@ -1,4 +1,4 @@
-const API_URL = localStorage.getItem('api_url') || '';
+const API_URL = localStorage.getItem('api_url') || '/api.php';
 const API_PROJECT = 'crebortoli';
 
 const getAuthHeaders = () => {
