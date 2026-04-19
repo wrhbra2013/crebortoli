@@ -11,6 +11,9 @@
     <style>
         
         .clinic-header {
+            display: none;
+        }
+        .clinic-header.print {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -19,17 +22,17 @@
             border-bottom: 2px solid #e91e63;
             margin-bottom: 1rem;
         }
-        .clinic-logo {
+        .clinic-header.print .clinic-logo {
             font-family: 'World of Water', cursive;
             font-size: 1.8rem;
             color: #e91e63;
         }
-        .clinic-tagline {
+        .clinic-header.print .clinic-tagline {
             font-size: 0.85rem;
             color: #666;
             margin-top: 0.25rem;
         }
-        .clinic-address {
+        .clinic-header.print .clinic-address {
             font-size: 0.8rem;
             color: #666;
             text-align: right;
@@ -301,6 +304,14 @@
 
         function criarHeaderPDF() {
             return function(currentPage, pageCount, pageSize) {
+                const headerEl = document.querySelector('.clinic-header');
+                headerEl.classList.add('print');
+                
+                const logo = headerEl.querySelector('.clinic-logo')?.textContent || 'Espaço Cre Bortoli';
+                const tagline = headerEl.querySelector('.clinic-tagline')?.textContent || 'Estética & Depilação';
+                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056';
+                
+                headerEl.classList.remove('print');
                 return {
                     stack: [
                         {
@@ -308,13 +319,13 @@
                                 {
                                     width: '*',
                                     stack: [
-                                        { text: 'Espaço Cre Bortoli', fontSize: 22, color: '#e91e63', bold: true, font: 'WorldOfWater' },
-                                        { text: 'Estética & Depilação', fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
+                                        { text: logo, fontSize: 22, color: '#e91e63', bold: true },
+                                        { text: tagline, fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
                                     ]
                                 },
                                 {
                                     width: '*',
-                                    text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
+                                    text: address,
                                     fontSize: 9,
                                     color: '#666',
                                     alignment: 'right'
@@ -479,6 +490,7 @@
         }
 
         async function gerarPDF() {
+            try {
             if (!window.pdfMake) {
                 alert('Biblioteca pdfMake não carregou.');
                 return;
@@ -518,17 +530,13 @@
                 }
             });
 
-            const docDefinition = {
+const docDefinition = {
                 pageSize: 'A4',
                 pageMargins: [20, 60, 20, 20],
                 header: criarHeaderPDF(),
                 defaultStyle: {
                     font: 'Helvetica'
                 },
-                fonts: {
-                    WorldOfWater: {
-                        normal: 'data:font/truetype;base64,TVRoZAAAAAYAAQACAeBNR1VCRvAGQAAAD0UAABXHUE9TLzKAAAnYAAABYJ1BFRzFVu4sAAA+gAAABgFJNQUWFuYZAABXwAAAAAR1BPUy3tL6cAAAX0AAAAKEdTVUW4TgYAAAGkAAAAYVVCCcgHEP8AAApQAAAAGGNtYWT/LgAEAABBmAAAE0xjbWQHAdD+pAAAbgAAAJZGTVZCLleUAAAAqQAAAJ5OU1ZCP3CqMAABBgAAAJqAhX/DqAAAAQZAAAAQZOU1ZCP3CqMAABBgAAAJqAhX/DqAAAAQZAAAA',
-                        bold: 'data:font/truetype;base64,TVRoZAAAAAYAAQACAeBNR1VCRvAGQAAAD0UAABXHUE9TLzKAAAnYAAABYJ1BFRzFVu4sAAA+gAAABgFJNQUWFuYZAABXwAAAAAR1BPUy3tL6cAAAX0AAAAKEdTVUW4TgYAAAGkAAAAYVVCCcgHEP8AAApQAAAAGGNtYWT/LgAEAABBmAAAE0xjbWQHAdD+pAAAbgAAAJZGTVZCLleUAAAAqQAAAJ5OU1ZCP3CqMAABBgAAAJqAhX/DqAAAAQZAAAAQQZOU1ZCP3CqMAABBgAAAJqAhX/DqAAAAQZAAAA
                 content: [
                     { text: titulo, fontSize: 14, bold: true, alignment: 'center', margin: [0, 15, 0, 0] },
                     { text: `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, fontSize: 10, alignment: 'center', margin: [0, 5, 0, 0] },
@@ -563,6 +571,10 @@
 
             const nomeArquivo = `relatorio-crebortoli-${ano}${tipoPeriodo === 'mensal' ? '-' + (mes + 1).toString().padStart(2, '0') : ''}.pdf`;
             pdfMake.createPdf(docDefinition).download(nomeArquivo);
+            } catch (err) {
+                console.error('Erro ao gerar PDF:', err);
+                alert('Erro ao gerar PDF: ' + err.message);
+            }
         }
 
         window.gerarPDF = gerarPDF;
