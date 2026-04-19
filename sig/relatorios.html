@@ -455,68 +455,50 @@
             return data.toLocaleDateString('pt-BR');
         }
 
-        async function gerarPDF() {
-            try {
-                const jsPDFModule = window.jspdf;
-                const jsPDF = jsPDFModule?.jsPDF || jsPDFModule;
-                if (!jsPDF) {
-                    alert('Biblioteca jsPDF não carregou. Carregue a página novamente.');
-                    return;
-                }
+        function gerarPDF() {
+            const jsPDFModule = window.jspdf;
+            const jsPDF = jsPDFModule?.jsPDF || jsPDFModule;
+            if (!jsPDF) {
+                alert('Biblioteca jsPDF não carregou. Carregue a página novamente.');
+                return;
+            }
 
+            try {
                 const headerEl = document.querySelector('.clinic-header');
-                headerEl.classList.add('print');
                 const logo = headerEl.querySelector('.clinic-logo')?.textContent || 'Espaço Cre Bortoli';
                 const tagline = headerEl.querySelector('.clinic-tagline')?.textContent || 'Estética & Depilação';
-                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492\nPalmital - Marília, SP | (14) 99663.8056';
-                headerEl.classList.remove('print');
+                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492 - Marília, SP';
 
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const pageHeight = doc.internal.pageSize.getHeight();
                 const margin = 20;
-                let y = margin;
+                let y = margin + 5;
 
-                // Header com logo em imagem gerada do canvas usando fonte local
-                const fontUrl = '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf';
-                const fontFace = new FontFace('WorldOfWater', `url(${fontUrl})`);
-                await fontFace.load();
-                document.fonts.add(fontFace);
-                
+                // Criar logo com canvas
                 const canvas = document.createElement('canvas');
-                canvas.width = 130;
-                canvas.height = 28;
+                canvas.width = 100;
+                canvas.height = 25;
                 const ctx = canvas.getContext('2d');
-                
-                ctx.fillStyle = 'transparent';
-                ctx.clearRect(0, 0, 130, 28);
-                
-                // Logo com fonte local (menor para caber)
-                ctx.font = '12px WorldOfWater';
+                ctx.font = '14px cursive';
                 ctx.fillStyle = '#e91e63';
                 ctx.fillText(logo, 2, 16);
-                
-                // Tagline menor
-                ctx.font = 'italic 5px sans-serif';
-                ctx.fillStyle = '#666666';
-                ctx.fillText(tagline, 2, 24);
-                
+                ctx.font = 'italic 6px sans-serif';
+                ctx.fillStyle = '#666';
+                ctx.fillText(tagline, 2, 22);
                 const logoDataUrl = canvas.toDataURL('image/png');
-                doc.addImage(logoDataUrl, 'PNG', margin, y, 35, 8);
+
+                // Header com logo
+                doc.addImage(logoDataUrl, 'PNG', margin, y, 40, 10);
                 
-                // Endereço (direita) - menor
+                // Endereço
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
+                doc.setFontSize(8);
                 doc.setTextColor(60, 60, 60);
-                const addressLines = address.split('\n');
-                let addrY = y + 3;
-                addressLines.forEach(line => {
-                    doc.text(line, pageWidth - margin, addrY, { align: 'right' });
-                    addrY += 4;
-                });
+                doc.text(address, pageWidth - margin, y + 4, { align: 'right' });
                 
+                y += 15;
                 doc.setDrawColor(233, 30, 99);
-                doc.setLineWidth(1.5);
+                doc.setLineWidth(1);
                 doc.line(margin, y, pageWidth - margin, y);
                 y += 12;
 
@@ -531,10 +513,14 @@
                     titulo = `Relatório Anual de Serviços - ${ano}`;
                 }
 
-                const totalRecebido = document.getElementById('total-recebido').textContent;
-                const totalPendente = document.getElementById('total-pendente').textContent;
-                const qtdServicos = document.getElementById('qtd-servicos').textContent;
-                const ticketMedio = document.getElementById('ticket-medio').textContent;
+                const totalRecebidoEl = document.getElementById('total-recebido');
+                const totalPendenteEl = document.getElementById('total-pendente');
+                const qtdServicosEl = document.getElementById('qtd-servicos');
+                const ticketMedioEl = document.getElementById('ticket-medio');
+                const totalRecebido = totalRecebidoEl?.textContent || 'R$ 0,00';
+                const totalPendente = totalPendenteEl?.textContent || 'R$ 0,00';
+                const qtdServicos = qtdServicosEl?.textContent || '0';
+                const ticketMedio = ticketMedioEl?.textContent || 'R$ 0,00';
 
                 doc.setFontSize(14);
                 doc.setTextColor(0, 0, 0);

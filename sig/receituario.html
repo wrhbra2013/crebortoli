@@ -433,54 +433,54 @@
         }
 
 function gerarPDF() {
-            try {
-                const { jsPDF } = window.jspdf;
-                if (!jsPDF) {
-                    alert('Biblioteca jsPDF não carregou.');
-                    return;
-                }
+            const { jsPDF } = window.jspdf;
+            if (!jsPDF) {
+                alert('Biblioteca jsPDF não carregou.');
+                return;
+            }
 
+            try {
                 const headerEl = document.querySelector('.clinic-header');
-                headerEl.classList.add('print');
                 const logo = headerEl.querySelector('.clinic-logo')?.textContent || 'Espaço Cre Bortoli';
                 const tagline = headerEl.querySelector('.clinic-tagline')?.textContent || 'Estética & Depilação';
-                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492\nPalmital - Marília, SP | (14) 99663.8056';
-                headerEl.classList.remove('print');
+                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492 - Marília, SP';
+
+                // Criar logo com canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 25;
+                const ctx = canvas.getContext('2d');
+                ctx.font = '14px cursive';
+                ctx.fillStyle = '#e91e63';
+                ctx.fillText(logo, 2, 16);
+                ctx.font = 'italic 6px sans-serif';
+                ctx.fillStyle = '#666';
+                ctx.fillText(tagline, 2, 22);
+                const logoDataUrl = canvas.toDataURL('image/png');
 
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const pageHeight = doc.internal.pageSize.getHeight();
                 const margin = 20;
-                let y = margin;
+                let y = margin + 5;
 
-                // Header com logo em texto (sem fonte externa)
-                doc.setFont('helvetica', 'bold');
-                doc.setFontSize(16);
-                doc.setTextColor(233, 30, 99);
-                doc.text(logo, margin, y + 8);
+                // Header com logo
+                doc.addImage(logoDataUrl, 'PNG', margin, y, 40, 10);
                 
-                doc.setFont('helvetica', 'italic');
-                doc.setFontSize(9);
-                doc.setTextColor(102, 102, 102);
-                doc.text(tagline, margin, y + 16);
-                
-                // Endereço (direita)
+                // Endereço
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(7);
+                doc.setFontSize(8);
                 doc.setTextColor(60, 60, 60);
-                const addressLines = address.split('\n');
-                let addrY = y + 3;
-                addressLines.forEach(line => {
-                    doc.text(line, pageWidth - margin, addrY, { align: 'right' });
-                    addrY += 4;
-                });
+                doc.text(address, pageWidth - margin, y + 4, { align: 'right' });
                 
+                y += 15;
                 doc.setDrawColor(233, 30, 99);
-                doc.setLineWidth(1.5);
+                doc.setLineWidth(1);
                 doc.line(margin, y, pageWidth - margin, y);
                 y += 12;
 
-                const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
+                const dataInput = document.getElementById('data');
+                const dataValor = dataInput?.value;
+                const dataFormatada = dataValor ? new Date(dataValor).toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
 
                 doc.setFontSize(14);
                 doc.setTextColor(128, 0, 128);
