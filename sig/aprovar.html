@@ -8,108 +8,83 @@
     <link rel="stylesheet" href="../static/css/style2.css">
     <style>
         :root { --cor-principal: #8a4baf; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             background: linear-gradient(135deg, #f7f8fc 0%, #e8eaf6 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             padding: 1rem;
         }
-        .approval-container {
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1rem;
+        }
+        .modal {
             background: white;
-            padding: 2rem;
             border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(108, 99, 255, 0.15);
             width: 100%;
             max-width: 400px;
+            padding: 2rem;
             text-align: center;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
         .icon { font-size: 4rem; margin-bottom: 1rem; }
-        h1 { color: var(--cor-principal); font-size: 1.8rem; margin-bottom: 0.5rem; }
-        .subtitle { color: #666; font-size: 1rem; margin-bottom: 1.5rem; }
+        h1 { color: var(--cor-principal); font-size: 1.5rem; margin-bottom: 0.5rem; }
+        .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 1rem; }
         .code-display {
             background: #e8eaf6;
             padding: 1rem;
             border-radius: 8px;
-            margin: 1.5rem 0;
-            font-size: 1.5rem;
+            font-size: 1.3rem;
             font-weight: bold;
-            letter-spacing: 0.3rem;
+            letter-spacing: 0.2rem;
             color: var(--cor-principal);
+            margin-bottom: 1rem;
             word-break: break-all;
         }
-        .input-container { margin: 1.5rem 0; }
-        .input-container label { display: block; margin-bottom: 0.5rem; font-weight: 500; }
-        .input-container input {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1.2rem;
-            text-align: center;
-            text-transform: uppercase;
-            letter-spacing: 0.2rem;
-        }
-        .input-container input:focus { outline: none; border-color: var(--cor-principal); }
-        .btn-group { display: flex; gap: 1rem; margin-top: 1.5rem; }
-        .btn-primary {
-            flex: 1;
-            padding: 1rem;
-            background: #28a745;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-primary:hover { background: #218838; }
-        .btn-danger {
-            flex: 1;
-            padding: 1rem;
-            background: #dc3545;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-danger:hover { background: #c82333; }
-        .status-message { padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500; display: none; }
-        .status-message.sucesso { background: #d4edda; color: #155724; border-left: 4px solid #28a745; display: block; }
-        .status-message.erro { background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545; display: block; }
-        .status-message.info { background: #cce5ff; color: #004085; border-left: 4px solid #007bff; display: block; }
-        .timer { display: block; color: #666; font-size: 0.9rem; margin-bottom: 1rem; }
+        .timer { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
         .timer .countdown { font-weight: bold; color: var(--cor-principal); }
+        .btn-group { display: flex; gap: 1rem; }
+        .btn {
+            flex: 1;
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .btn-confirm { background: #28a745; color: white; }
+        .btn-confirm:hover { background: #218838; }
+        .btn-cancel { background: #dc3545; color: white; }
+        .btn-cancel:hover { background: #c82333; }
+        .success-message, .error-message {
+            padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500;
+        }
+        .success-message { background: #d4edda; color: #155724; }
+        .error-message { background: #f8d7da; color: #721c24; }
+        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
 </head>
 <body>
-    <div class="approval-container">
-        <div class="icon" id="icon">🔐</div>
-        <h1 id="titulo">Aprovar Login</h1>
-        <p class="subtitle" id="subtitulo">Digite o código exibido no computador para confirmar o acesso.</p>
-        
-        <div id="approval-result"></div>
-        
-        <div class="code-display" id="codigo-lido"></div>
-        
-        <div id="mobile-timer" class="timer">Expira em: <span class="countdown" id="countdown">60</span>s</div>
-        
-        <div id="input-container" class="input-container">
-            <label for="codigo-digitado">Digite o código:</label>
-            <input type="text" id="codigo-digitado" placeholder="XXXXXXXX" maxlength="8" autocomplete="off">
+    <div class="modal-overlay">
+        <div class="modal">
+            <div class="icon" id="icon">🔐</div>
+            <h1 id="titulo">Aprovar Login</h1>
+            <p class="subtitle" id="subtitulo">Deseja permitir o acesso ao sistema?</p>
+            
+            <div class="code-display" id="codigo-lido"></div>
+            
+            <div class="timer">Expira em: <span class="countdown" id="countdown">60</span>s</div>
         </div>
-        
-        <div class="btn-group" id="btn-group">
-            <button class="btn-primary" id="btn-confirmar" onclick="confirmarLogin()">✓ Confirmar Login</button>
-            <button class="btn-danger" id="btn-cancelar" onclick="cancelarLogin()">✕ Cancelar</button>
-        </div>
-        
-        <p style="margin-top: 1.5rem; font-size: 0.9rem; color: #666;">
-            O código deve ser digitado manualmente para confirmar o acesso.
-        </p>
     </div>
 
     <script>
@@ -118,7 +93,7 @@
         let remainingTime = 60;
         const SESSION_KEY = 'sig_qr_session';
         
-        function startMobileTimer() {
+        function startTimer() {
             const countdownEl = document.getElementById('countdown');
             countdownEl.textContent = remainingTime;
             
@@ -130,9 +105,8 @@
                 
                 if (remainingTime <= 0) {
                     clearInterval(countdownInterval);
-                    mostrarStatus('Sessão expirada. Gere um novo código no computador.', 'erro');
-                    document.getElementById('btn-confirmar').disabled = true;
-                    document.getElementById('btn-cancelar').disabled = true;
+                    document.getElementById('titulo').textContent = 'Expirado';
+                    document.getElementById('subtitulo').textContent = 'Tente novamente';
                 }
             }, 1000);
         }
@@ -142,30 +116,21 @@
             codigoLido = urlParams.get('token') || '';
             
             if (!codigoLido) {
-                mostrarStatus('Link inválido. Gere um novo código no computador.', 'erro');
-                document.getElementById('btn-confirmar').style.display = 'none';
-                document.getElementById('btn-cancelar').style.display = 'none';
-                document.getElementById('input-container').style.display = 'none';
                 document.getElementById('icon').textContent = '❌';
+                document.getElementById('codigo-lido').textContent = 'Link inválido';
                 return;
             }
             
             document.getElementById('codigo-lido').textContent = codigoLido;
-            document.getElementById('codigo-digitado').focus();
+            document.getElementById('titulo').textContent = 'Aprovado!';
+            document.getElementById('subtitulo').textContent = 'Acesso liberado';
+            document.getElementById('icon').textContent = '✓';
             
-            startMobileTimer();
+            setSessionStatus('aprovado');
+            startTimer();
         }
         
-        function mostrarStatus(mensagem, tipo) {
-            const el = document.getElementById('approval-result');
-            el.innerHTML = '<div class="status-message ' + tipo + '">' + mensagem + '</div>';
-        }
-        
-        function validarCodigo() {
-            return document.getElementById('codigo-digitado').value.toUpperCase().trim() === codigoLido;
-        }
-        
-        function setSessionStatus(status) {
+function setSessionStatus(status) {
             const sessionData = {
                 token: codigoLido,
                 status: status,
@@ -173,54 +138,6 @@
             };
             localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         }
-        
-        function confirmarLogin() {
-            if (!validarCodigo()) {
-                mostrarStatus('Código incorreto. Digite exatamente o código exibido acima.', 'erro');
-                document.getElementById('codigo-digitado').value = '';
-                document.getElementById('codigo-digitado').focus();
-                return;
-            }
-            
-            const btn = document.getElementById('btn-confirmar');
-            btn.disabled = true;
-            btn.textContent = 'Confirmando...';
-            
-            setSessionStatus('aprovado');
-            
-            mostrarStatus('Login confirmado!', 'sucesso');
-            document.getElementById('btn-confirmar').style.display = 'none';
-            document.getElementById('btn-cancelar').style.display = 'none';
-            document.getElementById('input-container').style.display = 'none';
-            document.getElementById('icon').textContent = '✓';
-            document.getElementById('titulo').textContent = 'Confirmado!';
-            document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
-        }
-        
-        function cancelarLogin() {
-            const btn = document.getElementById('btn-cancelar');
-            btn.disabled = true;
-            btn.textContent = 'Cancelando...';
-            
-            setSessionStatus('negado');
-            
-            mostrarStatus('Login cancelado.', 'info');
-            document.getElementById('btn-confirmar').style.display = 'none';
-            document.getElementById('btn-cancelar').style.display = 'none';
-            document.getElementById('input-container').style.display = 'none';
-            document.getElementById('icon').textContent = '✕';
-            document.getElementById('titulo').textContent = 'Cancelado';
-            document.getElementById('subtitulo').textContent = 'O login foi cancelado.';
-        }
-        
-        document.getElementById('codigo-digitado').addEventListener('input', function() {
-            this.value = this.value.toUpperCase();
-            mostrarStatus('', '');
-        });
-        
-        document.getElementById('codigo-digitado').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') confirmarLogin();
-        });
         
         init();
     </script>

@@ -209,7 +209,7 @@
             
             const sessionData = {
                 token: currentToken,
-                status: 'aguardando',
+                status: 'gerado',
                 created: Date.now()
             };
             saveSessionLocal(sessionData);
@@ -225,7 +225,7 @@
             btnWhatsapp.textContent = '📱 Compartilhar link de aprovação';
             
             btn.disabled = false;
-            btn.textContent = 'Gerar QR Code';
+            btn.textContent = 'Gerar Novo Código';
             
             startTimer();
             startPollingLocal();
@@ -311,7 +311,9 @@
         function processarLoginManual() {
             if (!currentToken) return;
             
-            if (validarCodigoManual()) {
+            const inputCode = document.getElementById('codigo-manual').value.toUpperCase().trim();
+            
+            if (inputCode === currentToken) {
                 stopPolling();
                 stopTimer();
                 clearSessionLocal();
@@ -328,6 +330,10 @@
         document.getElementById('codigo-manual').addEventListener('input', function() {
             this.value = this.value.toUpperCase();
             hideStatus();
+            
+            if (currentToken && this.value.length === currentToken.length) {
+                processarLoginManual();
+            }
         });
         
         document.getElementById('codigo-manual').addEventListener('keypress', function(e) {
