@@ -468,7 +468,7 @@
                 headerEl.classList.add('print');
                 const logo = headerEl.querySelector('.clinic-logo')?.textContent || 'Espaço Cre Bortoli';
                 const tagline = headerEl.querySelector('.clinic-tagline')?.textContent || 'Estética & Depilação';
-                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492 - Palmital - Marília, SP | (14) 99663.8056';
+                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492\nPalmital - Marília, SP | (14) 99663.8056';
                 headerEl.classList.remove('print');
 
                 const doc = new jsPDF();
@@ -477,26 +477,33 @@
                 const margin = 20;
                 let y = margin;
 
-                // Header com logo em imagem gerada do canvas
+                // Header com logo em imagem gerada do canvas usando fonte local
                 const canvas = document.createElement('canvas');
-                canvas.width = 200;
-                canvas.height = 80;
+                canvas.width = 250;
+                canvas.height = 60;
                 const ctx = canvas.getContext('2d');
                 
-                // Fundo
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 200, 80);
+                ctx.fillRect(0, 0, 250, 60);
                 
-                // Texto do logo
-                ctx.font = 'bold 28px cursive';
+                // Carregar fonte local
+                const fontUrl = '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf';
+                const fontFace = new FontFace('WorldOfWater', `url(${fontUrl})`);
+                await fontFace.load();
+                document.fonts.add(fontFace);
+                
+                // Logo com fonte local
+                ctx.font = '28px WorldOfWater';
                 ctx.fillStyle = '#e91e63';
-                ctx.fillText(logo, 10, 35);
-                ctx.font = 'italic 12px sans-serif';
+                ctx.fillText(logo, 10, 38);
+                
+                // Tagline
+                ctx.font = 'italic 11px sans-serif';
                 ctx.fillStyle = '#666666';
-                ctx.fillText(tagline, 10, 50);
+                ctx.fillText(tagline, 10, 52);
                 
                 const logoDataUrl = canvas.toDataURL('image/png');
-                doc.addImage(logoDataUrl, 'PNG', margin, y, 80, 25);
+                doc.addImage(logoDataUrl, 'PNG', margin, y, 100, 24);
                 
                 // Endereço (direita)
                 doc.setFont('helvetica', 'normal');
