@@ -444,18 +444,8 @@ function gerarPDF() {
                 headerEl.classList.add('print');
                 const logo = headerEl.querySelector('.clinic-logo')?.textContent || 'Espaço Cre Bortoli';
                 const tagline = headerEl.querySelector('.clinic-tagline')?.textContent || 'Estética & Depilação';
-                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492 - Palmital - Marília, SP | (14) 99663.8056';
+                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492\nPalmital - Marília, SP | (14) 99663.8056';
                 headerEl.classList.remove('print');
-
-                const paciente = document.getElementById('paciente').value;
-                const data = document.getElementById('data').value;
-                const indicacao = document.getElementById('indicacao').value;
-                const observacoes = document.getElementById('observacoes').value;
-
-                if (!paciente || !data || !indicacao) {
-                    alert('Por favor, preencha todos os campos obrigatórios.');
-                    return;
-                }
 
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
@@ -463,32 +453,16 @@ function gerarPDF() {
                 const margin = 20;
                 let y = margin;
 
-                // Header com logo em imagem gerada do canvas usando fonte local
-                const fontUrl = '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf';
-                const fontFace = new FontFace('WorldOfWater', `url(${fontUrl})`);
-                await fontFace.load();
-                document.fonts.add(fontFace);
+                // Header com logo em texto (sem fonte externa)
+                doc.setFont('helvetica', 'bold');
+                doc.setFontSize(16);
+                doc.setTextColor(233, 30, 99);
+                doc.text(logo, margin, y + 8);
                 
-                const canvas = document.createElement('canvas');
-                canvas.width = 130;
-                canvas.height = 28;
-                const ctx = canvas.getContext('2d');
-                
-                ctx.fillStyle = 'transparent';
-                ctx.clearRect(0, 0, 130, 28);
-                
-                // Logo com fonte local (menor para caber)
-                ctx.font = '12px WorldOfWater';
-                ctx.fillStyle = '#e91e63';
-                ctx.fillText(logo, 2, 16);
-                
-                // Tagline menor
-                ctx.font = 'italic 5px sans-serif';
-                ctx.fillStyle = '#666666';
-                ctx.fillText(tagline, 2, 24);
-                
-                const logoDataUrl = canvas.toDataURL('image/png');
-                doc.addImage(logoDataUrl, 'PNG', margin, y, 35, 8);
+                doc.setFont('helvetica', 'italic');
+                doc.setFontSize(9);
+                doc.setTextColor(102, 102, 102);
+                doc.text(tagline, margin, y + 16);
                 
                 // Endereço (direita)
                 doc.setFont('helvetica', 'normal');
