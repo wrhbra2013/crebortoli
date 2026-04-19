@@ -20,9 +20,9 @@ function hashToken(token) {
 }
 
 function checkAuth(required = true) {
-    const isAuthenticated = sessionStorage.getItem(AUTH_KEY) === 'true';
-    const authTime = parseInt(sessionStorage.getItem(AUTH_TIMESTAMP) || '0', 10);
-    const storedHash = sessionStorage.getItem(AUTH_TOKEN);
+    const isAuthenticated = localStorage.getItem(AUTH_KEY) === 'true';
+    const authTime = parseInt(localStorage.getItem(AUTH_TIMESTAMP) || '0', 10);
+    const storedHash = localStorage.getItem(AUTH_TOKEN);
     
     if (isAuthenticated && authTime) {
         const elapsed = Date.now() - authTime;
@@ -57,27 +57,27 @@ function login(token) {
     const secureToken = generateSecureToken();
     const tokenHash = hashToken(secureToken);
     
-    sessionStorage.setItem(AUTH_KEY, 'true');
-    sessionStorage.setItem(AUTH_TIMESTAMP, Date.now().toString());
-    sessionStorage.setItem(AUTH_TOKEN, tokenHash);
+    localStorage.setItem(AUTH_KEY, 'true');
+    localStorage.setItem(AUTH_TIMESTAMP, Date.now().toString());
+    localStorage.setItem(AUTH_TOKEN, tokenHash);
     
     localStorage.setItem('sig_last_login', Date.now().toString());
 }
 
 function logout() {
-    sessionStorage.removeItem(AUTH_KEY);
-    sessionStorage.removeItem(AUTH_TIMESTAMP);
-    sessionStorage.removeItem(AUTH_TOKEN);
+    localStorage.removeItem(AUTH_KEY);
+    localStorage.removeItem(AUTH_TIMESTAMP);
+    localStorage.removeItem(AUTH_TOKEN);
     window.location.href = 'login.html';
 }
 
 function isAuthenticated() {
-    return sessionStorage.getItem(AUTH_KEY) === 'true';
+    return localStorage.getItem(AUTH_KEY) === 'true';
 }
 
 function refreshSession() {
     if (isAuthenticated()) {
-        sessionStorage.setItem(AUTH_TIMESTAMP, Date.now().toString());
+        localStorage.setItem(AUTH_TIMESTAMP, Date.now().toString());
     }
 }
 

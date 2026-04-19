@@ -259,8 +259,8 @@ const API_URL = 'http://201.23.76.59:3001/api.php';
         }
         
         function secureLogin() {
-            sessionStorage.setItem('sig_authenticated', 'true');
-            sessionStorage.setItem('sig_auth_time', Date.now().toString());
+            localStorage.setItem('sig_authenticated', 'true');
+            localStorage.setItem('sig_auth_time', Date.now().toString());
             
             const array = new Uint8Array(32);
             crypto.getRandomValues(array);
@@ -272,7 +272,7 @@ const API_URL = 'http://201.23.76.59:3001/api.php';
                 hash = ((hash << 5) - hash) + char;
                 hash = hash & hash;
             }
-            sessionStorage.setItem('sig_token', hash.toString(16));
+            localStorage.setItem('sig_token', hash.toString(16));
         }
         
         async function startPolling(token) {
