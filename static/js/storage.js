@@ -1,23 +1,43 @@
 const STORAGE_KEY = 'crebortoli_data';
 
-const getDefaultData = () => ({
-    agendamentos: [],
-    servicos: [],
-    clientes: [],
-    receitas: [],
-    contatos: [],
-    usuarios: [],
-    sessoes: [],
-    _updated: Date.now()
-});
+const getDefaultData = async () => {
+    const defaultData = {
+        agendamentos: [],
+        servicos: [],
+        clientes: [],
+        receitas: [],
+        contatos: [],
+        usuarios: [],
+        sessoes: [],
+        _updated: Date.now()
+    };
+    
+    try {
+        const response = await fetch('../servicos.json');
+        const servicosData = await response.json();
+        if (servicosData.servicos && servicosData.servicos.length > 0) {
+            defaultData.servicos = servicosData.servicos;
+            console.log('Carregados serviços do arquivo JSON:', servicosData.servicos.length);
+        }
+    } catch (e) {
+        console.log('Arquivo servicos.json não encontrado, usando dados vazios');
+    }
+    
+    return defaultData;
+};
 
-const getLocalData = () => {
+const getLocalData = async () => {
     try {
         const data = localStorage.getItem(STORAGE_KEY);
-        return data ? JSON.parse(data) : getDefaultData();
+        if (data) {
+            return JSON.parse(data);
+        }
+        const defaultData = await getDefaultData();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
+        return defaultData;
     } catch (e) {
         console.error('Erro ao carregar dados:', e);
-        return getDefaultData();
+        return await getDefaultData();
     }
 };
 
@@ -38,13 +58,23 @@ const DataSync = {
     storageKey: STORAGE_KEY,
     isLoaded: true,
     _online: false,
+    _cachedData: null,
     
-    getLocalData,
+    async getLocalData() {
+        if (this._cachedData) {
+            return this._cachedData;
+        }
+        this._cachedData = await getLocalData();
+        return this._cachedData;
+    },
     
-    saveLocalData,
+    saveLocalData(data) {
+        this._cachedData = data;
+        saveLocalData(data);
+    },
     
     async sync() {
-        const data = getLocalData();
+        const data = await this.getLocalData();
         this.isLoaded = true;
         console.log('Dados carregados do localStorage:', {
             agendamentos: data.agendamentos?.length || 0,
@@ -57,7 +87,7 @@ const DataSync = {
     },
     
     async save(item) {
-        const fullData = getLocalData();
+        const fullData = await this.getLocalData();
         const entity = item._entity || 'agendamentos';
         const items = fullData[entity] || [];
         
@@ -76,39 +106,39 @@ const DataSync = {
         }
         
         fullData[entity] = items;
-        saveLocalData(fullData);
+        this.saveLocalData(fullData);
         return item;
     },
     
     async delete(item) {
-        const fullData = getLocalData();
+        const fullData = await this.getLocalData();
         const entity = item._entity || 'agendamentos';
         const items = (fullData[entity] || []).filter(i => i.id !== item.id);
         fullData[entity] = items;
-        saveLocalData(fullData);
+        this.saveLocalData(fullData);
     },
     
     async update(id, dados, entity) {
-        const fullData = getLocalData();
+        const fullData = await this.getLocalData();
         const items = fullData[entity] || [];
         const idx = items.findIndex(item => item.id === id);
         
         if (idx >= 0) {
             items[idx] = { ...items[idx], ...dados, updated_at: new Date().toISOString() };
             fullData[entity] = items;
-            saveLocalData(fullData);
+            this.saveLocalData(fullData);
             return items[idx];
         }
         return null;
     },
     
-    getById(entity, id) {
-        const fullData = getLocalData();
+    async getById(entity, id) {
+        const fullData = await this.getLocalData();
         return (fullData[entity] || []).find(item => item.id === id);
     },
     
-    search(entity, term) {
-        const fullData = getLocalData();
+    async search(entity, term) {
+        const fullData = await this.getLocalData();
         const items = fullData[entity] || [];
         const lower = term.toLowerCase();
         return items.filter(item => 
@@ -118,23 +148,25 @@ const DataSync = {
         );
     },
     
-    getByField(entity, field, value) {
-        const fullData = getLocalData();
+    async getByField(entity, field, value) {
+        const fullData = await this.getLocalData();
         return (fullData[entity] || []).filter(item => item[field] === value);
     },
     
     clear() {
         localStorage.removeItem(STORAGE_KEY);
+        this._cachedData = null;
     },
     
-    export() {
-        return JSON.stringify(getLocalData(), null, 2);
+    async export() {
+        const data = await this.getLocalData();
+        return JSON.stringify(data, null, 2);
     },
     
     import(jsonString) {
         try {
             const data = JSON.parse(jsonString);
-            saveLocalData(data);
+            this.saveLocalData(data);
             return true;
         } catch (e) {
             console.error('Erro ao importar dados:', e);
@@ -150,7 +182,8 @@ function createEntityStore(entityName) {
         },
         
         async getAll() {
-            return getLocalData()[entityName] || [];
+            const data = await DataSync.getLocalData();
+            return data[entityName] || [];
         },
         
         async save(item) {
@@ -166,16 +199,16 @@ function createEntityStore(entityName) {
             await DataSync.delete({ id, _entity: entityName });
         },
         
-        getById(id) {
-            return DataSync.getById(entityName, id);
+        async getById(id) {
+            return await DataSync.getById(entityName, id);
         },
         
-        search(term) {
-            return DataSync.search(entityName, term);
+        async search(term) {
+            return await DataSync.search(entityName, term);
         },
         
-        getByField(field, value) {
-            return DataSync.getByField(entityName, field, value);
+        async getByField(field, value) {
+            return await DataSync.getByField(entityName, field, value);
         }
     };
 }

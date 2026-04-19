@@ -8,23 +8,24 @@ var ServicosPagina = (function() {
     var servicosCarregados = false;
     
     /* -------------------------------------------------------------------------
-       Inicialização
-       --------------------------------------------------------------------- */
+        Inicialização
+        --------------------------------------------------------------------- */
     function init() {
         ServicosStore.init().then(function() {
+            return ServicosStore.getAll();
+        }).then(function(servicos) {
             servicosCarregados = true;
-            renderizarTabela();
+            renderizarTabela(servicos);
         }).catch(function(err) {
             console.error('Erro ao carregar servicos:', err);
-            renderizarTabela();
+            renderizarTabela([]);
         });
     }
     
     /* -------------------------------------------------------------------------
-       Renderização da Tabela
-       --------------------------------------------------------------------- */
-    function renderizarTabela() {
-        var servicos = ServicosStore.getAll();
+        Renderização da Tabela
+        --------------------------------------------------------------------- */
+    function renderizarTabela(servicos) {
         var tbody = document.getElementById('tabela-corpo');
         var html = '';
         
