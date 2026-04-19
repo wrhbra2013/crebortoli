@@ -234,8 +234,7 @@
         function compartilharQR() {
             if (!currentToken) return;
             
-            const url = getBaseUrl() + '/sig/aprovar.html?token=' + currentToken;
-            const mensagem = 'Acesse para aprovar o login: ' + url;
+            const mensagem = 'Código de aprovação Cre Bortoli: ' + currentToken;
             const whatsappUrl = 'https://wa.me/?text=' + encodeURIComponent(mensagem);
             window.open(whatsappUrl, '_blank');
         }
