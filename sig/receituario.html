@@ -440,6 +440,13 @@ function gerarPDF() {
                     return;
                 }
 
+                const headerEl = document.querySelector('.clinic-header');
+                headerEl.classList.add('print');
+                const logo = headerEl.querySelector('.clinic-logo')?.textContent || 'Espaço Cre Bortoli';
+                const tagline = headerEl.querySelector('.clinic-tagline')?.textContent || 'Estética & Depilação';
+                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492 - Palmital - Marília, SP | (14) 99663.8056';
+                headerEl.classList.remove('print');
+
                 const paciente = document.getElementById('paciente').value;
                 const data = document.getElementById('data').value;
                 const indicacao = document.getElementById('indicacao').value;
@@ -456,13 +463,13 @@ function gerarPDF() {
 
                 doc.setFontSize(22);
                 doc.setTextColor(233, 30, 99);
-                doc.text('Espaço Cre Bortoli', pageWidth / 2, y, { align: 'center' });
+                doc.text(logo, pageWidth / 2, y, { align: 'center' });
                 y += 8;
                 doc.setFontSize(9);
                 doc.setTextColor(102, 102, 102);
-                doc.text('Estética & Depilação', pageWidth / 2, y, { align: 'center' });
+                doc.text(tagline, pageWidth / 2, y, { align: 'center' });
                 y += 5;
-                doc.text('Rua Francisco Martineli, 492 - Palmital - Marília, SP | (14) 99663.8056', pageWidth / 2, y, { align: 'center' });
+                doc.text(address, pageWidth / 2, y, { align: 'center' });
                 y += 10;
                 doc.setDrawColor(233, 30, 99);
                 doc.setLineWidth(1);
