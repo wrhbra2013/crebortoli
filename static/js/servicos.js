@@ -10,16 +10,11 @@ var ServicosPagina = (function() {
     /* -------------------------------------------------------------------------
         Inicialização
         --------------------------------------------------------------------- */
-    function init() {
-        ServicosStore.init().then(function() {
-            return ServicosStore.getAll();
-        }).then(function(servicos) {
-            servicosCarregados = true;
-            renderizarTabela(servicos);
-        }).catch(function(err) {
-            console.error('Erro ao carregar servicos:', err);
-            renderizarTabela([]);
-        });
+    async function init() {
+        await ServicosStore.init();
+        var servicos = await ServicosStore.getAll();
+        servicosCarregados = true;
+        renderizarTabela(servicos);
     }
     
     /* -------------------------------------------------------------------------

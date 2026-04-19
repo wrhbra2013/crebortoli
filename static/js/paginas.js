@@ -19,21 +19,19 @@ var AgendaPagina = (function() {
     /* -------------------------------------------------------------------------
        Inicialização
        --------------------------------------------------------------------- */
-    function init() {
+    async function init() {
         carregarDadosUsuario();
         
-        ServicosStore.init().then(function() {
-            servicosCarregados = true;
-            popularServicos();
-            renderizarCalendario();
-            renderizarMeusAgendamentos();
-            verificarParametroURL();
-        }).catch(function(err) {
-            console.error('Erro ao carregar servicos:', err);
-            popularServicos();
-            renderizarCalendario();
-            renderizarMeusAgendamentos();
-        });
+        await ServicosStore.init();
+        servicosCarregados = true;
+        
+        var servicos = await ServicosStore.getAll();
+        var agendamentos = await AgendamentoStore.getAll();
+        
+        popularServicos(servicos);
+        renderizarCalendario(agendamentos);
+        renderizarMeusAgendamentos(agendamentos);
+        verificarParametroURL();
         
         setupEventListeners();
     }
@@ -93,14 +91,15 @@ var AgendaPagina = (function() {
     /* -------------------------------------------------------------------------
        Renderização do Calendário
        --------------------------------------------------------------------- */
-    function renderizarCalendario() {
+    function renderizarCalendario(agendamentos) {
         var grid = document.getElementById('calendario-grid');
         var mesAno = document.getElementById('mes-ano');
         
         if (!grid || !mesAno) return;
         
-        var ano = dataAtual.getFullYear();
-        var mes = dataAtual.getMonth();
+        var dataAux = dataAtual;
+        var ano = dataAux.getFullYear();
+        var mes = dataAux.getMonth();
         
         mesAno.textContent = nomesMeses[mes] + ' ' + ano;
         
@@ -121,7 +120,7 @@ var AgendaPagina = (function() {
             var isToday = data.toDateString() === new Date().toDateString();
             var isPast = data < new Date().setHours(0,0,0,0);
             
-            var agendamentosDoDia = AgendamentoStore.getAll().filter(function(a) { 
+            var agendamentosDoDia = (agendamentos || []).filter(function(a) { 
                 return a.data === dataStr; 
             });
             
@@ -187,7 +186,9 @@ var AgendaPagina = (function() {
         document.getElementById('telefone').value = telefoneUsuario;
         document.getElementById('pagar-agora').checked = false;
         
-        popularServicos(servicoId);
+        ServicosStore.getAll().then(function(servicos) {
+            popularServicos(servicos, servicoId);
+        });
         
         modal.classList.add('active');
     }
@@ -199,10 +200,9 @@ var AgendaPagina = (function() {
         document.getElementById('pagar-agora').checked = false;
     }
     
-    function popularServicos(servicoIdPreselecionado) {
-        if (!servicosCarregados) return;
+    function popularServicos(servicos, servicoIdPreselecionado) {
+        if (!servicos || servicos.length === 0) return;
         
-        var servicos = ServicosStore.getAll();
         var select = document.getElementById('servico');
         var options = '<option value="">Selecione...</option>';
         
@@ -237,11 +237,11 @@ var AgendaPagina = (function() {
     /* -------------------------------------------------------------------------
        Submit do Formulário
        --------------------------------------------------------------------- */
-    function handleSubmit(e) {
+    async function handleSubmit(e) {
         e.preventDefault();
         
         var servicoId = document.getElementById('servico').value;
-        var servico = ServicosStore.getById(servicoId);
+        var servico = await ServicosStore.getById(servicoId);
         var data = document.getElementById('data-input').value;
         var nome = document.getElementById('nome').value;
         var telefoneFormatado = document.getElementById('telefone').value;
@@ -273,7 +273,7 @@ var AgendaPagina = (function() {
             pago: pagarAgora
         };
         
-        AgendamentoStore.save(agendamento);
+        await AgendamentoStore.save(agendamento);
         
         var whatsappMsg = 'Olá! Acabei de fazer um agendamento no site:\n\n' +
             '👤 Nome completo: ' + nome + '\n' +
@@ -292,8 +292,9 @@ var AgendaPagina = (function() {
         }
         
         fecharModal();
-        renderizarCalendario();
-        renderizarMeusAgendamentos();
+        var agendamentos = await AgendamentoStore.getAll();
+        renderizarCalendario(agendamentos);
+        renderizarMeusAgendamentos(agendamentos);
         
         alert('Agendamento realizado com sucesso!' + (pagarAgora ? '\nPagamento registrado!' : ''));
         window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + encodeURIComponent(whatsappMsg), '_blank');
@@ -302,8 +303,9 @@ var AgendaPagina = (function() {
     /* -------------------------------------------------------------------------
        Modal de Pagamento
        --------------------------------------------------------------------- */
-    function abrirModalPagamento(id) {
-        agendamentoSelecionado = AgendamentoStore.getAll().find(function(a) { 
+    async function abrirModalPagamento(id) {
+        var agendamentos = await AgendamentoStore.getAll();
+        agendamentoSelecionado = agendamentos.find(function(a) { 
             return a.id === id; 
         });
         
@@ -330,10 +332,10 @@ var AgendaPagina = (function() {
         });
     }
     
-    function confirmarPagamento() {
+    async function confirmarPagamento() {
         if (!agendamentoSelecionado) return;
         
-        AgendamentoStore.update(agendamentoSelecionado.id, { pago: true, status: 'PAGO' });
+        await AgendamentoStore.update(agendamentoSelecionado.id, { pago: true, status: 'PAGO' });
         
         var whatsappMsg = 'Olá! Já fiz o pagamento do meu agendamento:\n\n' +
             '👤 Nome: ' + agendamentoSelecionado.cliente + '\n' +
@@ -342,9 +344,10 @@ var AgendaPagina = (function() {
             '💰 Valor: R$ ' + agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '\n\n' +
             'Por favor, confirmem o recebimento!';
         
+        var agendamentos = await AgendamentoStore.getAll();
         fecharModalPagamento();
-        renderizarCalendario();
-        renderizarMeusAgendamentos();
+        renderizarCalendario(agendamentos);
+        renderizarMeusAgendamentos(agendamentos);
         
         alert('Pagamento registrado! Entraremos em contato para confirmar.');
         window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + encodeURIComponent(whatsappMsg), '_blank');
@@ -353,18 +356,18 @@ var AgendaPagina = (function() {
     /* -------------------------------------------------------------------------
        Meus Agendamentos
        --------------------------------------------------------------------- */
-    function renderizarMeusAgendamentos() {
+    function renderizarMeusAgendamentos(agendamentos) {
         var lista = document.getElementById('lista-meus-agendamentos');
         if (!lista) return;
         
-        var agendamentos = AgendamentoStore.getAll().sort(function(a, b) {
-            return new Date(a.data) - new Date(b.data);
-        });
-        
-        if (agendamentos.length === 0) {
+        if (!agendamentos || agendamentos.length === 0) {
             lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
             return;
         }
+        
+        agendamentos.sort(function(a, b) {
+            return new Date(a.data) - new Date(b.data);
+        });
         
         var html = agendamentos.map(function(a) {
             var badgePago = a.pago ? 
@@ -429,8 +432,6 @@ var AgendaPagina = (function() {
 
 document.addEventListener('DOMContentLoaded', function() {
     if (document.getElementById('calendario-grid')) {
-        AgendamentoStore.syncFromServer().then(() => {
-            AgendaPagina.init();
-        });
+        AgendaPagina.init();
     }
 });
