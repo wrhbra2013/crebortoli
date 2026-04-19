@@ -464,32 +464,31 @@ function gerarPDF() {
                 let y = margin;
 
                 // Header com logo em imagem gerada do canvas usando fonte local
-                const canvas = document.createElement('canvas');
-                canvas.width = 150;
-                canvas.height = 40;
-                const ctx = canvas.getContext('2d');
-                
-                ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 150, 40);
-                
-                // Carregar fonte local
                 const fontUrl = '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf';
                 const fontFace = new FontFace('WorldOfWater', `url(${fontUrl})`);
                 await fontFace.load();
                 document.fonts.add(fontFace);
                 
-                // Logo com fonte local (menor)
-                ctx.font = '18px WorldOfWater';
+                const canvas = document.createElement('canvas');
+                canvas.width = 100;
+                canvas.height = 30;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.fillStyle = 'transparent';
+                ctx.clearRect(0, 0, 100, 30);
+                
+                // Logo com fonte local
+                ctx.font = '14px WorldOfWater';
                 ctx.fillStyle = '#e91e63';
-                ctx.fillText(logo, 5, 25);
+                ctx.fillText(logo, 2, 18);
                 
                 // Tagline
-                ctx.font = 'italic 8px sans-serif';
+                ctx.font = 'italic 6px sans-serif';
                 ctx.fillStyle = '#666666';
-                ctx.fillText(tagline, 5, 35);
+                ctx.fillText(tagline, 2, 27);
                 
                 const logoDataUrl = canvas.toDataURL('image/png');
-                doc.addImage(logoDataUrl, 'PNG', margin, y, 60, 16);
+                doc.addImage(logoDataUrl, 'PNG', margin, y, 40, 12);
                 
                 // Endereço (direita)
                 doc.setFont('helvetica', 'normal');
@@ -502,11 +501,11 @@ function gerarPDF() {
                     addrY += 5;
                 });
                 
-                y += 20;
+                y += 15;
                 doc.setDrawColor(233, 30, 99);
-                doc.setLineWidth(1.5);
+                doc.setLineWidth(1);
                 doc.line(margin, y, pageWidth - margin, y);
-                y += 12;
+                y += 10;
 
                 const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
 
