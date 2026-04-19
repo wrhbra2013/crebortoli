@@ -3,11 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aprovar Login - SIG Cre Bortoli</title>
+    <title>Aprovar Login - Cre Bortoli</title>
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
-    <link rel="stylesheet" href="../static/css/style2.css">
     <style>
-        :root { --cor-principal: #8a4baf; }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
             min-height: 100vh;
@@ -16,15 +14,6 @@
             align-items: center;
             background: linear-gradient(135deg, #f7f8fc 0%, #e8eaf6 100%);
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding: 1rem;
-        }
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
             padding: 1rem;
         }
         .modal {
@@ -36,55 +25,24 @@
             text-align: center;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
-        .icon { font-size: 4rem; margin-bottom: 1rem; }
-        h1 { color: var(--cor-principal); font-size: 1.5rem; margin-bottom: 0.5rem; }
-        .subtitle { color: #666; font-size: 0.95rem; margin-bottom: 1rem; }
         .code-display {
             background: #e8eaf6;
             padding: 1rem;
             border-radius: 8px;
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             font-weight: bold;
-            letter-spacing: 0.2rem;
-            color: var(--cor-principal);
-            margin-bottom: 1rem;
+            letter-spacing: 0.3rem;
+            color: #8a4baf;
             word-break: break-all;
         }
-        .timer { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
-        .timer .countdown { font-weight: bold; color: var(--cor-principal); }
-        .btn-group { display: flex; gap: 1rem; }
-        .btn {
-            flex: 1;
-            padding: 1rem;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-        }
-        .btn-confirm { background: #28a745; color: white; }
-        .btn-confirm:hover { background: #218838; }
-        .btn-cancel { background: #dc3545; color: white; }
-        .btn-cancel:hover { background: #c82333; }
-        .success-message, .error-message {
-            padding: 1rem; border-radius: 8px; margin-bottom: 1rem; font-weight: 500;
-        }
-        .success-message { background: #d4edda; color: #155724; }
-        .error-message { background: #f8d7da; color: #721c24; }
-        .btn:disabled { opacity: 0.6; cursor: not-allowed; }
+        .timer { color: #666; font-size: 0.9rem; margin-top: 1rem; }
+        .timer .countdown { font-weight: bold; color: #8a4baf; }
     </style>
 </head>
 <body>
-    <div class="modal-overlay">
-        <div class="modal">
-            <div class="icon" id="icon">🔐</div>
-            <h1 id="titulo">Aprovar Login</h1>
-            <p class="subtitle" id="subtitulo">Deseja permitir o acesso ao sistema?</p>
-            
-            <div class="code-display" id="codigo-lido"></div>
-            
-            <div class="timer">Expira em: <span class="countdown" id="countdown">60</span>s</div>
-        </div>
+    <div class="modal">
+        <div class="code-display" id="codigo-lido"></div>
+        <div class="timer">Expira em: <span class="countdown" id="countdown">60</span>s</div>
     </div>
 
     <script>
@@ -105,10 +63,17 @@
                 
                 if (remainingTime <= 0) {
                     clearInterval(countdownInterval);
-                    document.getElementById('titulo').textContent = 'Expirado';
-                    document.getElementById('subtitulo').textContent = 'Tente novamente';
                 }
             }, 1000);
+        }
+        
+        function setSessionStatus(status) {
+            const sessionData = {
+                token: codigoLido,
+                status: status,
+                created: Date.now()
+            };
+            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         }
         
         function init() {
@@ -116,27 +81,13 @@
             codigoLido = urlParams.get('token') || '';
             
             if (!codigoLido) {
-                document.getElementById('icon').textContent = '❌';
                 document.getElementById('codigo-lido').textContent = 'Link inválido';
                 return;
             }
             
             document.getElementById('codigo-lido').textContent = codigoLido;
-            document.getElementById('titulo').textContent = 'Aprovado!';
-            document.getElementById('subtitulo').textContent = 'Acesso liberado';
-            document.getElementById('icon').textContent = '✓';
-            
             setSessionStatus('aprovado');
             startTimer();
-        }
-        
-function setSessionStatus(status) {
-            const sessionData = {
-                token: codigoLido,
-                status: status,
-                created: Date.now()
-            };
-            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         }
         
         init();

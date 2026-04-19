@@ -20,7 +20,7 @@
 
 @font-face {
     font-family: 'World of Water';
-    src: url('../fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('truetype');
+    src: url('../fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('opentype');
     font-weight: normal;
     font-style: normal;
 }

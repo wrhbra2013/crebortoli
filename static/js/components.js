@@ -36,7 +36,7 @@ function initComponents() {
     const headerHTML = `<header class="header">
     <div class="header-container">
         <a href="${getBasePath()}index.html" class="header-title">
-            <span class="site-title">Espaço Cre Bortoli</span>
+            <span class="site-title">crebortoli</span>
         </a>
         <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
             <span></span>
@@ -61,7 +61,7 @@ function initComponents() {
     const headerSigHTML = `<header class="header">
     <div class="header-container">
         <a href="${getSigPath()}index.html" class="header-title">
-            <span class="site-title">Espaço Cre Bortoli - SIG</span>
+            <span class="site-title">crebortoli</span>
         </a>
         <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
             <span></span>
