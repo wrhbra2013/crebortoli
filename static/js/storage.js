@@ -1,210 +1,156 @@
-const API_URL = localStorage.getItem('api_url') || '/api';
-const API_PROJECT = 'crebortoli';
+const STORAGE_KEY = 'crebortoli_data';
 
-const getAuthHeaders = () => {
-    const token = localStorage.getItem('api_token') || sessionStorage.getItem('sig_api_token');
-    if (!token) {
-        console.warn('Token não configurado. Configure via: localStorage.setItem("api_token", "seu-token")');
+const getDefaultData = () => ({
+    agendamentos: [],
+    servicos: [],
+    clientes: [],
+    receitas: [],
+    contatos: [],
+    usuarios: [],
+    sessoes: [],
+    _updated: Date.now()
+});
+
+const getLocalData = () => {
+    try {
+        const data = localStorage.getItem(STORAGE_KEY);
+        return data ? JSON.parse(data) : getDefaultData();
+    } catch (e) {
+        console.error('Erro ao carregar dados:', e);
+        return getDefaultData();
     }
-    return {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-    };
 };
 
-const isAuthenticated = () => {
-    return !!(localStorage.getItem('api_token') || sessionStorage.getItem('sig_api_token'));
+const saveLocalData = (data) => {
+    try {
+        data._updated = Date.now();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    } catch (e) {
+        console.error('Erro ao salvar dados:', e);
+    }
+};
+
+const generateId = (prefix) => {
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
 const DataSync = {
-    storageKey: 'crebortoli_data',
-    isLoaded: false,
-    _online: true,
+    storageKey: STORAGE_KEY,
+    isLoaded: true,
+    _online: false,
     
-    getLocalData() {
-        const data = localStorage.getItem(this.storageKey);
-        return data ? JSON.parse(data) : {
-            agendamentos: [],
-            servicos: [],
-            clientes: [],
-            receitas: [],
-            contatos: []
-        };
-    },
+    getLocalData,
     
-    saveLocalData(data) {
-        data._updated = Date.now();
-        localStorage.setItem(this.storageKey, JSON.stringify(data));
-    },
+    saveLocalData,
     
-    async fetchFromServer() {
-        if (!isAuthenticated()) {
-            console.warn('API não configurada. Configure via login ou localStorage.setItem("api_token", "token")');
-            return {};
-        }
-        
-        const apiUrl = API_URL || '';
-        if (!apiUrl) {
-            console.warn('API URL não configurada. Configure via localStorage.setItem("api_url", "http://servidor:3000")');
-            return {};
-        }
-        
-        const tables = ['agendamentos', 'servicos', 'clientes', 'receitas', 'contatos'];
-        const data = {};
-        
-        for (const table of tables) {
-            try {
-                const response = await fetch(`${API_URL}/read`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ project: API_PROJECT, table, limit: 1000 })
-                });
-                if (response.ok) {
-                    const result = await response.json();
-                    data[table] = result.data || [];
-                } else {
-                    data[table] = [];
-                }
-            } catch (e) {
-                console.warn(`Erro ao carregar ${table}:`, e);
-                data[table] = [];
-            }
-        }
-        
+    async sync() {
+        const data = getLocalData();
+        this.isLoaded = true;
+        console.log('Dados carregados do localStorage:', {
+            agendamentos: data.agendamentos?.length || 0,
+            servicos: data.servicos?.length || 0,
+            clientes: data.clientes?.length || 0,
+            receitas: data.receitas?.length || 0,
+            contatos: data.contatos?.length || 0
+        });
         return data;
     },
     
-    async sync() {
-        const serverData = await this.fetchFromServer();
-        const localData = this.getLocalData();
-        
-        const merged = this.mergeData(localData, serverData);
-        this.saveLocalData(merged);
-        this.isLoaded = true;
-        
-        console.log('Sincronizado com servidor Node API:', {
-            agendamentos: merged.agendamentos?.length || 0,
-            servicos: merged.servicos?.length || 0,
-            clientes: merged.clientes?.length || 0,
-            receitas: merged.receitas?.length || 0,
-            contatos: merged.contatos?.length || 0
-        });
-        
-        return merged;
-    },
-    
-    mergeData(local, server) {
-        const mergeArrays = (localArr, serverArr, key = 'id') => {
-            const map = new Map();
-            (localArr || []).forEach(item => map.set(item[key], item));
-            (serverArr || []).forEach(item => map.set(item[key], item));
-            return Array.from(map.values());
-        };
-        
-        return {
-            agendamentos: mergeArrays(local.agendamentos, server.agendamentos),
-            servicos: mergeArrays(local.servicos, server.servicos),
-            clientes: mergeArrays(local.clientes, server.clientes),
-            receitas: mergeArrays(local.receitas, server.receitas),
-            contatos: mergeArrays(local.contatos, server.contatos)
-        };
-    },
-    
-    getTimestamp() {
-        const data = this.getLocalData();
-        return data._updated || 0;
-    },
-    
     async save(item) {
-        const fullData = this.getLocalData();
+        const fullData = getLocalData();
         const entity = item._entity || 'agendamentos';
         const items = fullData[entity] || [];
-        item.id = item.id || entity + '_' + Date.now();
-        item.created_at = item.created_at || new Date().toISOString();
         
-        try {
-            const response = await fetch(`${API_URL}/create`, {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ project: API_PROJECT, table: entity, data: item })
-            });
-            if (response.ok) {
-                const result = await response.json();
-                if (result.data?.id) {
-                    item.id = result.data.id;
-                }
-            }
-        } catch (e) {
-            console.warn('Erro ao salvar no servidor, salvando localmente:', e);
+        if (!item.id) {
+            item.id = generateId(entity);
+        }
+        if (!item.created_at) {
+            item.created_at = new Date().toISOString();
         }
         
         const idx = items.findIndex(i => i.id === item.id);
         if (idx >= 0) {
-            items[idx] = item;
+            items[idx] = { ...items[idx], ...item };
         } else {
             items.push(item);
         }
+        
         fullData[entity] = items;
-        this.saveLocalData(fullData);
+        saveLocalData(fullData);
         return item;
     },
     
     async delete(item) {
-        const fullData = this.getLocalData();
+        const fullData = getLocalData();
         const entity = item._entity || 'agendamentos';
         const items = (fullData[entity] || []).filter(i => i.id !== item.id);
-        
-        try {
-            await fetch(`${API_URL}/delete`, {
-                method: 'POST',
-                headers: getAuthHeaders(),
-                body: JSON.stringify({ project: API_PROJECT, table: entity, id: item.id })
-            });
-        } catch (e) {
-            console.warn('Erro ao excluir do servidor:', e);
-        }
-        
         fullData[entity] = items;
-        this.saveLocalData(fullData);
+        saveLocalData(fullData);
     },
     
     async update(id, dados, entity) {
-        const fullData = this.getLocalData();
+        const fullData = getLocalData();
         const items = fullData[entity] || [];
         const idx = items.findIndex(item => item.id === id);
         
         if (idx >= 0) {
             items[idx] = { ...items[idx], ...dados, updated_at: new Date().toISOString() };
             fullData[entity] = items;
-            
-            try {
-                await fetch(`${API_URL}/update`, {
-                    method: 'POST',
-                    headers: getAuthHeaders(),
-                    body: JSON.stringify({ project: API_PROJECT, table: entity, id, data: items[idx] })
-                });
-            } catch (e) {
-                console.warn('Erro ao atualizar no servidor:', e);
-            }
-            
-            this.saveLocalData(fullData);
+            saveLocalData(fullData);
             return items[idx];
         }
         return null;
+    },
+    
+    getById(entity, id) {
+        const fullData = getLocalData();
+        return (fullData[entity] || []).find(item => item.id === id);
+    },
+    
+    search(entity, term) {
+        const fullData = getLocalData();
+        const items = fullData[entity] || [];
+        const lower = term.toLowerCase();
+        return items.filter(item => 
+            Object.values(item).some(val => 
+                typeof val === 'string' && val.toLowerCase().includes(lower)
+            )
+        );
+    },
+    
+    getByField(entity, field, value) {
+        const fullData = getLocalData();
+        return (fullData[entity] || []).filter(item => item[field] === value);
+    },
+    
+    clear() {
+        localStorage.removeItem(STORAGE_KEY);
+    },
+    
+    export() {
+        return JSON.stringify(getLocalData(), null, 2);
+    },
+    
+    import(jsonString) {
+        try {
+            const data = JSON.parse(jsonString);
+            saveLocalData(data);
+            return true;
+        } catch (e) {
+            console.error('Erro ao importar dados:', e);
+            return false;
+        }
     }
 };
 
 function createEntityStore(entityName) {
     return {
-        _data: null,
-        
         async init() {
             return this;
         },
         
         async getAll() {
-            if (this._data) return this._data;
-            return DataSync.getLocalData()[entityName] || [];
+            return getLocalData()[entityName] || [];
         },
         
         async save(item) {
@@ -221,23 +167,15 @@ function createEntityStore(entityName) {
         },
         
         getById(id) {
-            const items = DataSync.getLocalData()[entityName] || [];
-            return items.find(item => item.id === id);
+            return DataSync.getById(entityName, id);
         },
         
         search(term) {
-            const items = DataSync.getLocalData()[entityName] || [];
-            const lower = term.toLowerCase();
-            return items.filter(item => 
-                Object.values(item).some(val => 
-                    typeof val === 'string' && val.toLowerCase().includes(lower)
-                )
-            );
+            return DataSync.search(entityName, term);
         },
         
         getByField(field, value) {
-            const items = DataSync.getLocalData()[entityName] || [];
-            return items.filter(item => item[field] === value);
+            return DataSync.getByField(entityName, field, value);
         }
     };
 }
@@ -247,6 +185,7 @@ const ServicosStore = createEntityStore('servicos');
 const ClientesStore = createEntityStore('clientes');
 const ReceitasStore = createEntityStore('receitas');
 const ContatosStore = createEntityStore('contatos');
+const UsuariosStore = createEntityStore('usuarios');
 
 const AgendamentoStore = AgendamentosStore;
 
@@ -272,6 +211,8 @@ if (typeof window !== 'undefined') {
     window.ClientesStore = ClientesStore;
     window.ReceitasStore = ReceitasStore;
     window.ContatosStore = ContatosStore;
+    window.UsuariosStore = UsuariosStore;
+    window.STORAGE_KEY = STORAGE_KEY;
     
     DataSync.sync();
 }
