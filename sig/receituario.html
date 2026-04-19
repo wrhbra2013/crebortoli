@@ -501,17 +501,10 @@ function gerarPDF() {
                     addrY += 4;
                 });
                 
-                // Borda do header
-                const headerHeight = 28;
                 doc.setDrawColor(233, 30, 99);
-                doc.setLineWidth(0.5);
-                doc.rect(margin, margin, pageWidth - (margin * 2), headerHeight);
-                
-                y += 12;
-                doc.setDrawColor(233, 30, 99);
-                doc.setLineWidth(1);
+                doc.setLineWidth(1.5);
                 doc.line(margin, y, pageWidth - margin, y);
-                y += 10;
+                y += 12;
 
                 const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
 
