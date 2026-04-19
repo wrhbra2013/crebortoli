@@ -97,7 +97,11 @@
         const SESSION_KEY = 'sig_qr_session';
         const AUTH_KEY = 'sig_authenticated';
         const SESSION_TIMEOUT = 60;
-const API_URL = 'http://201.23.76.59:3001/api.php';
+        
+        let currentToken = '';
+        let countdownInterval = null;
+        let pollTimeout = null;
+        let remainingTime = SESSION_TIMEOUT;
         
         const BASE_URL = window.location.origin;
         
@@ -123,20 +127,6 @@ const API_URL = 'http://201.23.76.59:3001/api.php';
                 token += chars.charAt(Math.floor(Math.random() * chars.length));
             }
             return token;
-        }
-        
-        async function apiRequest(acao, dados = {}) {
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: acao, ...dados })
-                });
-                return await response.json();
-            } catch (e) {
-                console.error('Erro na API:', e);
-                return { erro: e.message };
-            }
         }
         
         function displayToken(token) {
@@ -206,7 +196,7 @@ const API_URL = 'http://201.23.76.59:3001/api.php';
             }
         }
         
-        async function gerarQR() {
+        function gerarQR() {
             const btn = document.getElementById('btn-gerar');
             btn.disabled = true;
             btn.textContent = 'Gerando...';
@@ -214,16 +204,8 @@ const API_URL = 'http://201.23.76.59:3001/api.php';
             stopPolling();
             stopTimer();
             remainingTime = SESSION_TIMEOUT;
-            displayToken('...');
             
             currentToken = gerarToken();
-            
-            const urlAprovacao = getBaseUrl() + '/sig/aprovar.html?token=' + currentToken;
-            const result = await apiRequest('criar_sessao', { token: currentToken, urlAprovacao });
-            
-            if (!result.sucesso) {
-                currentToken = gerarToken();
-            }
             
             const sessionData = {
                 token: currentToken,
@@ -246,7 +228,7 @@ const API_URL = 'http://201.23.76.59:3001/api.php';
             btn.textContent = 'Gerar QR Code';
             
             startTimer();
-            startPolling(currentToken);
+            startPollingLocal();
         }
         
         function compartilharQR() {
@@ -275,24 +257,32 @@ const API_URL = 'http://201.23.76.59:3001/api.php';
             localStorage.setItem('sig_token', hash.toString(16));
         }
         
-        async function startPolling(token) {
-            const checkApproval = async () => {
-                const result = await apiRequest('verificar_sessao', { token });
-                
-                if (result && result.status === 'aprovado') {
-                    stopPolling();
-                    stopTimer();
-                    clearSessionLocal();
-                    secureLogin();
-                    showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                    setTimeout(() => { window.location.href = './index.html'; }, 1000);
+        function verificarAprovacaoLocal() {
+            const session = loadSessionLocal();
+            if (session && session.status === 'aprovado') {
+                stopPolling();
+                stopTimer();
+                clearSessionLocal();
+                secureLogin();
+                showStatus('Login aprovado! Redirecionando...', 'aprovado');
+                setTimeout(() => { window.location.href = './index.html'; }, 1000);
+                return true;
+            }
+            return false;
+        }
+        
+        function startPollingLocal() {
+            const checkApproval = () => {
+                const session = loadSessionLocal();
+                if (session && session.status === 'aprovado') {
+                    verificarAprovacaoLocal();
                     return;
                 }
                 
-                if (result && result.status === 'negado') {
+                if (session && session.status === 'negado') {
                     stopPolling();
                     stopTimer();
-                    showStatus('Login cancelado pelo administrador.', 'negado');
+                    showStatus('Login cancelado.', 'negado');
                     return;
                 }
                 
@@ -343,17 +333,6 @@ const API_URL = 'http://201.23.76.59:3001/api.php';
         document.getElementById('codigo-manual').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') processarLoginManual();
         });
-        
-        function syncTimerWithMobile() {
-            const timeLeft = remainingTime;
-            apiRequest('sync_timer', { token: currentToken, timeLeft });
-        }
-        
-        setInterval(() => {
-            if (currentToken && remainingTime > 0) {
-                syncTimerWithMobile();
-            }
-        }, 5000);
     </script>
 </body>
 </html>

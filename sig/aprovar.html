@@ -116,10 +116,7 @@
         let codigoLido = '';
         let countdownInterval = null;
         let remainingTime = 60;
-        
-        function getBaseUrl() {
-            return 'http://201.23.76.59:3001';
-        }
+        const SESSION_KEY = 'sig_qr_session';
         
         function startMobileTimer() {
             const countdownEl = document.getElementById('countdown');
@@ -140,23 +137,6 @@
             }, 1000);
         }
         
-        async function syncTimer() {
-            try {
-                const response = await fetch(getBaseUrl() + '/api.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acao: 'get_timer', token: codigoLido })
-                });
-                const result = await response.json();
-                if (result && result.timeLeft && result.timeLeft > 0) {
-                    remainingTime = result.timeLeft;
-                    document.getElementById('countdown').textContent = remainingTime;
-                }
-            } catch (e) {
-                console.error('Erro ao sincronizar timer:', e);
-            }
-        }
-        
         function init() {
             const urlParams = new URLSearchParams(window.location.search);
             codigoLido = urlParams.get('token') || '';
@@ -174,8 +154,6 @@
             document.getElementById('codigo-digitado').focus();
             
             startMobileTimer();
-            
-            setInterval(syncTimer, 5000);
         }
         
         function mostrarStatus(mensagem, tipo) {
@@ -187,20 +165,16 @@
             return document.getElementById('codigo-digitado').value.toUpperCase().trim() === codigoLido;
         }
         
-        async function apiRequest(acao, dados = {}) {
-            try {
-                const response = await fetch(getBaseUrl() + '/api.php', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ acao, ...dados })
-                });
-                return await response.json();
-            } catch (e) {
-                return { erro: e.message };
-            }
+        function setSessionStatus(status) {
+            const sessionData = {
+                token: codigoLido,
+                status: status,
+                created: Date.now()
+            };
+            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
         }
         
-        async function confirmarLogin() {
+        function confirmarLogin() {
             if (!validarCodigo()) {
                 mostrarStatus('Código incorreto. Digite exatamente o código exibido acima.', 'erro');
                 document.getElementById('codigo-digitado').value = '';
@@ -212,29 +186,23 @@
             btn.disabled = true;
             btn.textContent = 'Confirmando...';
             
-            const result = await apiRequest('aprovar_sessao', { token: codigoLido });
+            setSessionStatus('aprovado');
             
-            if (result.sucesso) {
-                mostrarStatus('Login confirmado!', 'sucesso');
-                document.getElementById('btn-confirmar').style.display = 'none';
-                document.getElementById('btn-cancelar').style.display = 'none';
-                document.getElementById('input-container').style.display = 'none';
-                document.getElementById('icon').textContent = '✓';
-                document.getElementById('titulo').textContent = 'Confirmado!';
-                document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
-            } else {
-                mostrarStatus('Erro ao confirmar. Tente novamente.', 'erro');
-                btn.disabled = false;
-                btn.textContent = '✓ Confirmar Login';
-            }
+            mostrarStatus('Login confirmado!', 'sucesso');
+            document.getElementById('btn-confirmar').style.display = 'none';
+            document.getElementById('btn-cancelar').style.display = 'none';
+            document.getElementById('input-container').style.display = 'none';
+            document.getElementById('icon').textContent = '✓';
+            document.getElementById('titulo').textContent = 'Confirmado!';
+            document.getElementById('subtitulo').textContent = 'O acesso foi liberado no computador.';
         }
         
-        async function cancelarLogin() {
+        function cancelarLogin() {
             const btn = document.getElementById('btn-cancelar');
             btn.disabled = true;
             btn.textContent = 'Cancelando...';
             
-            await apiRequest('negar_sessao', { token: codigoLido });
+            setSessionStatus('negado');
             
             mostrarStatus('Login cancelado.', 'info');
             document.getElementById('btn-confirmar').style.display = 'none';
