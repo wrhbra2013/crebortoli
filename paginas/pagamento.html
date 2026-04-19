@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <script>var v='1.0.2';document.write('<link rel="stylesheet" href="../static/css/style.css?v='+v+'">');document.write('<link rel="stylesheet" href="../static/css/paginas.css?v='+v+'">');</script>
+    <script>var v='1.0.3';document.write('<link rel="stylesheet" href="../static/css/style.css?v='+v+'">');document.write('<link rel="stylesheet" href="../static/css/paginas.css?v='+v+'">');</script>
     <style>
         .pagamento-container {
             max-width: 600px;
@@ -183,7 +183,7 @@
                 <h3>&#10004; PIX - Chave Celular</h3>
                 
                 <div class="qr-code-container">
-                    <div id="qr-code-pix"></div>
+                    <img id="qr-code-pix" src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=14996638056" alt="QR Code PIX">
                 </div>
                 
                 <div class="chave-pix">
@@ -209,24 +209,12 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script>var v='1.0.2';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
+    <script>var v='1.0.3';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <script>
         const CHAVE_PIX = '14996638056';
         const TELEFONE_FORMATADO = '(14) 99663-8056';
         const WHATSAPP = '5514996638056';
-        
-        function gerarQRCodePIX() {
-            const qr = new QRious({
-                element: document.getElementById('qr-code-pix'),
-                value: CHAVE_PIX,
-                size: 200,
-                background: 'white',
-                foreground: '#2e7d32',
-                level: 'M',
-                padding: 10
-            });
-        }
         
         function copiarChave() {
             navigator.clipboard.writeText(CHAVE_PIX).then(() => {
@@ -283,8 +271,9 @@
             }
         }
 
-        gerarQRCodePIX();
-        renderAgendamentos();
+        document.addEventListener('DOMContentLoaded', function() {
+            renderAgendamentos();
+        });
     </script>
 </body>
 </html>
