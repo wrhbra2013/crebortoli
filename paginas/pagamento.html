@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <script>var v='1.0.0';document.write('<link rel="stylesheet" href="../static/css/style.css?v='+v+'">');document.write('<link rel="stylesheet" href="../static/css/paginas.css?v='+v+'">');</script>
+    <script>var v='1.0.2';document.write('<link rel="stylesheet" href="../static/css/style.css?v='+v+'">');document.write('<link rel="stylesheet" href="../static/css/paginas.css?v='+v+'">');</script>
     <style>
         .pagamento-container {
             max-width: 600px;
@@ -209,7 +209,7 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
+    <script>var v='1.0.2';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <script>
         const CHAVE_PIX = '14996638056';
@@ -242,8 +242,8 @@
             });
         }
 
-        function renderAgendamentos() {
-            const agendamentos = AgendamentoStore.getAll()
+        async function renderAgendamentos() {
+            const agendamentos = (await AgendamentoStore.getAll())
                 .filter(a => !a.pago && a.status !== 'CONCLUIDO')
                 .sort((a, b) => new Date(a.data) - new Date(b.data));
             
@@ -275,9 +275,9 @@
             return data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
         }
 
-        function marcarPago(id) {
+        async function marcarPago(id) {
             if (confirm('Confirmar pagamento deste agendamento?')) {
-                AgendamentoStore.update(id, { pago: true, status: 'PAGO' });
+                await AgendamentoStore.update(id, { pago: true, status: 'PAGO' });
                 renderAgendamentos();
                 alert('Pagamento confirmado com sucesso!');
             }
