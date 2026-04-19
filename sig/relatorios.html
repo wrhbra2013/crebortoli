@@ -473,22 +473,47 @@
 
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
-                let y = 20;
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 20;
+                let y = margin;
 
-                doc.setFontSize(22);
-                doc.setTextColor(233, 30, 99);
-                doc.text(logo, pageWidth / 2, y, { align: 'center' });
-                y += 8;
+                // Header com logo em imagem gerada do canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 200;
+                canvas.height = 80;
+                const ctx = canvas.getContext('2d');
+                
+                // Fundo
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 200, 80);
+                
+                // Texto do logo
+                ctx.font = 'bold 28px cursive';
+                ctx.fillStyle = '#e91e63';
+                ctx.fillText(logo, 10, 35);
+                ctx.font = 'italic 12px sans-serif';
+                ctx.fillStyle = '#666666';
+                ctx.fillText(tagline, 10, 50);
+                
+                const logoDataUrl = canvas.toDataURL('image/png');
+                doc.addImage(logoDataUrl, 'PNG', margin, y, 80, 25);
+                
+                // Endereço (direita)
+                doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
-                doc.setTextColor(102, 102, 102);
-                doc.text(tagline, pageWidth / 2, y, { align: 'center' });
-                y += 5;
-                doc.text(address, pageWidth / 2, y, { align: 'center' });
-                y += 10;
+                doc.setTextColor(60, 60, 60);
+                const addressLines = address.split('\n');
+                let addrY = y + 6;
+                addressLines.forEach(line => {
+                    doc.text(line, pageWidth - margin, addrY, { align: 'right' });
+                    addrY += 5;
+                });
+                
+                y += 30;
                 doc.setDrawColor(233, 30, 99);
-                doc.setLineWidth(1);
-                doc.line(20, y, pageWidth - 20, y);
-                y += 15;
+                doc.setLineWidth(1.5);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 12;
 
                 const tipoPeriodo = document.getElementById('tipo-periodo').value;
                 const mes = parseInt(document.getElementById('mes').value);
@@ -496,9 +521,9 @@
                 
                 let titulo = '';
                 if (tipoPeriodo === 'mensal') {
-                    titulo = `Relatório - ${nomesMeses[mes]} de ${ano}`;
+                    titulo = `Relatório de Serviços - ${nomesMeses[mes]} de ${ano}`;
                 } else {
-                    titulo = `Relatório Anual - ${ano}`;
+                    titulo = `Relatório Anual de Serviços - ${ano}`;
                 }
 
                 const totalRecebido = document.getElementById('total-recebido').textContent;
@@ -509,16 +534,46 @@
                 doc.setFontSize(14);
                 doc.setTextColor(0, 0, 0);
                 doc.text(titulo, pageWidth / 2, y, { align: 'center' });
-                y += 8;
-                doc.setFontSize(10);
-                doc.setTextColor(102, 102, 102);
-                doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, y, { align: 'center' });
                 y += 10;
+
+                // Box de resumo
+                const boxWidth = pageWidth - (margin * 2);
+                const boxHeight = 35;
+                doc.setFillColor(250, 250, 252);
+                doc.rect(margin, y, boxWidth, boxHeight, 'F');
+                
                 doc.setFontSize(10);
-                doc.text(`Total Recebido: ${totalRecebido}  |  Total Pendente: ${totalPendente}`, pageWidth / 2, y, { align: 'center' });
-                y += 6;
-                doc.text(`Qtd. Serviços: ${qtdServicos}  |  Tíquete Médio: ${ticketMedio}`, pageWidth / 2, y, { align: 'center' });
-                y += 15;
+                doc.setTextColor(60, 60, 60);
+                
+                const col1 = margin + 10;
+                const col2 = margin + boxWidth / 2 + 10;
+                
+                doc.setFontSize(9);
+                doc.text('Recebido', col1, y + 10);
+                doc.setFontSize(12);
+                doc.setTextColor(33, 150, 83);
+                doc.text(totalRecebido, col1, y + 20);
+                
+                doc.setFontSize(9);
+                doc.setTextColor(60, 60, 60);
+                doc.text('Pendente', col2, y + 10);
+                doc.setFontSize(12);
+                doc.setTextColor(255, 152, 0);
+                doc.text(totalPendente, col2, y + 20);
+                
+                doc.setFontSize(9);
+                doc.setTextColor(60, 60, 60);
+                doc.text('Qtd.', col1, y + 30);
+                doc.setTextColor(0, 0, 0);
+                doc.text(qtdServicos, col1 + 20, y + 30);
+                
+                doc.setFontSize(9);
+                doc.setTextColor(60, 60, 60);
+                doc.text('Título Médio', col2, y + 30);
+                doc.setTextColor(0, 0, 0);
+                doc.text(ticketMedio, col2 + 35, y + 30);
+                
+                y += boxHeight + 10;
 
                 const rows = document.querySelectorAll('#tabela-corpo tr');
                 const tableData = [];
@@ -537,33 +592,37 @@
                     }
                 });
 
+                // Table header
+                const tableWidth = pageWidth - (margin * 2);
                 doc.setFillColor(233, 30, 99);
-                doc.rect(20, y, pageWidth - 40, 8, 'F');
+                doc.rect(margin, y, tableWidth, 8, 'F');
                 doc.setTextColor(255, 255, 255);
-                doc.setFontSize(9);
-                doc.text('Data', 22, y + 5);
-                doc.text('Cliente', 55, y + 5);
-                doc.text('Serviço', 100, y + 5);
-                doc.text('Valor', 150, y + 5);
-                doc.text('Status', 175, y + 5);
+                doc.setFontSize(8);
+                doc.setFont('helvetica', 'bold');
+                doc.text('Data', margin + 5, y + 5.5);
+                doc.text('Cliente', margin + 30, y + 5.5);
+                doc.text('Serviço', margin + 80, y + 5.5);
+                doc.text('Valor', margin + tableWidth - 35, y + 5.5);
+                doc.text('Status', margin + tableWidth - 15, y + 5.5);
                 y += 10;
 
                 doc.setTextColor(0, 0, 0);
+                doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8);
                 tableData.forEach((row, i) => {
-                    if (y > 270) {
+                    if (y > pageHeight - 20) {
                         doc.addPage();
-                        y = 20;
+                        y = margin;
                     }
                     if (i % 2 === 0) {
-                        doc.setFillColor(245, 228, 236);
-                        doc.rect(20, y - 4, pageWidth - 40, 8, 'F');
+                        doc.setFillColor(250, 250, 252);
+                        doc.rect(margin, y - 3, tableWidth, 7, 'F');
                     }
-                    doc.text(String(row[0]).substring(0, 10), 22, y);
-                    doc.text(String(row[1]).substring(0, 20), 55, y);
-                    doc.text(String(row[2]).substring(0, 25), 100, y);
-                    doc.text(String(row[3]).substring(0, 10), 150, y);
-                    doc.text(String(row[4]).substring(0, 10), 175, y);
+                    doc.text(String(row[0]).substring(0, 10), margin + 5, y + 2);
+                    doc.text(String(row[1]).substring(0, 22), margin + 30, y + 2);
+                    doc.text(String(row[2]).substring(0, 30), margin + 80, y + 2);
+                    doc.text(String(row[3]).substring(0, 10), margin + tableWidth - 35, y + 2);
+                    doc.text(String(row[4]).substring(0, 10), margin + tableWidth - 15, y + 2);
                     y += 7;
                 });
 

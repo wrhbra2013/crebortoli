@@ -459,51 +459,90 @@ function gerarPDF() {
 
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
-                let y = 20;
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 20;
+                let y = margin;
 
-                doc.setFontSize(22);
-                doc.setTextColor(233, 30, 99);
-                doc.text(logo, pageWidth / 2, y, { align: 'center' });
-                y += 8;
+                // Header com logo em imagem gerada do canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 200;
+                canvas.height = 80;
+                const ctx = canvas.getContext('2d');
+                
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, 200, 80);
+                
+                ctx.font = 'bold 28px cursive';
+                ctx.fillStyle = '#e91e63';
+                ctx.fillText(logo, 10, 35);
+                ctx.font = 'italic 12px sans-serif';
+                ctx.fillStyle = '#666666';
+                ctx.fillText(tagline, 10, 50);
+                
+                const logoDataUrl = canvas.toDataURL('image/png');
+                doc.addImage(logoDataUrl, 'PNG', margin, y, 80, 25);
+                
+                // Endereço (direita)
+                doc.setFont('helvetica', 'normal');
                 doc.setFontSize(9);
-                doc.setTextColor(102, 102, 102);
-                doc.text(tagline, pageWidth / 2, y, { align: 'center' });
-                y += 5;
-                doc.text(address, pageWidth / 2, y, { align: 'center' });
-                y += 10;
+                doc.setTextColor(60, 60, 60);
+                const addressLines = address.split('\n');
+                let addrY = y + 6;
+                addressLines.forEach(line => {
+                    doc.text(line, pageWidth - margin, addrY, { align: 'right' });
+                    addrY += 5;
+                });
+                
+                y += 30;
                 doc.setDrawColor(233, 30, 99);
-                doc.setLineWidth(1);
-                doc.line(20, y, pageWidth - 20, y);
-                y += 15;
+                doc.setLineWidth(1.5);
+                doc.line(margin, y, pageWidth - margin, y);
+                y += 12;
 
                 const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
 
-                doc.setFontSize(16);
+                doc.setFontSize(14);
                 doc.setTextColor(128, 0, 128);
                 doc.text('INDICAÇÃO TERAPÊUTICA', pageWidth / 2, y, { align: 'center' });
                 y += 8;
                 doc.setDrawColor(147, 112, 219);
                 doc.setLineWidth(0.5);
-                doc.line(60, y, 150, y);
+                doc.line(70, y, pageWidth - 70, y);
                 y += 12;
 
+                // Box paciente
+                doc.setFillColor(250, 250, 252);
+                doc.rect(20, y, pageWidth - 40, 25, 'F');
+                
+                doc.setFontSize(11);
+                doc.setTextColor(60, 60, 60);
+                doc.text('Paciente:', 25, y + 10);
+                doc.setFontSize(13);
+                doc.setTextColor(0, 0, 0);
+                doc.text(paciente, 60, y + 10);
+                
+                doc.setFontSize(11);
+                doc.setTextColor(60, 60, 60);
+                doc.text('Data:', 25, y + 20);
                 doc.setFontSize(12);
                 doc.setTextColor(0, 0, 0);
-                doc.text(`Paciente: ${paciente}`, 20, y);
-                y += 8;
-                doc.text(`Data: ${dataFormatada}`, 20, y);
-                y += 10;
+                doc.text(dataFormatada, 50, y + 20);
+                
+                y += 35;
 
                 const lines = doc.splitTextToSize(indicacao, pageWidth - 40);
+                doc.setFontSize(11);
+                doc.setTextColor(0, 0, 0);
                 doc.text(lines, 20, y);
-                y += lines.length * 6 + 10;
+                y += lines.length * 5 + 15;
 
-                if (observacoes) {
-                    doc.setFontSize(11);
-                    doc.setTextColor(0, 0, 0);
+                if (observacoes && observacoes.trim()) {
+                    doc.setFontSize(10);
+                    doc.setTextColor(60, 60, 60);
                     doc.text('Observações:', 20, y);
-                    y += 6;
+                    y += 5;
                     const obsLines = doc.splitTextToSize(observacoes, pageWidth - 40);
+                    doc.setTextColor(0, 0, 0);
                     doc.text(obsLines, 20, y);
                 }
 
