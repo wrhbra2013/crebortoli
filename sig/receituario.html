@@ -470,38 +470,44 @@ function gerarPDF() {
                 document.fonts.add(fontFace);
                 
                 const canvas = document.createElement('canvas');
-                canvas.width = 100;
-                canvas.height = 30;
+                canvas.width = 130;
+                canvas.height = 28;
                 const ctx = canvas.getContext('2d');
                 
                 ctx.fillStyle = 'transparent';
-                ctx.clearRect(0, 0, 100, 30);
+                ctx.clearRect(0, 0, 130, 28);
                 
-                // Logo com fonte local
-                ctx.font = '14px WorldOfWater';
+                // Logo com fonte local (menor para caber)
+                ctx.font = '12px WorldOfWater';
                 ctx.fillStyle = '#e91e63';
-                ctx.fillText(logo, 2, 18);
+                ctx.fillText(logo, 2, 16);
                 
-                // Tagline
-                ctx.font = 'italic 6px sans-serif';
+                // Tagline menor
+                ctx.font = 'italic 5px sans-serif';
                 ctx.fillStyle = '#666666';
-                ctx.fillText(tagline, 2, 27);
+                ctx.fillText(tagline, 2, 24);
                 
                 const logoDataUrl = canvas.toDataURL('image/png');
-                doc.addImage(logoDataUrl, 'PNG', margin, y, 40, 12);
+                doc.addImage(logoDataUrl, 'PNG', margin, y, 35, 8);
                 
                 // Endereço (direita)
                 doc.setFont('helvetica', 'normal');
-                doc.setFontSize(9);
+                doc.setFontSize(7);
                 doc.setTextColor(60, 60, 60);
                 const addressLines = address.split('\n');
-                let addrY = y + 6;
+                let addrY = y + 3;
                 addressLines.forEach(line => {
                     doc.text(line, pageWidth - margin, addrY, { align: 'right' });
-                    addrY += 5;
+                    addrY += 4;
                 });
                 
-                y += 15;
+                // Borda do header
+                const headerHeight = 28;
+                doc.setDrawColor(233, 30, 99);
+                doc.setLineWidth(0.5);
+                doc.rect(margin, margin, pageWidth - (margin * 2), headerHeight);
+                
+                y += 12;
                 doc.setDrawColor(233, 30, 99);
                 doc.setLineWidth(1);
                 doc.line(margin, y, pageWidth - margin, y);
