@@ -304,14 +304,35 @@
 
         function criarHeaderPDF() {
             return function(currentPage, pageCount, pageSize) {
-                const headerEl = document.querySelector('.clinic-header');
-                headerEl.classList.add('print');
-                
-                const logo = headerEl.querySelector('.clinic-logo')?.textContent || 'Espaço Cre Bortoli';
-                const tagline = headerEl.querySelector('.clinic-tagline')?.textContent || 'Estética & Depilação';
-                const address = headerEl.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056';
-                
-                headerEl.classList.remove('print');
+                return {
+                    stack: [
+                        {
+                            columns: [
+                                {
+                                    width: '*',
+                                    stack: [
+                                        { text: 'Espaço Cre Bortoli', fontSize: 22, color: '#e91e63', bold: true },
+                                        { text: 'Estética & Depilação', fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
+                                    ]
+                                },
+                                {
+                                    width: '*',
+                                    text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
+                                    fontSize: 9,
+                                    color: '#666',
+                                    alignment: 'right'
+                                }
+                            ]
+                        },
+                        {
+                            canvas: [{ type: 'line', x1: 0, y1: 5, x2: 555, y2: 5, lineWidth: 2, lineColor: '#e91e63' }],
+                            margin: [0, 10, 0, 0]
+                        }
+                    ],
+                    margin: [20, 20, 20, 10]
+                };
+            };
+        }
                 return {
                     stack: [
                         {
