@@ -479,12 +479,12 @@
 
                 // Header com logo em imagem gerada do canvas usando fonte local
                 const canvas = document.createElement('canvas');
-                canvas.width = 250;
-                canvas.height = 60;
+                canvas.width = 150;
+                canvas.height = 40;
                 const ctx = canvas.getContext('2d');
                 
                 ctx.fillStyle = '#ffffff';
-                ctx.fillRect(0, 0, 250, 60);
+                ctx.fillRect(0, 0, 150, 40);
                 
                 // Carregar fonte local
                 const fontUrl = '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf';
@@ -492,18 +492,18 @@
                 await fontFace.load();
                 document.fonts.add(fontFace);
                 
-                // Logo com fonte local
-                ctx.font = '28px WorldOfWater';
+                // Logo com fonte local (menor)
+                ctx.font = '18px WorldOfWater';
                 ctx.fillStyle = '#e91e63';
-                ctx.fillText(logo, 10, 38);
+                ctx.fillText(logo, 5, 25);
                 
                 // Tagline
-                ctx.font = 'italic 11px sans-serif';
+                ctx.font = 'italic 8px sans-serif';
                 ctx.fillStyle = '#666666';
-                ctx.fillText(tagline, 10, 52);
+                ctx.fillText(tagline, 5, 35);
                 
                 const logoDataUrl = canvas.toDataURL('image/png');
-                doc.addImage(logoDataUrl, 'PNG', margin, y, 100, 24);
+                doc.addImage(logoDataUrl, 'PNG', margin, y, 60, 16);
                 
                 // Endereço (direita)
                 doc.setFont('helvetica', 'normal');
@@ -516,7 +516,7 @@
                     addrY += 5;
                 });
                 
-                y += 30;
+                y += 20;
                 doc.setDrawColor(233, 30, 99);
                 doc.setLineWidth(1.5);
                 doc.line(margin, y, pageWidth - margin, y);
