@@ -219,8 +219,7 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         document.getElementById('data').valueAsDate = new Date();
@@ -433,77 +432,91 @@
             };
         }
 
-        function gerarPDF() {
-            const paciente = document.getElementById('paciente').value;
-            const data = document.getElementById('data').value;
-            const indicacao = document.getElementById('indicacao').value;
-            const observacoes = document.getElementById('observacoes').value;
+function gerarPDF() {
+            try {
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) {
+                    alert('Biblioteca jsPDF não carregou.');
+                    return;
+                }
 
-            if (!paciente || !data || !indicacao) {
-                alert('Por favor, preencha todos os campos obrigatórios.');
-                return;
+                const paciente = document.getElementById('paciente').value;
+                const data = document.getElementById('data').value;
+                const indicacao = document.getElementById('indicacao').value;
+                const observacoes = document.getElementById('observacoes').value;
+
+                if (!paciente || !data || !indicacao) {
+                    alert('Por favor, preencha todos os campos obrigatórios.');
+                    return;
+                }
+
+                const doc = new jsPDF();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                let y = 20;
+
+                doc.setFontSize(22);
+                doc.setTextColor(233, 30, 99);
+                doc.text('Espaço Cre Bortoli', pageWidth / 2, y, { align: 'center' });
+                y += 8;
+                doc.setFontSize(9);
+                doc.setTextColor(102, 102, 102);
+                doc.text('Estética & Depilação', pageWidth / 2, y, { align: 'center' });
+                y += 5;
+                doc.text('Rua Francisco Martineli, 492 - Palmital - Marília, SP | (14) 99663.8056', pageWidth / 2, y, { align: 'center' });
+                y += 10;
+                doc.setDrawColor(233, 30, 99);
+                doc.setLineWidth(1);
+                doc.line(20, y, pageWidth - 20, y);
+                y += 15;
+
+                const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
+
+                doc.setFontSize(16);
+                doc.setTextColor(128, 0, 128);
+                doc.text('INDICAÇÃO TERAPÊUTICA', pageWidth / 2, y, { align: 'center' });
+                y += 8;
+                doc.setDrawColor(147, 112, 219);
+                doc.setLineWidth(0.5);
+                doc.line(60, y, 150, y);
+                y += 12;
+
+                doc.setFontSize(12);
+                doc.setTextColor(0, 0, 0);
+                doc.text(`Paciente: ${paciente}`, 20, y);
+                y += 8;
+                doc.text(`Data: ${dataFormatada}`, 20, y);
+                y += 10;
+
+                const lines = doc.splitTextToSize(indicacao, pageWidth - 40);
+                doc.text(lines, 20, y);
+                y += lines.length * 6 + 10;
+
+                if (observacoes) {
+                    doc.setFontSize(11);
+                    doc.setTextColor(0, 0, 0);
+                    doc.text('Observações:', 20, y);
+                    y += 6;
+                    const obsLines = doc.splitTextToSize(observacoes, pageWidth - 40);
+                    doc.text(obsLines, 20, y);
+                }
+
+                const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${data}.pdf`;
+                doc.save(nomeArquivo);
+
+                saveReceita({
+                    paciente: paciente,
+                    data: data,
+                    dataFormatada: dataFormatada,
+                    nomeArquivo: nomeArquivo
+                });
+
+                renderHistorico();
+
+                alert('Receita gerada com sucesso!');
+            } catch (err) {
+                console.error('Erro ao gerar PDF:', err);
+                alert('Erro ao gerar PDF: ' + err.message);
             }
-
-            if (!window.pdfMake) {
-                alert('Biblioteca pdfMake não carregou. Aguarde um momento e tente novamente.');
-                return;
-            }
-
-            const dataFormatada = new Date(data).toLocaleDateString('pt-BR');
-
-            const docDefinition = {
-                header: criarHeaderPDF(),
-                defaultStyle: {
-                    font: 'Helvetica'
-                },
-                fonts: {
-                    WorldOfWater: {
-                        normal: '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf',
-                        bold: '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf',
-                        italics: '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf',
-                        bolditalics: '/static/fonts/World_Discovery_Five_PERSONAL_Regular.otf'
-                    }
-                },
-                content: [
-                    {
-                        text: 'INDICAÇÃO TERAPÊUTICA',
-                        fontSize: 16,
-                        bold: true,
-                        color: '#800080',
-                        alignment: 'center',
-                        margin: [0, 10, 0, 3]
-                    },
-                    {
-                        canvas: [{ type: 'line', x1: 60, y1: 0, x2: 150, y2: 0, lineWidth: 0.3, lineColor: '#9370db' }],
-                        margin: [0, 0, 0, 15]
-                    },
-                    { columns: [{ text: 'Paciente: ', bold: true }, { text: paciente }] },
-                    { columns: [{ text: 'Data: ', bold: true }, { text: dataFormatada }], margin: [0, 5, 0, 10] },
-                    { text: indicacao, lineHeight: 1.5 }
-                ],
-                pageSize: 'A4',
-                pageMargins: [20, 60, 20, 20]
-            };
-
-            if (observacoes) {
-                docDefinition.content.push({ text: 'Observações:', bold: true, margin: [0, 15, 0, 5] });
-                docDefinition.content.push({ text: observacoes, lineHeight: 1.5 });
-            }
-
-            const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${data}.pdf`;
-
-            pdfMake.createPdf(docDefinition).download(nomeArquivo);
-            
-            saveReceita({
-                paciente: paciente,
-                data: data,
-                dataFormatada: dataFormatada,
-                nomeArquivo: nomeArquivo
-            });
-
-            renderHistorico();
-
-            alert('Receita gerada com sucesso!');
         }
     </script>
 </body>

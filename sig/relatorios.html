@@ -296,8 +296,7 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script>var v='1.0.0';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         const nomesMeses = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
@@ -512,86 +511,110 @@
 
         async function gerarPDF() {
             try {
-            if (!window.pdfMake) {
-                alert('Biblioteca pdfMake não carregou.');
-                return;
-            }
-
-            const tipoPeriodo = document.getElementById('tipo-periodo').value;
-            const mes = parseInt(document.getElementById('mes').value);
-            const ano = parseInt(document.getElementById('ano').value);
-            
-            let titulo = '';
-            if (tipoPeriodo === 'mensal') {
-                titulo = `Relatório - ${nomesMeses[mes]} de ${ano}`;
-            } else {
-                titulo = `Relatório Anual - ${ano}`;
-            }
-
-            const totalRecebido = document.getElementById('total-recebido').textContent;
-            const totalPendente = document.getElementById('total-pendente').textContent;
-            const qtdServicos = document.getElementById('qtd-servicos').textContent;
-            const ticketMedio = document.getElementById('ticket-medio').textContent;
-
-            const tableData = [];
-            const rows = document.querySelectorAll('#tabela-corpo tr');
-            
-            rows.forEach(row => {
-                if (!row.classList.contains('agrupamento') && !row.classList.contains('subtotal')) {
-                    const cells = row.querySelectorAll('td');
-                    if (cells.length === 5) {
-                        tableData.push([
-                            cells[0].textContent,
-                            cells[1].textContent,
-                            cells[2].textContent,
-                            cells[3].textContent,
-                            cells[4].textContent.trim()
-                        ]);
-                    }
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) {
+                    alert('Biblioteca jsPDF não carregou.');
+                    return;
                 }
-            });
 
-const docDefinition = {
-                pageSize: 'A4',
-                pageMargins: [20, 60, 20, 20],
-                header: criarHeaderPDF(),
-                defaultStyle: {
-                    font: 'Helvetica'
-                },
-                content: [
-                    { text: titulo, fontSize: 14, bold: true, alignment: 'center', margin: [0, 15, 0, 0] },
-                    { text: `Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, fontSize: 10, alignment: 'center', margin: [0, 5, 0, 0] },
-                    {
-                        columns: [
-                            { text: `Total Recebido: ${totalRecebido}`, width: '50%', fontSize: 10 },
-                            { text: `Total Pendente: ${totalPendente}`, width: '50%', fontSize: 10 }
-                        ],
-                        margin: [0, 15, 0, 0]
-                    },
-                    {
-                        columns: [
-                            { text: `Qtd. Serviços: ${qtdServicos}`, width: '50%', fontSize: 10 },
-                            { text: `Tíquete Médio: ${ticketMedio}`, width: '50%', fontSize: 10 }
-                        ],
-                        margin: [0, 5, 0, 0]
-                    },
-                    {
-                        table: {
-                            headerRows: 1,
-                            widths: ['auto', '*', 'auto', 'auto', 'auto'],
-                            body: [
-                                [{ text: 'Data', fillColor: '#e91e63', color: 'white' }, { text: 'Cliente', fillColor: '#e91e63', color: 'white' }, { text: 'Serviço', fillColor: '#e91e63', color: 'white' }, { text: 'Valor', fillColor: '#e91e63', color: 'white' }, { text: 'Status', fillColor: '#e91e63', color: 'white' }],
-                                ...tableData.map(row => row.map(cell => ({ text: cell, fontSize: 8 })))
-                            ]
-                        },
-                        layout: { fillColor: (rowIndex) => rowIndex === 0 ? null : (rowIndex % 2 === 0 ? '#f5e4ec' : null) },
-                        margin: [0, 15, 0, 0]
+                const doc = new jsPDF();
+                const pageWidth = doc.internal.pageSize.getWidth();
+                let y = 20;
+
+                doc.setFontSize(22);
+                doc.setTextColor(233, 30, 99);
+                doc.text('Espaço Cre Bortoli', pageWidth / 2, y, { align: 'center' });
+                y += 8;
+                doc.setFontSize(9);
+                doc.setTextColor(102, 102, 102);
+                doc.text('Estética & Depilação', pageWidth / 2, y, { align: 'center' });
+                y += 5;
+                doc.text('Rua Francisco Martineli, 492 - Palmital - Marília, SP | (14) 99663.8056', pageWidth / 2, y, { align: 'center' });
+                y += 10;
+                doc.setDrawColor(233, 30, 99);
+                doc.setLineWidth(1);
+                doc.line(20, y, pageWidth - 20, y);
+                y += 15;
+
+                const tipoPeriodo = document.getElementById('tipo-periodo').value;
+                const mes = parseInt(document.getElementById('mes').value);
+                const ano = parseInt(document.getElementById('ano').value);
+                
+                let titulo = '';
+                if (tipoPeriodo === 'mensal') {
+                    titulo = `Relatório - ${nomesMeses[mes]} de ${ano}`;
+                } else {
+                    titulo = `Relatório Anual - ${ano}`;
+                }
+
+                const totalRecebido = document.getElementById('total-recebido').textContent;
+                const totalPendente = document.getElementById('total-pendente').textContent;
+                const qtdServicos = document.getElementById('qtd-servicos').textContent;
+                const ticketMedio = document.getElementById('ticket-medio').textContent;
+
+                doc.setFontSize(14);
+                doc.setTextColor(0, 0, 0);
+                doc.text(titulo, pageWidth / 2, y, { align: 'center' });
+                y += 8;
+                doc.setFontSize(10);
+                doc.setTextColor(102, 102, 102);
+                doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')}`, pageWidth / 2, y, { align: 'center' });
+                y += 10;
+                doc.setFontSize(10);
+                doc.text(`Total Recebido: ${totalRecebido}  |  Total Pendente: ${totalPendente}`, pageWidth / 2, y, { align: 'center' });
+                y += 6;
+                doc.text(`Qtd. Serviços: ${qtdServicos}  |  Tíquete Médio: ${ticketMedio}`, pageWidth / 2, y, { align: 'center' });
+                y += 15;
+
+                const rows = document.querySelectorAll('#tabela-corpo tr');
+                const tableData = [];
+                rows.forEach(row => {
+                    if (!row.classList.contains('agrupamento') && !row.classList.contains('subtotal')) {
+                        const cells = row.querySelectorAll('td');
+                        if (cells.length === 5) {
+                            tableData.push([
+                                cells[0].textContent,
+                                cells[1].textContent,
+                                cells[2].textContent,
+                                cells[3].textContent,
+                                cells[4].textContent.trim()
+                            ]);
+                        }
                     }
-                ]
-            };
+                });
 
-            const nomeArquivo = `relatorio-crebortoli-${ano}${tipoPeriodo === 'mensal' ? '-' + (mes + 1).toString().padStart(2, '0') : ''}.pdf`;
-            pdfMake.createPdf(docDefinition).download(nomeArquivo);
+                doc.setFillColor(233, 30, 99);
+                doc.rect(20, y, pageWidth - 40, 8, 'F');
+                doc.setTextColor(255, 255, 255);
+                doc.setFontSize(9);
+                doc.text('Data', 22, y + 5);
+                doc.text('Cliente', 55, y + 5);
+                doc.text('Serviço', 100, y + 5);
+                doc.text('Valor', 150, y + 5);
+                doc.text('Status', 175, y + 5);
+                y += 10;
+
+                doc.setTextColor(0, 0, 0);
+                doc.setFontSize(8);
+                tableData.forEach((row, i) => {
+                    if (y > 270) {
+                        doc.addPage();
+                        y = 20;
+                    }
+                    if (i % 2 === 0) {
+                        doc.setFillColor(245, 228, 236);
+                        doc.rect(20, y - 4, pageWidth - 40, 8, 'F');
+                    }
+                    doc.text(String(row[0]).substring(0, 10), 22, y);
+                    doc.text(String(row[1]).substring(0, 20), 55, y);
+                    doc.text(String(row[2]).substring(0, 25), 100, y);
+                    doc.text(String(row[3]).substring(0, 10), 150, y);
+                    doc.text(String(row[4]).substring(0, 10), 175, y);
+                    y += 7;
+                });
+
+                const nomeArquivo = `relatorio-crebortoli-${ano}${tipoPeriodo === 'mensal' ? '-' + (mes + 1).toString().padStart(2, '0') : ''}.pdf`;
+                doc.save(nomeArquivo);
             } catch (err) {
                 console.error('Erro ao gerar PDF:', err);
                 alert('Erro ao gerar PDF: ' + err.message);

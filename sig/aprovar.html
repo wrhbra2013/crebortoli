@@ -24,31 +24,28 @@
             padding: 2rem;
             text-align: center;
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            font-size: 1.2rem;
         }
         .token-label {
-            font-size: 0.85rem;
+            font-size: 1rem;
             color: #666;
             margin-bottom: 0.5rem;
         }
         .token-display {
-            font-size: 1.1rem;
+            font-size: 1.5rem;
             font-weight: bold;
             color: #8a4baf;
-            background: #e8eaf6;
-            padding: 1rem;
-            border-radius: 8px;
-            overflow-x: auto;
-            white-space: nowrap;
             margin-bottom: 1rem;
+            word-break: break-all;
         }
-        .timer { color: #666; font-size: 0.9rem; margin-top: 1rem; }
+        .timer { color: #666; font-size: 1rem; margin-top: 1rem; }
         .timer .countdown { font-weight: bold; color: #8a4baf; }
     </style>
 </head>
 <body>
     <div class="modal">
         <div class="token-label">Token de aprovação:</div>
-        <div class="token-display" id="codigo-lido"></div>
+        <div id="codigo-lido"></div>
         <div class="timer">Expira em: <span class="countdown" id="countdown">60</span>s</div>
     </div>
 
