@@ -38,11 +38,12 @@ function initComponents() {
         <a href="${getBasePath()}index.html" class="header-title">
             <span class="site-title">Espaço Cre Bortoli</span>
         </a>
-        <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
+        <input type="checkbox" id="menu-toggle" class="menu-checkbox">
+        <label for="menu-toggle" class="sandwich-button" aria-label="Abrir menu">
             <span></span>
             <span></span>
             <span></span>
-        </button>
+        </label>
     </div>
     <nav id="main-navigation" class="main-nav">
         <ul class="menu">
@@ -63,16 +64,18 @@ function initComponents() {
         <a href="${getSigPath()}index.html" class="header-title">
             <span class="site-title">Espaço Cre Bortoli</span>
         </a>
-        <button id="menu-toggle" class="sandwich-button" aria-label="Abrir menu" aria-expanded="false">
+        <input type="checkbox" id="menu-toggle" class="menu-checkbox">
+        <label for="menu-toggle" class="sandwich-button" aria-label="Abrir menu">
             <span></span>
             <span></span>
             <span></span>
-        </button>
+        </label>
     </div>
     <nav id="main-navigation" class="main-nav">
         <ul class="menu">
             <li class="nav-item"><a class="nav-link" href="${getSigPath()}index.html">Dashboard</a></li>
             <li class="nav-item"><a class="nav-link" href="${getSigPath()}agenda.html">Agenda</a></li>
+            <li class="nav-item"><a class="nav-link" href="${getSigPath()}receituario.html">Receituário</a></li>
             <li class="nav-item"><a class="nav-link" href="${getSigPath()}tabela_precos.html">Tabela de Preços</a></li>
             <li class="nav-item"><a class="nav-link" href="${getSigPath()}relatorios.html">Relatórios</a></li>
             <li class="nav-item"><a class="nav-link" href="${getBasePath()}index.html">Ver Site</a></li>
@@ -101,47 +104,31 @@ function initMenu() {
     
     if (!menuToggle || !mainNav) return;
     
-    function openMenu() {
-        mainNav.classList.add('is-active');
-        menuToggle.classList.add('is-active');
-        menuToggle.setAttribute('aria-expanded', 'true');
-        if (mobileOverlay) mobileOverlay.classList.add('is-active');
-        document.body.classList.add('menu-open');
-    }
-    
-    function closeMenu() {
-        mainNav.classList.remove('is-active');
-        menuToggle.classList.remove('is-active');
-        menuToggle.setAttribute('aria-expanded', 'false');
-        if (mobileOverlay) mobileOverlay.classList.remove('is-active');
-        document.body.classList.remove('menu-open');
-    }
-    
-    menuToggle.addEventListener('click', function() {
-        if (mainNav.classList.contains('is-active')) {
-            closeMenu();
+    function syncMenuState() {
+        const isChecked = menuToggle.checked;
+        if (isChecked) {
+            mainNav.classList.add('is-active');
+            if (mobileOverlay) mobileOverlay.classList.add('is-active');
         } else {
-            openMenu();
+            mainNav.classList.remove('is-active');
+            if (mobileOverlay) mobileOverlay.classList.remove('is-active');
         }
-    });
-
-    if (mobileOverlay) {
-        mobileOverlay.addEventListener('click', closeMenu);
     }
-
-    document.addEventListener('click', function(e) {
-        if (mainNav.classList.contains('is-active') && 
-            !mainNav.contains(e.target) && 
-            !menuToggle.contains(e.target) &&
-            (!mobileOverlay || !mobileOverlay.contains(e.target))) {
-            closeMenu();
-        }
-    });
-
+    
+    menuToggle.addEventListener('change', syncMenuState);
+    
+    if (mobileOverlay) {
+        mobileOverlay.addEventListener('click', function() {
+            menuToggle.checked = false;
+            syncMenuState();
+        });
+    }
+    
     document.querySelectorAll('.nav-link').forEach(function(link) {
         link.addEventListener('click', function() {
             if (window.innerWidth <= 768) {
-                closeMenu();
+                menuToggle.checked = false;
+                syncMenuState();
             }
         });
     });
