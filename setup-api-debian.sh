@@ -1,21 +1,133 @@
 #!/bin/bash
 
-set -e
-
 CONFIG_FILE="/var/www/.setup-api-config"
+NGINX_MAIN_CONF="/etc/nginx/sites-available/main"
+
+PG_ADMIN_USER="postgres"
+PG_ADMIN_PASS=""
+
+init_postgres_credentials() {
+    echo ""
+    echo "=============================================="
+    echo "  ACESSSO POSTGRESQL"
+    echo "=============================================="
+    
+    while [ -z "$PG_ADMIN_USER" ]; do
+        read -p "Usuário PostgreSQL: " PG_ADMIN_USER
+        if [ -z "$PG_ADMIN_USER" ]; then
+            echo "Informe o usuário"
+        fi
+    done
+    
+    while [ -z "$PG_ADMIN_PASS" ]; do
+        read -s -p "Senha PostgreSQL: " PG_ADMIN_PASS
+        if [ -z "$PG_ADMIN_PASS" ]; then
+            echo "Informe a senha"
+        fi
+    done
+    echo ""
+}
+
+init_postgres_credentials
 
 save_config() {
-    echo "$PROJECT_NAME|$DB_NAME|$DB_USER|$PORT|$DOMAIN" >> "$CONFIG_FILE"
+    grep -q "^$PROJECT_NAME|" "$CONFIG_FILE" 2>/dev/null || echo "$PROJECT_NAME|$DB_NAME|$DB_USER|$PORT|$LOCATION" >> "$CONFIG_FILE"
+}
+
+update_config() {
+    local name=$1
+    local port=$2
+    local location=$3
+    if [ -f "$CONFIG_FILE" ]; then
+        if grep -q "^$name|" "$CONFIG_FILE"; then
+            sed -i "s|^$name|.*|$name|$port|$location|" "$CONFIG_FILE"
+        else
+            echo "$name||$port|$location" >> "$CONFIG_FILE"
+        fi
+    fi
+}
+
+check_port() {
+    local port=$1
+    if lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+        echo "Porta $port já está em uso"
+        return 1
+    fi
+    return 0
+}
+
+kill_port() {
+    local port=$1
+    echo "Verificando porta $port..."
+    local pids=$(lsof -Pi :$port -t 2>/dev/null || true)
+    if [ -n "$pids" ]; then
+        echo "Matando processos na porta $port: $pids"
+        echo "$pids" | xargs -r sudo kill -9 2>/dev/null || true
+        sleep 1
+    fi
+}
+
+cleanup_pm2() {
+    local name=$1
+    echo "Limpando PM2 para $name..."
+    sudo pm2 stop "$name" 2>/dev/null || true
+    sudo pm2 delete "$name" 2>/dev/null || true
+}
+
+remove_location() {
+    local name=$1
+    if [ -f "$NGINX_MAIN_CONF" ]; then
+        echo "Removendo location /$name do Nginx..."
+        sudo sed -i "/location \/$name/,/}/d" "$NGINX_MAIN_CONF"
+    fi
+}
+
+cleanup_database() {
+    local db_name=$1
+    local db_user=$2
+    echo "Limpando banco de dados..."
+    sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$db_name' AND pid <> pg_backend_pid();" 2>/dev/null || true
+    sudo -u postgres psql -c "DROP DATABASE IF EXISTS $db_name;" 2>/dev/null || true
+    sudo -u postgres psql -c "DROP USER IF EXISTS $db_user;" 2>/dev/null || true
 }
 
 list_projects() {
     if [ -f "$CONFIG_FILE" ]; then
         echo ""
         echo "Projetos existentes:"
-        cat "$CONFIG_FILE" | while IFS='|' read -r name dbname dbuser port domain; do
-            echo "  - $name (banco: $dbname, porta: $port)"
+        cat "$CONFIG_FILE" | while IFS='|' read -r name dbname dbuser port location; do
+            echo "  - $name (porta: $port, path: /$location)"
         done
     fi
+}
+
+generate_nginx_conf() {
+    local server_name=$1
+    shift
+    local locations=("$@")
+    
+    local conf="server {
+    listen 80;
+    server_name $server_name;
+"
+    for loc in "${locations[@]}"; do
+        IFS='|' read -r name port <<< "$loc"
+        conf+="
+    location /$name/ {
+        proxy_pass http://127.0.0.1:$port/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_cache_bypass \$http_upgrade;
+    }
+"
+    done
+    conf+="
+}"
+    echo "$conf"
 }
 
 rollback_project() {
@@ -23,6 +135,8 @@ rollback_project() {
     echo "=============================================="
     echo "  REVERTENDO PROJETO"
     echo "=============================================="
+
+    list_projects
 
     read -p "Nome do projeto a remover: " ROLLBACK_NAME
 
@@ -37,8 +151,7 @@ rollback_project() {
     echo "ATENÇÃO: Isso irá remover:"
     echo "  - Diretório: $PROJECT_DIR"
     echo "  - Banco de dados PostgreSQL"
-    echo "  - Usuário PostgreSQL"
-    echo "  - Configuração Nginx"
+    echo "  - Location Nginx: /$ROLLBACK_NAME/"
     echo "  - Processo PM2"
     echo ""
     read -p "Confirmar? (sim/não): " CONFIRM
@@ -49,82 +162,31 @@ rollback_project() {
 
     DB_NAME="${ROLLBACK_NAME}_db"
     DB_USER="${ROLLBACK_NAME}_user"
+    PORT=$(grep "^PORT=" "$PROJECT_DIR/.env" 2>/dev/null | cut -d= -f2 || echo "3000")
 
     echo ""
     echo "1. Parando PM2..."
-    sudo pm2 stop "$ROLLBACK_NAME" 2>/dev/null || true
-    sudo pm2 delete "$ROLLBACK_NAME" 2>/dev/null || true
+    cleanup_pm2 "$ROLLBACK_NAME"
 
-    echo "2. Removendo Nginx..."
-    sudo rm -f /etc/nginx/sites-enabled/"$ROLLBACK_NAME"
-    sudo rm -f /etc/nginx/sites-available/"$ROLLBACK_NAME"
-    sudo nginx -t && sudo systemctl reload nginx
+    echo "2. Removendo location Nginx..."
+    remove_location "$ROLLBACK_NAME"
 
-    echo "3. Removendo banco de dados..."
-    sudo -u postgres psql -c "DROP DATABASE IF EXISTS $DB_NAME;" 2>/dev/null || true
-    sudo -u postgres psql -c "DROP USER IF EXISTS $DB_USER;" 2>/dev/null || true
+    echo "3. Liberando porta $PORT..."
+    kill_port "$PORT"
 
-    echo "4. Removendo diretório..."
+    echo "4. Removendo banco de dados..."
+    cleanup_database "$DB_NAME" "$DB_USER"
+
+    echo "5. Removendo diretório..."
     sudo rm -rf "$PROJECT_DIR"
 
-    echo "5. Atualizando config..."
+    echo "6. Atualizando config..."
     if [ -f "$CONFIG_FILE" ]; then
         grep -v "^$ROLLBACK_NAME|" "$CONFIG_FILE" > "${CONFIG_FILE}.tmp" && mv "${CONFIG_FILE}.tmp" "$CONFIG_FILE"
     fi
 
     echo ""
     echo "=== Projeto $ROLLBACK_NAME removido com sucesso! ==="
-}
-
-restore_backup() {
-    echo ""
-    echo "=============================================="
-    echo "  RESTAURAR BACKUP"
-    echo "=============================================="
-
-    read -p "Caminho do arquivo de backup: " BACKUP_FILE
-
-    if [ ! -f "$BACKUP_FILE" ]; then
-        echo "Arquivo não encontrado: $BACKUP_FILE"
-        return 1
-    fi
-
-    read -p "Nome do projeto no backup: " BACKUP_NAME
-
-    TEMP_DIR="/tmp/restore_$$"
-    mkdir -p "$TEMP_DIR"
-
-    echo "Extraindo backup..."
-    if file "$BACKUP_FILE" | grep -q "gzip"; then
-        tar -xzf "$BACKUP_FILE" -C "$TEMP_DIR"
-    else
-        tar -xf "$BACKUP_FILE" -C "$TEMP_DIR"
-    fi
-
-    echo ""
-    echo "Arquivos extraídos:"
-    ls -la "$TEMP_DIR"
-
-    read -p "Confirmar restauração? (sim/não): " CONFIRM
-    if [ "$CONFIRM" != "sim" ]; then
-        rm -rf "$TEMP_DIR"
-        echo "Cancelado"
-        return 0
-    fi
-
-    RESTORE_DIR="$TEMP_DIR/$BACKUP_NAME"
-
-    if [ -d "$RESTORE_DIR" ]; then
-        sudo cp -r "$RESTORE_DIR" /var/www/
-        cd "/var/www/$BACKUP_NAME"
-        sudo npm install
-        sudo pm2 start "/var/www/$BACKUP_NAME/src/server.js" --name "$BACKUP_NAME"
-        echo "Backup restaurado!"
-    else
-        echo "Pasta do projeto não encontrada no backup"
-    fi
-
-    rm -rf "$TEMP_DIR"
 }
 
 create_backup() {
@@ -147,7 +209,7 @@ create_backup() {
     sudo tar -czf "$BACKUP_FILE" -C "$(dirname "$PROJECT_DIR")" "$(basename "$PROJECT_DIR")"
 
     if [ -f "$PROJECT_DIR/.env" ]; then
-        echo "备份 criado: $BACKUP_FILE"
+        echo "Backup criado: $BACKUP_FILE"
         ls -lh "$BACKUP_FILE"
     else
         echo "Erro ao criar backup"
@@ -197,30 +259,69 @@ create_project() {
     echo "  CRIAR NOVO PROJETO"
     echo "=============================================="
 
-    read -p "Nome do projeto (ex: meu-site): " PROJECT_NAME
-    read -p "Domínio (ex: api.meusite.com ou Enter para localhost): " DOMAIN
-    read -p "Porta (Enter para 3000): " PORT
-    PORT="${PORT:-3000}"
+    read -p "Nome do projeto (ex: crebortoli): " PROJECT_NAME
+    read -p "Domínio/IP principal (ex: 201.54.22.122): " SERVER_NAME
+    SERVER_NAME="${SERVER_NAME:-201.54.22.122}"
+    read -p "Porta (Enter para auto-detectar): " PORT
 
+    if [ -z "$PORT" ]; then
+        PORT=3001
+        while ! check_port "$PORT"; do
+            PORT=$((PORT + 1))
+        done
+    else
+        if ! check_port "$PORT"; then
+            echo ""
+            echo "ERRO: Porta $PORT já está em uso!"
+            read -p "Deseja limpar a porta e continuar? (sim/não): " CLEAN_PORT
+            if [ "$CLEAN_PORT" == "sim" ]; then
+                kill_port "$PORT"
+            else
+                echo "Cancelado"
+                return 1
+            fi
+        fi
+    fi
+
+    LOCATION="$PROJECT_NAME"
     PROJECT_DIR="/var/www/$PROJECT_NAME"
 
-    echo ""
-    echo "--- Configuração do Banco de Dados ---"
-    read -p "Nome do banco de dados [${PROJECT_NAME}_db]: " DB_NAME
-    DB_NAME="${DB_NAME:-${PROJECT_NAME}_db}"
-
-    read -p "Usuário do banco [${PROJECT_NAME}_user]: " DB_USER
-    DB_USER="${DB_USER:-${PROJECT_NAME}_user}"
-
-    while [ -z "$DB_PASS" ]; do
-        read -s -p "Senha do banco: " DB_PASS
+    if [ -d "$PROJECT_DIR" ]; then
         echo ""
-        if [ -z "$DB_PASS" ]; then
-            echo "Senha não pode ser vazia"
+        echo "Projeto já existe em $PROJECT_DIR"
+        read -p "Deseja remover e recriar? (sim/não): " RECREATE
+        if [ "$RECREATE" == "sim" ]; then
+            DB_NAME="${PROJECT_NAME}_db"
+            DB_USER="${PROJECT_NAME}_user"
+            cleanup_pm2 "$PROJECT_NAME"
+            remove_location "$PROJECT_NAME"
+            kill_port "$PORT"
+            cleanup_database "$DB_NAME" "$DB_USER"
+            sudo rm -rf "$PROJECT_DIR"
+        else
+            echo "Cancelado"
+            return 0
         fi
-    done
+    else
+        echo ""
+        echo "--- Configuração do Banco de Dados ---"
+        read -p "Nome do banco de dados [${PROJECT_NAME}_db]: " DB_NAME
+        DB_NAME="${DB_NAME:-${PROJECT_NAME}_db}"
 
-    read -p "Tabelas iniciais (Enter para padrão): " TABLES_INPUT
+        read -p "Usuário do banco [${PROJECT_NAME}_user]: " DB_USER
+        DB_USER="${DB_USER:-${PROJECT_NAME}_user}"
+
+        while [ -z "$DB_PASS" ]; do
+            read -s -p "Senha do banco: " DB_PASS
+            echo ""
+            if [ -z "$DB_PASS" ]; then
+                echo "Senha não pode ser vazia"
+            fi
+        done
+    fi
+
+    read -p "Tabelas (Enter para agendamentos,servicos,clientes,contatos): " TABLES_INPUT
+    TABLES="${TABLES_INPUT:-agendamentos,servicos,clientes,contatos}"
 
     echo ""
     echo "=============================================="
@@ -246,7 +347,7 @@ create_project() {
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
-    "dev": "node src/server.js"
+    "dev": "node --watch src/server.js"
   },
   "dependencies": {
     "express": "^4.18.0",
@@ -267,13 +368,10 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=$DB_NAME
 DB_USER=$DB_USER
-PASSWORD=$DB_PASS
+DB_PASS=$DB_PASS
 EOF
 
-    DEFAULT_TABLES="clientes,contatos,servicos"
-    TABLES="${TABLES_INPUT:-$DEFAULT_TABLES}"
-
-    sudo tee "$PROJECT_DIR/src/server.js" > /dev/null <<'SERVEREOF'
+    sudo tee "$PROJECT_DIR/src/server.js" > /dev/null <<SERVEREOF
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -283,11 +381,11 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 const pool = new Pool({
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
+    host: process.env.DB_HOST || 'localhost',
+    port: process.env.DB_PORT || 5432,
     database: process.env.DB_NAME,
     user: process.env.DB_USER,
-    password: process.env.PASSWORD
+    password: process.env.DB_PASS
 });
 
 pool.on('error', (err) => console.error('DB Error:', err));
@@ -314,40 +412,13 @@ app.get('/health', async (req, res) => {
     }
 });
 
-app.post('/api/tables', async (req, res) => {
-    const { tableName, columns } = req.body;
-    if (!tableName || !columns || !Array.isArray(columns)) {
-        return res.status(400).json({ error: 'tableName e columns (array) são obrigatórios' });
-    }
-    try {
-        const columnDefs = columns.map(col => {
-            if (typeof col === 'string') return `"${col}" TEXT`;
-            return `"${col.name}" ${col.type || 'TEXT'}${col.primary ? ' PRIMARY KEY' : ''}${col.notnull ? ' NOT NULL' : ''}`;
-        }).join(', ');
-        await pool.query(`CREATE TABLE IF NOT EXISTS "${tableName}" (${columnDefs});`);
-        res.json({ success: true, message: `Tabela "${tableName}" criada` });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
-app.delete('/api/tables/:tableName', async (req, res) => {
-    const { tableName } = req.params;
-    try {
-        await pool.query(`DROP TABLE IF EXISTS "${tableName}" CASCADE;`);
-        res.json({ success: true, message: `Tabela "${tableName}" excluída` });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
-});
-
 app.get('/api/tables', async (req, res) => {
     try {
-        const result = await pool.query(`
+        const result = await pool.query(\`
             SELECT table_name FROM information_schema.tables 
             WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
             ORDER BY table_name;
-        `);
+        \`);
         res.json({ tables: result.rows.map(r => r.table_name) });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -357,8 +428,8 @@ app.get('/api/tables', async (req, res) => {
 app.get('/api/tables/:tableName', async (req, res) => {
     const { tableName } = req.params;
     try {
-        const result = await pool.query(`SELECT * FROM "${tableName}" LIMIT 100;`);
-        res.json({ table: tableName, data: result.rows, columns: result.fields.map(f => f.name) });
+        const result = await pool.query(\`SELECT * FROM "\${tableName}" LIMIT 100;\`);
+        res.json({ table: tableName, data: result.rows });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -368,12 +439,9 @@ app.post('/api/tables/:tableName', async (req, res) => {
     const { tableName } = req.params;
     const data = req.body;
     try {
-        const keys = Object.keys(data).map(k => `"${k}"`).join(', ');
-        const values = Object.keys(data).map((_, i) => `$${i + 1}`).join(', ');
-        const result = await pool.query(
-            `INSERT INTO "${tableName}" (${keys}) VALUES (${values}) RETURNING *;`,
-            Object.values(data)
-        );
+        const keys = Object.keys(data).map(k => '"${k}"').join(', ');
+        const values = Object.keys(data).map((_, i) => \`$\${i + 1}\`).join(', ');
+        const result = await pool.query(\`INSERT INTO "\${tableName}" (\${keys}) VALUES (\${values}) RETURNING *;\`, Object.values(data));
         res.json({ success: true, data: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -384,11 +452,8 @@ app.put('/api/tables/:tableName/:id', async (req, res) => {
     const { tableName, id } = req.params;
     const data = req.body;
     try {
-        const keys = Object.keys(data).map((k, i) => `"${k}" = $${i + 1}`).join(', ');
-        const result = await pool.query(
-            `UPDATE "${tableName}" SET ${keys} WHERE id = $${Object.keys(data).length + 1} RETURNING *;`,
-            [...Object.values(data), id]
-        );
+        const keys = Object.keys(data).map((k, i) => \`"\${k}" = $\${i + 1}\`).join(', ');
+        const result = await pool.query(\`UPDATE "\${tableName}" SET \${keys} WHERE id = $\${Object.keys(data).length + 1} RETURNING *;\`, [...Object.values(data), id]);
         res.json({ success: true, data: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -398,15 +463,15 @@ app.put('/api/tables/:tableName/:id', async (req, res) => {
 app.delete('/api/tables/:tableName/:id', async (req, res) => {
     const { tableName, id } = req.params;
     try {
-        await pool.query(`DELETE FROM "${tableName}" WHERE id = $1;`, [id]);
-        res.json({ success: true, message: 'Registro excluído' });
+        await pool.query(\`DELETE FROM "\${tableName}" WHERE id = $1;\`, [id]);
+        res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+    console.log(\`Server running on port \${PORT}\`);
 });
 SERVEREOF
 
@@ -438,8 +503,8 @@ SERVEREOF
     echo "  CONFIGURANDO PM2"
     echo "=============================================="
 
-    sudo pm2 delete "$PROJECT_NAME" 2>/dev/null || true
-    sudo pm2 start "$PROJECT_DIR/src/server.js" --name "$PROJECT_NAME" -- --port "$PORT"
+    cleanup_pm2 "$PROJECT_NAME"
+    sudo pm2 start "$PROJECT_DIR/src/server.js" --name "$PROJECT_NAME"
     sudo pm2 save
 
     SYSTEMD_SERVICE=$(sudo pm2 startup | tail -1)
@@ -449,19 +514,12 @@ SERVEREOF
 
     echo ""
     echo "=============================================="
-    echo "  CONFIGURANDO NGINX"
+    echo "  CONFIGURANDO NGINX (MULTI-LOCATION)"
     echo "=============================================="
 
-    NGINX_CONF="/etc/nginx/sites-available/$PROJECT_NAME"
-
-    if [ -n "$DOMAIN" ]; then
-        sudo tee "$NGINX_CONF" > /dev/null <<EOF
-server {
-    listen 80;
-    server_name $DOMAIN;
-
-    location / {
-        proxy_pass http://localhost:$PORT;
+    local location_block="
+    location /$LOCATION/ {
+        proxy_pass http://127.0.0.1:$PORT/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -470,29 +528,25 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_cache_bypass \$http_upgrade;
     }
-}
-EOF
+"
+
+    if [ -f "$NGINX_MAIN_CONF" ]; then
+        echo "Adicionando location /$LOCATION/ ao config existente..."
+        if ! grep -q "location /$LOCATION/" "$NGINX_MAIN_CONF"; then
+            sudo sed -i "s|server {|server {\n$location_block|" "$NGINX_MAIN_CONF"
+        fi
     else
-        sudo tee "$NGINX_CONF" > /dev/null <<EOF
+        echo "Criando novo config Nginx..."
+        sudo tee "$NGINX_MAIN_CONF" > /dev/null <<EOF
 server {
     listen 80;
-    server_name _;
-
-    location / {
-        proxy_pass http://localhost:$PORT;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_cache_bypass \$http_upgrade;
-    }
+    server_name $SERVER_NAME;
+$location_block
 }
 EOF
     fi
 
-    sudo ln -sf "$NGINX_CONF" /etc/nginx/sites-enabled/
+    sudo ln -sf "$NGINX_MAIN_CONF" /etc/nginx/sites-enabled/main 2>/dev/null || true
     sudo nginx -t && sudo systemctl reload nginx
 
     save_config
@@ -505,14 +559,12 @@ EOF
     echo "Projeto: $PROJECT_NAME"
     echo "Diretório: $PROJECT_DIR"
     echo "Porta: $PORT"
+    echo "Location: /$LOCATION/"
     echo "Banco: $DB_NAME"
     echo "Usuário: $DB_USER"
     echo "Tabelas: $TABLES"
     echo ""
-    echo "URL: http://localhost:$PORT"
-    if [ -n "$DOMAIN" ]; then
-        echo "Domínio: $DOMAIN"
-    fi
+    echo "URL: http://$SERVER_NAME/$LOCATION/"
     echo ""
     echo "=== Projeto criado com sucesso! ==="
 }
@@ -520,7 +572,7 @@ EOF
 show_menu() {
     echo ""
     echo "=============================================="
-    echo "  Setup API Node.js + PostgreSQL + Nginx + PM2"
+    echo "  Setup API Multi-Projeto (Nginx Locations)"
     echo "=============================================="
     echo ""
     echo "Escolha uma opção:"
@@ -529,8 +581,7 @@ show_menu() {
     echo "  3 - Listar projetos"
     echo "  4 - Reverter/remover projeto"
     echo "  5 - Criar backup"
-    echo "  6 - Restaurar backup"
-    echo "  7 - Sair"
+    echo "  6 - Sair"
     echo ""
     read -p "Opção: " OPTION
 
@@ -540,8 +591,7 @@ show_menu() {
         3) list_projects ;;
         4) rollback_project ;;
         5) create_backup ;;
-        6) restore_backup ;;
-        7) echo "Saindo..."; exit 0 ;;
+        6) echo "Saindo..."; exit 0 ;;
         *) echo "Opção inválida" ;;
     esac
 }
@@ -556,8 +606,6 @@ elif [ "$1" == "rollback" ]; then
     rollback_project
 elif [ "$1" == "backup" ]; then
     create_backup
-elif [ "$1" == "restore" ]; then
-    restore_backup
 else
     show_menu
 fi

@@ -1,5 +1,11 @@
 const STORAGE_KEY = 'crebortoli_data';
 
+const API_CONFIG = {
+    baseUrl: window.API_BASE || 'http://201.54.22.122/crebortoli',
+    project: window.API_PROJECT || 'crebortoli',
+    token: window.API_TOKEN || 'crebortoli-api-token-2024'
+};
+
 const getDefaultData = async () => {
     const defaultData = {
         agendamentos: [],
@@ -32,13 +38,8 @@ const getLocalData = async () => {
         if (data) {
             return JSON.parse(data);
         }
-        const defaultData = await getDefaultData();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultData));
-        return defaultData;
-    } catch (e) {
-        console.error('Erro ao carregar dados:', e);
-        return await getDefaultData();
-    }
+    } catch (e) {}
+    return await getDefaultData();
 };
 
 const saveLocalData = (data) => {
@@ -46,7 +47,7 @@ const saveLocalData = (data) => {
         data._updated = Date.now();
         localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (e) {
-        console.error('Erro ao salvar dados:', e);
+        console.error('Erro ao salvar no localStorage:', e);
     }
 };
 
@@ -54,11 +55,105 @@ const generateId = (prefix) => {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
+const apiRequest = async (endpoint, options = {}) => {
+    const res = await fetch(`${API_CONFIG.baseUrl}${endpoint}`, {
+        ...options,
+        headers: {
+            'Authorization': `Bearer ${API_CONFIG.token}`,
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+    return res.json();
+};
+
 const DataSync = {
     storageKey: STORAGE_KEY,
-    isLoaded: true,
+    isLoaded: false,
     _online: false,
     _cachedData: null,
+    
+    async fetchFromAPI(entity) {
+        try {
+            const result = await apiRequest('/api/read', {
+                method: 'POST',
+                body: JSON.stringify({
+                    project: API_CONFIG.project,
+                    table: entity,
+                    order_by: 'created_at',
+                    order_dir: 'DESC',
+                    limit: 1000
+                })
+            });
+            return result.data || [];
+        } catch (e) {
+            console.error(`Erro ao buscar ${entity} da API:`, e);
+            return [];
+        }
+    },
+    
+    async saveToAPI(entity, item) {
+        try {
+            const result = await apiRequest('/api/create', {
+                method: 'POST',
+                body: JSON.stringify({
+                    project: API_CONFIG.project,
+                    table: entity,
+                    data: item
+                })
+            });
+            return result.success ? result.data : null;
+        } catch (e) {
+            console.error(`Erro ao salvar ${entity} na API:`, e);
+            return null;
+        }
+    },
+    
+    async updateToAPI(entity, id, data) {
+        try {
+            const result = await apiRequest('/api/update', {
+                method: 'POST',
+                body: JSON.stringify({
+                    project: API_CONFIG.project,
+                    table: entity,
+                    id: id,
+                    data: data
+                })
+            });
+            return result.success ? result.data : null;
+        } catch (e) {
+            console.error(`Erro ao atualizar ${entity} na API:`, e);
+            return null;
+        }
+    },
+    
+    async deleteToAPI(entity, id) {
+        try {
+            const result = await apiRequest('/api/delete', {
+                method: 'POST',
+                body: JSON.stringify({
+                    project: API_CONFIG.project,
+                    table: entity,
+                    id: id
+                })
+            });
+            return result.success;
+        } catch (e) {
+            console.error(`Erro ao excluir ${entity} da API:`, e);
+            return false;
+        }
+    },
+    
+    async checkConnection() {
+        try {
+            const result = await apiRequest('/health');
+            this._online = result.status === 'ok';
+            return this._online;
+        } catch (e) {
+            this._online = false;
+            return false;
+        }
+    },
     
     async getLocalData() {
         if (this._cachedData) {
@@ -74,22 +169,30 @@ const DataSync = {
     },
     
     async sync() {
-        const data = await this.getLocalData();
+        const isOnline = await this.checkConnection();
+        
+        if (isOnline) {
+            const entities = ['agendamentos', 'servicos', 'clientes', 'contatos'];
+            const data = {};
+            
+            for (const entity of entities) {
+                data[entity] = await this.fetchFromAPI(entity);
+            }
+            
+            this._cachedData = data;
+            saveLocalData(data);
+            console.log('Dados sincronizados do PostgreSQL:', data);
+        } else {
+            console.log('API offline, usando localStorage');
+            this._cachedData = await getLocalData();
+        }
+        
         this.isLoaded = true;
-        console.log('Dados carregados do localStorage:', {
-            agendamentos: data.agendamentos?.length || 0,
-            servicos: data.servicos?.length || 0,
-            clientes: data.clientes?.length || 0,
-            receitas: data.receitas?.length || 0,
-            contatos: data.contatos?.length || 0
-        });
-        return data;
+        return this._cachedData;
     },
     
     async save(item) {
-        const fullData = await this.getLocalData();
         const entity = item._entity || 'agendamentos';
-        const items = fullData[entity] || [];
         
         if (!item.id) {
             item.id = generateId(entity);
@@ -98,27 +201,56 @@ const DataSync = {
             item.created_at = new Date().toISOString();
         }
         
+        this._online = this._online || await this.checkConnection();
+        
+        if (this._online) {
+            const saved = await this.saveToAPI(entity, item);
+            if (saved) {
+                const fullData = await this.getLocalData();
+                const items = fullData[entity] || [];
+                const idx = items.findIndex(i => i.id === item.id);
+                if (idx >= 0) {
+                    items[idx] = saved;
+                } else {
+                    items.unshift(saved);
+                }
+                fullData[entity] = items;
+                this.saveLocalData(fullData);
+                return saved;
+            }
+        }
+        
+        const fullData = await this.getLocalData();
+        const items = fullData[entity] || [];
         const idx = items.findIndex(i => i.id === item.id);
         if (idx >= 0) {
             items[idx] = { ...items[idx], ...item };
         } else {
             items.push(item);
         }
-        
         fullData[entity] = items;
         this.saveLocalData(fullData);
         return item;
     },
     
     async delete(item) {
-        const fullData = await this.getLocalData();
         const entity = item._entity || 'agendamentos';
+        
+        if (this._online) {
+            await this.deleteToAPI(entity, item.id);
+        }
+        
+        const fullData = await this.getLocalData();
         const items = (fullData[entity] || []).filter(i => i.id !== item.id);
         fullData[entity] = items;
         this.saveLocalData(fullData);
     },
     
     async update(id, dados, entity) {
+        if (this._online) {
+            await this.updateToAPI(entity, id, dados);
+        }
+        
         const fullData = await this.getLocalData();
         const items = fullData[entity] || [];
         const idx = items.findIndex(item => item.id === id);
@@ -178,6 +310,7 @@ const DataSync = {
 function createEntityStore(entityName) {
     return {
         async init() {
+            await DataSync.sync();
             return this;
         },
         
@@ -246,6 +379,7 @@ if (typeof window !== 'undefined') {
     window.ContatosStore = ContatosStore;
     window.UsuariosStore = UsuariosStore;
     window.STORAGE_KEY = STORAGE_KEY;
+    window.API_CONFIG = API_CONFIG;
     
     DataSync.sync();
 }

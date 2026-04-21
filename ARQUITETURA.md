@@ -3,22 +3,41 @@
 ## Visão Geral
 
 ```
-[Usuário] --> [Nginx] --> [Páginas Estáticas]
-                       --> [API Node.js] (PM2)
-                              --> [PostgreSQL]
-                  (port 80)        (port 3000)      (5432)
+[Usuário] --> [Nginx/Servidor] --> [Páginas Estáticas]
+                               --> [API Node.js] (PM2)
+                                      --> [PostgreSQL] (VM Magalu)
+                        (port 80)        (port 3000)      (5432)
 ```
 
 ## Componentes
 
 ### 1. Páginas Estáticas (Frontend)
 - **Local**: `/var/www/crebortoli/`
-- **Arquivos**: `index.html`, `paginas/*.html`, `static/`
+- **Arquivos**: `index.html`, `paginas/*.html`, `static/`, `sig/*.html`
 - **Servidor**: Nginx (porta 80)
 - **Interação**: Chamadas AJAX para API Node.js via `/api/`
 
+#### Páginas Públicas (`paginas/`)
+- `index.html` - Homepage
+- `sobre.html` - Sobre a clínica
+- `servicos.html` - Lista de serviços
+- `contato.html` - Formulário de contato
+- `agenda.html` - Agendamento online
+- `pagamento.html` - Informações de pagamento
+
+#### Área Administrativa (`sig/`)
+- `index.html` - Dashboard principal
+- `login.html` - Login com QR Code
+- `agenda.html` - Gestão de agendamentos
+- `aprovar.html` - Aprovação de logins
+- `receituario.html` - Emissão de receitas
+- `relatorios.html` - Relatórios
+- `tabela_precos.html` - Gestão de preços
+- `pagamento.html` - Controle de pagamentos
+
 ### 2. API Node.js (Backend)
 - **Local**: `/var/www/crebortoli/api/`
+- **Framework**: Fastify
 - **Gerenciador**: PM2 (crebortoli-api)
 - **Porta**: 3000
 - **Endpoints**:
@@ -32,9 +51,9 @@
 
 ### 3. Banco de Dados
 - **Tipo**: PostgreSQL
-- **Host**: 127.0.0.1 (localhost)
+- **Host**: 201.54.22.122 (VM Magalu)
 - **Porta**: 5432
-- **Banco**: crebortoli
+- **Banco**: crebortoli_db
 - **Usuário**: postgres
 - **Senha**: wander
 
@@ -42,11 +61,11 @@
 
 ### Variáveis de Ambiente (API)
 ```bash
-CREBORTOLI_DB_HOST=127.0.0.1
+CREBORTOLI_DB_HOST=201.54.22.122
 CREBORTOLI_DB_PORT=5432
 CREBORTOLI_DB_USER=postgres
 CREBORTOLI_DB_PASS=wander
-CREBORTOLI_DB_NAME=crebortoli
+CREBORTOLI_DB_NAME=crebortoli_db
 API_TOKEN=crebortoli-api-token-2024
 ALLOWED_ORIGINS=*
 UPLOAD_DIR=uploads
@@ -107,6 +126,42 @@ O sistema usa as seguintes tabelas:
 - `clientes` - Cadastro de clientes
 - `receitas` - Receitas médicas
 - `contatos` - Mensagens de contato
+- `sessoes` - Sessões de login QR Code
+- `usuarios` - Usuários do sistema
+
+## Estrutura de Arquivos
+
+```
+crebortoli/
+├── index.html              # Homepage principal
+├── api.js                  # Proxy API (Node.js)
+├── api/                    # Backend Fastify
+│   ├── .env               # Variáveis de ambiente
+│   ├── src/server.js      # Servidor principal
+│   └── package.json
+├── paginas/               # Páginas públicas
+│   ├── sobre.html
+│   ├── servicos.html
+│   ├── contato.html
+│   ├── agenda.html
+│   └── pagamento.html
+├── sig/                   # Área administrativa
+│   ├── index.html
+│   ├── login.html
+│   ├── agenda.html
+│   ├── aprovar.html
+│   ├── receituario.html
+│   ├── relatorios.html
+│   ├── tabela_precos.html
+│   └── pagamento.html
+├── static/                # Recursos estáticos
+│   ├── css/              # Estilos
+│   ├── js/               # Scripts
+│   └── icon/            # Ícones e imagens
+├── deploy/               # Scripts de deploy
+├── ARQUITURA.md          # Este documento
+└── INSTALL.md            # Guia de instalação
+```
 
 ## Testes
 

@@ -361,7 +361,8 @@ const start = async () => {
       console.error(`Erro ao criar tabelas em ${name}:`, e.message);
     }
   }
-  await fastify.listen({ port: 3000, host: '0.0.0.0' });
-  console.log('Server: http://0.0.0.0:3000');
+  const PORT = process.env.PORT || 3000;
+  await fastify.listen({ port: PORT, host: '0.0.0.0' });
+  console.log(`Server: http://0.0.0.0:${PORT}`);
 };
 start();
