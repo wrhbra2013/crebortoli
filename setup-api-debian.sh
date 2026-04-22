@@ -655,6 +655,129 @@ stop_crebortoli_api() {
     echo "API parada"
 }
 
+setup_crebortoli_nginx() {
+    echo ""
+    echo "=============================================="
+    echo "  CONFIGURAR NGINX CREBORTOLI"
+    echo "=============================================="
+
+    CREBORTOLI_DIR="/var/www/crebortoli"
+    API_PORT=3001
+    SERVER_NAME="${1:-201.54.22.122}"
+
+    if [ ! -d "$CREBORTOLI_DIR" ]; then
+        echo "Erro: Diretório $CREBORTOLI_DIR não existe"
+        return 1
+    fi
+
+    NGINX_CONF="/etc/nginx/sites-available/crebortoli"
+    NGINX_ENABLED="/etc/nginx/sites-enabled/crebortoli"
+
+    echo "Criando configuração Nginx para Crebortoli..."
+    echo "Servidor: $SERVER_NAME"
+    echo "Pasta: $CREBORTOLI_DIR"
+    echo "API: http://127.0.0.1:$API_PORT"
+    echo ""
+
+    sudo tee "$NGINX_CONF" > /dev/null <<EOF
+server {
+    listen 80;
+    server_name $SERVER_NAME;
+
+    root $CREBORTOLI_DIR;
+    index index.html;
+
+    access_log /var/log/nginx/crebortoli_access.log;
+    error_log /var/log/nginx/crebortoli_error.log;
+
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    gzip on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml;
+
+    # Static files
+    location / {
+        try_files \$uri \$uri/ /index.html;
+    }
+
+    # API proxy - /api/ -> Node.js
+    location /api/ {
+        proxy_pass http://127.0.0.1:$API_PORT/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_read_timeout 60s;
+    }
+
+    # API proxy - /crebortoli/api/ -> Node.js
+    location /crebortoli/api/ {
+        proxy_pass http://127.0.0.1:$API_PORT/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
+        proxy_read_timeout 60s;
+    }
+
+    # Static /crebortoli/
+    location /crebortoli/ {
+        alias $CREBORTOLI_DIR/;
+        try_files \$uri \$uri/ /crebortoli/index.html;
+    }
+
+    location /uploads/ {
+        alias $CREBORTOLI_DIR/static/uploads/;
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|otf)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    location ~ /\. {
+        deny all;
+    }
+
+    location ~ ^/(\.htaccess|\.git|\.env) {
+        deny all;
+    }
+}
+EOF
+
+    sudo ln -sf "$NGINX_CONF" "$NGINX_ENABLED"
+    sudo rm -f /etc/nginx/sites-enabled/default 2>/dev/null || true
+
+    echo "Testando configuração Nginx..."
+    if sudo nginx -t; then
+        echo "Recarregando Nginx..."
+        sudo systemctl reload nginx
+        echo ""
+        echo "=== Nginx configurado com sucesso! ==="
+        echo ""
+        echo "URLs disponíveis:"
+        echo "  - http://$SERVER_NAME/"
+        echo "  - http://$SERVER_NAME/api/"
+        echo "  - http://$SERVER_NAME/crebortoli/"
+        echo "  - http://$SERVER_NAME/crebortoli/api/"
+        echo ""
+    else
+        echo "Erro na configuração do Nginx"
+        return 1
+    fi
+}
+
 show_menu() {
     echo ""
     echo "=============================================="
@@ -669,7 +792,8 @@ show_menu() {
     echo "  5 - Criar backup"
     echo "  6 - Instalar/Atualizar API Crebortoli (Fastify)"
     echo "  7 - Parar API Crebortoli"
-    echo "  8 - Sair"
+    echo "  8 - Configurar Nginx para Crebortoli"
+    echo "  9 - Sair"
     echo ""
     read -p "Opção: " OPTION
 
@@ -681,7 +805,12 @@ show_menu() {
         5) create_backup ;;
         6) install_crebortoli_api ;;
         7) stop_crebortoli_api ;;
-        8) echo "Saindo..."; exit 0 ;;
+        8) 
+            read -p "IP/Domínio (Enter para 201.54.22.122): " SERVER_IP
+            SERVER_IP="${SERVER_IP:-201.54.22.122}"
+            setup_crebortoli_nginx "$SERVER_IP"
+            ;;
+        9) echo "Saindo..."; exit 0 ;;
         *) echo "Opção inválida" ;;
     esac
 }
@@ -700,6 +829,8 @@ elif [ "$1" == "api" ]; then
     install_crebortoli_api
 elif [ "$1" == "stop-api" ]; then
     stop_crebortoli_api
+elif [ "$1" == "nginx" ]; then
+    setup_crebortoli_nginx "${2:-201.54.22.122}"
 else
     show_menu
 fi

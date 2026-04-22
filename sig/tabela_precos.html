@@ -256,86 +256,6 @@
             servicosCache = await servicos.getAll();
         }
 
-        let modoEdicao = false;
-
-        function renderTabela() {
-            const servicos = getAll();
-            const tbody = document.getElementById('tabela-corpo');
-            tbody.classList.toggle('editing', modoEdicao);
-            
-            if (modoEdicao) {
-                tbody.innerHTML = servicos.map(s => `
-                    <tr>
-                        <td>
-                            <select class="categoria-select" data-id="${s.id}" data-campo="categoria">
-                                <option value="Depilação" ${s.categoria === 'Depilação' ? 'selected' : ''}>Depilação</option>
-                                <option value="Tratamento" ${s.categoria === 'Tratamento' ? 'selected' : ''}>Tratamento</option>
-                                <option value="Massagem" ${s.categoria === 'Massagem' ? 'selected' : ''}>Massagem</option>
-                            </select>
-                            <input type="text" class="nome-input" data-id="${s.id}" data-campo="nome" value="${s.nome}">
-                        </td>
-                        <td>
-                            <input type="number" class="preco-input" data-id="${s.id}" data-campo="preco" value="${s.preco}" step="0.01" min="0">
-                        </td>
-                        <td class="acoes-col">
-                            <button class="btn-excluir" onclick="excluirServico('${s.id}')">Excluir</button>
-                        </td>
-                    </tr>
-                `).join('');
-                document.querySelectorAll('.acoes-col').forEach(el => el.style.display = '');
-            } else {
-                tbody.innerHTML = servicos.map(s => `
-                    <tr>
-                        <td>
-                            <span class="categoria">${s.categoria}</span><br>
-                            ${s.nome}
-                            ${s.desconto ? `<br><span class="desconto">${s.desconto}</span>` : ''}
-                        </td>
-                        <td class="preco">R$ ${s.preco.toFixed(2).replace('.', ',')}</td>
-                    </tr>
-                `).join('');
-                document.querySelectorAll('.acoes-col').forEach(el => el.style.display = 'none');
-            }
-        }
-
-        function toggleEdicao() {
-            if (modoEdicao) {
-                salvarAlteracoes();
-            }
-            modoEdicao = !modoEdicao;
-            document.getElementById('btn-modo-edicao').textContent = modoEdicao ? '💾 Salvar Alterações' : '✎ Editar Preços';
-            renderTabela();
-        }
-
-        async function salvarAlteracoes() {
-            const inputs = document.querySelectorAll('.editing input, .editing select');
-            for (const input of inputs) {
-                const id = input.dataset.id;
-                const campo = input.dataset.campo;
-                let valor = input.value;
-                if (campo === 'preco') valor = parseFloat(valor);
-                await updateServico(id, { [campo]: valor });
-            }
-            renderTabela();
-            alert('Preços salvos com sucesso!');
-        }
-
-        async function adicionarServico() {
-            const nome = prompt('Nome do serviço:');
-            if (!nome) return;
-            const preco = parseFloat(prompt('Preço (R$):') || '0');
-            const categoria = prompt('Categoria (Depilação/Tratamento/Massagem):') || 'Depilação';
-            await addServico({ nome, preco, categoria });
-            renderTabela();
-        }
-
-        async function excluirServico(id) {
-            if (confirm('Excluir este serviço?')) {
-                await deleteServico(id);
-                renderTabela();
-            }
-        }
-
         function exportJson() {
             const servicos = getAll();
             const data = { servicos, ultimaAtualizacao: new Date().toISOString().split('T')[0] };
@@ -559,6 +479,12 @@
             reader.readAsText(file);
             input.value = '';
         }
+
+        window.toggleEdicao = toggleEdicao;
+        window.adicionarServico = adicionarServico;
+        window.excluirServico = excluirServico;
+        window.exportJson = exportJson;
+        window.importarJson = importarJson;
 
         init();
     </script>
