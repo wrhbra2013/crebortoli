@@ -6,14 +6,24 @@
 API_DIR="/var/www/crebortoli/api"
 cd $API_DIR
 
-# Verificar se .env existe
+# Criar .env se não existir
 if [ ! -f .env ]; then
-    echo "Arquivo .env não encontrado. Execute primeiro: bash install.sh"
-    exit 1
+    echo "Criando arquivo .env..."
+    cat > .env <<EOF
+CREBORTOLI_DB_HOST=201.54.22.122
+CREBORTOLI_DB_PORT=5432
+CREBORTOLI_DB_USER=postgres
+CREBORTOLI_DB_PASS=wander
+CREBORTOLI_DB_NAME=crebortoli_db
+
+API_TOKEN=crebortoli-api-token-2024
+ALLOWED_ORIGINS=*
+PORT=3001
+EOF
 fi
 
 # Verificar se já está rodando
-if pgrep -f "node.*server.js" > /dev/null; then
+if pgrep -f "crebortoli-api" > /dev/null; then
     echo "API já está rodando!"
     curl -s http://localhost:3001/health
     exit 0
