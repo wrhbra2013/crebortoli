@@ -1,54 +1,7 @@
-const STORAGE_KEY = 'crebortoli_data';
-
 const API_CONFIG = {
-    baseUrl: window.API_BASE || 'http://201.54.22.122/crebortoli',
+    baseUrl: window.API_BASE || 'http://201.54.22.122:3001',
     project: window.API_PROJECT || 'crebortoli',
     token: window.API_TOKEN || 'crebortoli-api-token-2024'
-};
-
-const getDefaultData = async () => {
-    const defaultData = {
-        agendamentos: [],
-        servicos: [],
-        clientes: [],
-        receitas: [],
-        contatos: [],
-        usuarios: [],
-        sessoes: [],
-        _updated: Date.now()
-    };
-    
-    try {
-        const response = await fetch('../servicos.json');
-        const servicosData = await response.json();
-        if (servicosData.servicos && servicosData.servicos.length > 0) {
-            defaultData.servicos = servicosData.servicos;
-            console.log('Carregados serviços do arquivo JSON:', servicosData.servicos.length);
-        }
-    } catch (e) {
-        console.log('Arquivo servicos.json não encontrado, usando dados vazios');
-    }
-    
-    return defaultData;
-};
-
-const getLocalData = async () => {
-    try {
-        const data = localStorage.getItem(STORAGE_KEY);
-        if (data) {
-            return JSON.parse(data);
-        }
-    } catch (e) {}
-    return await getDefaultData();
-};
-
-const saveLocalData = (data) => {
-    try {
-        data._updated = Date.now();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-    } catch (e) {
-        console.error('Erro ao salvar no localStorage:', e);
-    }
 };
 
 const generateId = (prefix) => {
@@ -68,10 +21,8 @@ const apiRequest = async (endpoint, options = {}) => {
 };
 
 const DataSync = {
-    storageKey: STORAGE_KEY,
-    isLoaded: false,
-    _online: false,
-    _cachedData: null,
+    _cachedData: {},
+    _loaded: false,
     
     async fetchFromAPI(entity) {
         try {
@@ -144,51 +95,23 @@ const DataSync = {
         }
     },
     
-    async checkConnection() {
-        try {
-            const result = await apiRequest('/health');
-            this._online = result.status === 'ok';
-            return this._online;
-        } catch (e) {
-            this._online = false;
-            return false;
+    async loadAll() {
+        const entities = ['agendamentos', 'servicos', 'clientes', 'contatos', 'receitas'];
+        
+        for (const entity of entities) {
+            this._cachedData[entity] = await this.fetchFromAPI(entity);
         }
-    },
-    
-    async getLocalData() {
-        if (this._cachedData) {
-            return this._cachedData;
-        }
-        this._cachedData = await getLocalData();
+        
+        this._loaded = true;
+        console.log('Dados carregados da API:', this._cachedData);
         return this._cachedData;
     },
     
-    saveLocalData(data) {
-        this._cachedData = data;
-        saveLocalData(data);
-    },
-    
-    async sync() {
-        const isOnline = await this.checkConnection();
-        
-        if (isOnline) {
-            const entities = ['agendamentos', 'servicos', 'clientes', 'contatos'];
-            const data = {};
-            
-            for (const entity of entities) {
-                data[entity] = await this.fetchFromAPI(entity);
-            }
-            
-            this._cachedData = data;
-            saveLocalData(data);
-            console.log('Dados sincronizados do PostgreSQL:', data);
-        } else {
-            console.log('API offline, usando localStorage');
-            this._cachedData = await getLocalData();
+    async getAll(entity) {
+        if (!this._loaded) {
+            await this.loadAll();
         }
-        
-        this.isLoaded = true;
-        return this._cachedData;
+        return this._cachedData[entity] || [];
     },
     
     async save(item) {
@@ -201,77 +124,52 @@ const DataSync = {
             item.created_at = new Date().toISOString();
         }
         
-        this._online = this._online || await this.checkConnection();
-        
-        if (this._online) {
-            const saved = await this.saveToAPI(entity, item);
-            if (saved) {
-                const fullData = await this.getLocalData();
-                const items = fullData[entity] || [];
-                const idx = items.findIndex(i => i.id === item.id);
-                if (idx >= 0) {
-                    items[idx] = saved;
-                } else {
-                    items.unshift(saved);
-                }
-                fullData[entity] = items;
-                this.saveLocalData(fullData);
-                return saved;
+        const saved = await this.saveToAPI(entity, item);
+        if (saved) {
+            if (!this._cachedData[entity]) {
+                this._cachedData[entity] = [];
             }
+            this._cachedData[entity].unshift(saved);
+            return saved;
         }
         
-        const fullData = await this.getLocalData();
-        const items = fullData[entity] || [];
-        const idx = items.findIndex(i => i.id === item.id);
-        if (idx >= 0) {
-            items[idx] = { ...items[idx], ...item };
-        } else {
-            items.push(item);
-        }
-        fullData[entity] = items;
-        this.saveLocalData(fullData);
         return item;
     },
     
     async delete(item) {
         const entity = item._entity || 'agendamentos';
+        await this.deleteToAPI(entity, item.id);
         
-        if (this._online) {
-            await this.deleteToAPI(entity, item.id);
+        if (this._cachedData[entity]) {
+            this._cachedData[entity] = this._cachedData[entity].filter(i => i.id !== item.id);
         }
-        
-        const fullData = await this.getLocalData();
-        const items = (fullData[entity] || []).filter(i => i.id !== item.id);
-        fullData[entity] = items;
-        this.saveLocalData(fullData);
     },
     
     async update(id, dados, entity) {
-        if (this._online) {
-            await this.updateToAPI(entity, id, dados);
-        }
+        await this.updateToAPI(entity, id, dados);
         
-        const fullData = await this.getLocalData();
-        const items = fullData[entity] || [];
-        const idx = items.findIndex(item => item.id === id);
-        
-        if (idx >= 0) {
-            items[idx] = { ...items[idx], ...dados, updated_at: new Date().toISOString() };
-            fullData[entity] = items;
-            this.saveLocalData(fullData);
-            return items[idx];
+        if (this._cachedData[entity]) {
+            const idx = this._cachedData[entity].findIndex(item => item.id === id);
+            if (idx >= 0) {
+                this._cachedData[entity][idx] = { ...this._cachedData[entity][idx], ...dados, updated_at: new Date().toISOString() };
+                return this._cachedData[entity][idx];
+            }
         }
         return null;
     },
     
     async getById(entity, id) {
-        const fullData = await this.getLocalData();
-        return (fullData[entity] || []).find(item => item.id === id);
+        if (!this._loaded) {
+            await this.loadAll();
+        }
+        return (this._cachedData[entity] || []).find(item => item.id === id);
     },
     
     async search(entity, term) {
-        const fullData = await this.getLocalData();
-        const items = fullData[entity] || [];
+        if (!this._loaded) {
+            await this.loadAll();
+        }
+        const items = this._cachedData[entity] || [];
         const lower = term.toLowerCase();
         return items.filter(item => 
             Object.values(item).some(val => 
@@ -281,45 +179,36 @@ const DataSync = {
     },
     
     async getByField(entity, field, value) {
-        const fullData = await this.getLocalData();
-        return (fullData[entity] || []).filter(item => item[field] === value);
-    },
-    
-    clear() {
-        localStorage.removeItem(STORAGE_KEY);
-        this._cachedData = null;
-    },
-    
-    async export() {
-        const data = await this.getLocalData();
-        return JSON.stringify(data, null, 2);
-    },
-    
-    import(jsonString) {
-        try {
-            const data = JSON.parse(jsonString);
-            this.saveLocalData(data);
-            return true;
-        } catch (e) {
-            console.error('Erro ao importar dados:', e);
-            return false;
+        if (!this._loaded) {
+            await this.loadAll();
         }
+        return (this._cachedData[entity] || []).filter(item => item[field] === value);
+    },
+    
+    async refresh() {
+        this._cachedData = {};
+        this._loaded = false;
+        return await this.loadAll();
     }
 };
 
 function createEntityStore(entityName) {
     return {
         async init() {
-            await DataSync.sync();
+            await DataSync.loadAll();
             return this;
         },
         
         async getAll() {
-            const data = await DataSync.getLocalData();
-            return data[entityName] || [];
+            return await DataSync.getAll(entityName);
         },
         
         async save(item) {
+            item._entity = entityName;
+            return await DataSync.save(item);
+        },
+        
+        async create(item) {
             item._entity = entityName;
             return await DataSync.save(item);
         },
@@ -356,16 +245,8 @@ const UsuariosStore = createEntityStore('usuarios');
 const AgendamentoStore = AgendamentosStore;
 
 const DataStore = {
-    load(key) {
-        try {
-            return JSON.parse(localStorage.getItem(key));
-        } catch {
-            return null;
-        }
-    },
-    save(key, value) {
-        localStorage.setItem(key, JSON.stringify(value));
-    }
+    load(key) { return null; },
+    save(key, value) { }
 };
 
 if (typeof window !== 'undefined') {
@@ -378,8 +259,7 @@ if (typeof window !== 'undefined') {
     window.ReceitasStore = ReceitasStore;
     window.ContatosStore = ContatosStore;
     window.UsuariosStore = UsuariosStore;
-    window.STORAGE_KEY = STORAGE_KEY;
     window.API_CONFIG = API_CONFIG;
-    
-    DataSync.sync();
 }
+
+DataSync.loadAll();

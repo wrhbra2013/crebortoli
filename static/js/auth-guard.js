@@ -75,6 +75,10 @@ function isAuthenticated() {
     return localStorage.getItem(AUTH_KEY) === 'true';
 }
 
+function isAdmin() {
+    return isAuthenticated();
+}
+
 function refreshSession() {
     if (isAuthenticated()) {
         localStorage.setItem(AUTH_TIMESTAMP, Date.now().toString());

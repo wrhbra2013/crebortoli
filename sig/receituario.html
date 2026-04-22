@@ -338,6 +338,7 @@
             try {
                 const listaReceitas = getReceitas();
                 const tbody = document.getElementById('historicoBody');
+                const isAdminUser = typeof isAdmin === 'function' && isAdmin();
                 
                 if (!listaReceitas || listaReceitas.length === 0) {
                     tbody.innerHTML = '<tr><td colspan="3" class="empty-message">Nenhuma receita gerada ainda.</td></tr>';
@@ -350,7 +351,7 @@
                         <td>${r.dataFormatada}</td>
                         <td>
                             <button class="btn-download" onclick="downloadPDF('${r.id}')">Download</button>
-                            <button class="btn-download" style="background:#666" onclick="excluirReceita('${r.id}')">Excluir</button>
+                            ${isAdminUser ? `<button class="btn-download" style="background:#666" onclick="excluirReceita('${r.id}')">Excluir</button>` : ''}
                         </td>
                     </tr>
                 `).join('');

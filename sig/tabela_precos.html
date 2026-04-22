@@ -373,6 +373,193 @@
         }
 
         window.servicos = ServicosStore;
+        
+        function verificarAdmin() {
+            return typeof isAdmin === 'function' && isAdmin();
+        }
+        
+        async function init() {
+            if (!verificarAdmin()) {
+                document.getElementById('btn-modo-edicao').style.display = 'none';
+                document.querySelector('.btn-adicionar').style.display = 'none';
+                document.querySelectorAll('.btn-sync').forEach(el => el.style.display = 'none');
+            }
+            servicosCache = await servicos.getAll();
+            if (!servicosCache || servicosCache.length === 0) {
+                servicosCache = [
+                    { id: 'dep_perna', nome: 'Depilação Perna', preco: 25, categoria: 'Depilação' },
+                    { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: 50, categoria: 'Depilação' },
+                    { id: 'dep_buco', nome: 'Depilação Buço', preco: 15, categoria: 'Depilação' },
+                    { id: 'dep_axilas', nome: 'Depilação Axilas', preco: 20, categoria: 'Depilação' },
+                    { id: 'dep_pacote', nome: 'Pacote Mensal Depilação', preco: 90, categoria: 'Depilação', desconto: 'De R$110 por R$90' },
+                    { id: 'barreira_cutanea', nome: 'Reparação de Barreira Cutânea', preco: 50, categoria: 'Tratamento' },
+                    { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: 100, categoria: 'Tratamento' },
+                    { id: 'massagem', nome: 'Massagem Relaxante', preco: 50, categoria: 'Massagem' }
+                ];
+            }
+            renderTabela();
+        }
+
+        function getAll() {
+            return servicosCache || [];
+        }
+
+        async function addServico(servico) {
+            if (!verificarAdmin()) {
+                alert('Acesso restrito ao administrador');
+                return;
+            }
+            await servicos.create(servico);
+            servicosCache = await servicos.getAll();
+        }
+
+        async function updateServico(id, dados) {
+            if (!verificarAdmin()) {
+                alert('Acesso restrito ao administrador');
+                return;
+            }
+            await servicos.update(id, dados);
+            servicosCache = await servicos.getAll();
+        }
+
+        async function deleteServico(id) {
+            if (!verificarAdmin()) {
+                alert('Acesso restrito ao administrador');
+                return;
+            }
+            await servicos.delete(id);
+            servicosCache = await servicos.getAll();
+        }
+
+        let modoEdicao = false;
+
+        function renderTabela() {
+            const servicos = getAll();
+            const tbody = document.getElementById('tabela-corpo');
+            const isAdminUser = verificarAdmin();
+            tbody.classList.toggle('editing', modoEdicao);
+            
+            if (modoEdicao && isAdminUser) {
+                tbody.innerHTML = servicos.map(s => `
+                    <tr>
+                        <td>
+                            <select class="categoria-select" data-id="${s.id}" data-campo="categoria">
+                                <option value="Depilação" ${s.categoria === 'Depilação' ? 'selected' : ''}>Depilação</option>
+                                <option value="Tratamento" ${s.categoria === 'Tratamento' ? 'selected' : ''}>Tratamento</option>
+                                <option value="Massagem" ${s.categoria === 'Massagem' ? 'selected' : ''}>Massagem</option>
+                            </select>
+                            <input type="text" class="nome-input" data-id="${s.id}" data-campo="nome" value="${s.nome}">
+                        </td>
+                        <td>
+                            <input type="number" class="preco-input" data-id="${s.id}" data-campo="preco" value="${s.preco}" step="0.01" min="0">
+                        </td>
+                        <td class="acoes-col">
+                            <button class="btn-excluir" onclick="excluirServico('${s.id}')">Excluir</button>
+                        </td>
+                    </tr>
+                `).join('');
+                document.querySelectorAll('.acoes-col').forEach(el => el.style.display = '');
+            } else {
+                tbody.innerHTML = servicos.map(s => `
+                    <tr>
+                        <td>
+                            <span class="categoria">${s.categoria}</span><br>
+                            ${s.nome}
+                            ${s.desconto ? `<br><span class="desconto">${s.desconto}</span>` : ''}
+                        </td>
+                        <td class="preco">R$ ${s.preco.toFixed(2).replace('.', ',')}</td>
+                    </tr>
+                `).join('');
+                document.querySelectorAll('.acoes-col').forEach(el => el.style.display = 'none');
+            }
+        }
+
+        function toggleEdicao() {
+            if (modoEdicao) {
+                salvarAlteracoes();
+            }
+            modoEdicao = !modoEdicao;
+            document.getElementById('btn-modo-edicao').textContent = modoEdicao ? '💾 Salvar Alterações' : '✎ Editar Preços';
+            renderTabela();
+        }
+
+        async function salvarAlteracoes() {
+            if (!verificarAdmin()) {
+                alert('Acesso restrito ao administrador');
+                return;
+            }
+            const inputs = document.querySelectorAll('.editing input, .editing select');
+            for (const input of inputs) {
+                const id = input.dataset.id;
+                const campo = input.dataset.campo;
+                let valor = input.value;
+                if (campo === 'preco') valor = parseFloat(valor);
+                await updateServico(id, { [campo]: valor });
+            }
+            renderTabela();
+            alert('Preços salvos com sucesso!');
+        }
+
+        async function adicionarServico() {
+            if (!verificarAdmin()) {
+                alert('Acesso restrito ao administrador');
+                return;
+            }
+            const nome = prompt('Nome do serviço:');
+            if (!nome) return;
+            const preco = parseFloat(prompt('Preço (R$):') || '0');
+            const categoria = prompt('Categoria (Depilação/Tratamento/Massagem):') || 'Depilação';
+            await addServico({ nome, preco, categoria });
+            renderTabela();
+        }
+
+        async function excluirServico(id) {
+            if (!verificarAdmin()) {
+                alert('Acesso restrito ao administrador');
+                return;
+            }
+            if (confirm('Excluir este serviço?')) {
+                await deleteServico(id);
+                renderTabela();
+            }
+        }
+
+        function exportJson() {
+            const servicos = getAll();
+            const data = { servicos, ultimaAtualizacao: new Date().toISOString().split('T')[0] };
+            const json = JSON.stringify(data, null, 2);
+            const blob = new Blob([json], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'servicos.json';
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        function importarJson(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (data.servicos && Array.isArray(data.servicos)) {
+                        for (const s of data.servicos) {
+                            await servicos.create(s);
+                        }
+                        servicosCache = await servicos.getAll();
+                        renderTabela();
+                        alert('Importado com sucesso!');
+                    }
+                } catch (err) {
+                    alert('Erro ao importar: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            input.value = '';
+        }
+
         init();
     </script>
 </body>

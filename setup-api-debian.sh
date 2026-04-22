@@ -569,6 +569,92 @@ EOF
     echo "=== Projeto criado com sucesso! ==="
 }
 
+install_crebortoli_api() {
+    echo ""
+    echo "=============================================="
+    echo "  API CREBORTOLI (Fastify)"
+    echo "=============================================="
+
+    CREBORTOLI_DIR="/var/www/crebortoli"
+    API_DIR="$CREBORTOLI_DIR/api"
+    PORT=3001
+
+    if [ ! -d "$CREBORTOLI_DIR" ]; then
+        echo "Erro: Diretório $CREBORTOLI_DIR não existe"
+        return 1
+    fi
+
+    if [ ! -d "$API_DIR" ]; then
+        echo "Erro: Diretório $API_DIR não existe"
+        return 1
+    fi
+
+    cd "$API_DIR"
+
+    echo ""
+    echo "1. Instalando dependências..."
+    if [ ! -d "node_modules" ]; then
+        npm install
+    fi
+
+    echo "2. Criando arquivo .env..."
+    if [ ! -f .env ]; then
+        cat > .env <<EOF
+CREBORTOLI_DB_HOST=201.54.22.122
+CREBORTOLI_DB_PORT=5432
+CREBORTOLI_DB_USER=postgres
+CREBORTOLI_DB_PASS=wander
+CREBORTOLI_DB_NAME=crebortoli_db
+API_TOKEN=crebortoli-api-token-2024
+ALLOWED_ORIGINS=*
+PORT=$PORT
+EOF
+        echo ".env criado"
+    fi
+
+    echo "3. Verificando/parando processo existente..."
+    if pgrep -f "node.*server.js" > /dev/null 2>&1; then
+        echo "Parando API existente..."
+        pkill -f "node.*server.js" || true
+        sleep 2
+    fi
+
+    echo "4. Iniciando API com PM2..."
+    cleanup_pm2 "crebortoli-api"
+    cd "$API_DIR"
+    sudo pm2 start src/server.js --name "crebortoli-api"
+    sudo pm2 save
+
+    echo "5. Testando API..."
+    sleep 2
+    TEST_RESULT=$(curl -s http://localhost:$PORT/health 2>/dev/null || echo '{"status":"error"}')
+    echo "$TEST_RESULT" | grep -q "ok" && echo "API iniciada com sucesso!" || echo "Verifique os logs: pm2 logs crebortoli-api"
+
+    echo ""
+    echo "=============================================="
+    echo "  RESUMO"
+    echo "=============================================="
+    echo "Diretório: $API_DIR"
+    echo "Porta: $PORT"
+    echo "URL: http://201.54.22.122:$PORT/"
+    echo "Health: http://201.54.22.122:$PORT/health"
+    echo ""
+    echo "Comandos úteis:"
+    echo "  pm2 status          - Ver status"
+    echo "  pm2 logs            - Ver logs"
+    echo "  pm2 restart        - Reiniciar"
+    echo ""
+    echo "=== API Crebortoli iniciada! ==="
+}
+
+stop_crebortoli_api() {
+    echo ""
+    echo "Parando API Crebortoli..."
+    cleanup_pm2 "crebortoli-api"
+    pkill -f "crebortoli-api" 2>/dev/null || true
+    echo "API parada"
+}
+
 show_menu() {
     echo ""
     echo "=============================================="
@@ -581,7 +667,9 @@ show_menu() {
     echo "  3 - Listar projetos"
     echo "  4 - Reverter/remover projeto"
     echo "  5 - Criar backup"
-    echo "  6 - Sair"
+    echo "  6 - Instalar/Atualizar API Crebortoli (Fastify)"
+    echo "  7 - Parar API Crebortoli"
+    echo "  8 - Sair"
     echo ""
     read -p "Opção: " OPTION
 
@@ -591,7 +679,9 @@ show_menu() {
         3) list_projects ;;
         4) rollback_project ;;
         5) create_backup ;;
-        6) echo "Saindo..."; exit 0 ;;
+        6) install_crebortoli_api ;;
+        7) stop_crebortoli_api ;;
+        8) echo "Saindo..."; exit 0 ;;
         *) echo "Opção inválida" ;;
     esac
 }
@@ -606,6 +696,10 @@ elif [ "$1" == "rollback" ]; then
     rollback_project
 elif [ "$1" == "backup" ]; then
     create_backup
+elif [ "$1" == "api" ]; then
+    install_crebortoli_api
+elif [ "$1" == "stop-api" ]; then
+    stop_crebortoli_api
 else
     show_menu
 fi

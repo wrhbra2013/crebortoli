@@ -380,6 +380,12 @@
         async function loadData() {
             servicosCache = await servicos.getAll();
             agendamentosCache = await agendamentos.getAll();
+            
+            const isAdminUser = typeof isAdmin === 'function' && isAdmin();
+            if (!isAdminUser) {
+                document.getElementById('btn-excluir').style.display = 'none';
+            }
+            
             renderizarCalendario();
         }
 
