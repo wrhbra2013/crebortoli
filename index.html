@@ -9,8 +9,8 @@
     <meta http-equiv="Pragma" content="no-cache">
     <script>var v='1.0.0';document.write('<link rel="stylesheet" href="static/css/style.css?v='+v+'">');</script>
     <style>
-        .banner-aniversario {
-            background: linear-gradient(135deg, #e91e63 0%, #f48fb1 50%, #e91e63 100%);
+        .banner-comercial {
+            background: linear-gradient(135deg, #8a4baf 0%, #a86bc9 50%, #8a4baf 100%);
             color: white;
             padding: 1.5rem;
             text-align: center;
@@ -24,8 +24,8 @@
             50% { background-size: 100% 100%; }
         }
         
-        .banner-aniversario::before {
-            content: '🎂';
+        .banner-comercial::before {
+            content: '💜';
             position: absolute;
             left: 20px;
             top: 50%;
@@ -34,8 +34,8 @@
             animation: pulse 1s ease-in-out infinite;
         }
         
-        .banner-aniversario::after {
-            content: '🎉';
+        .banner-comercial::after {
+            content: '✨';
             position: absolute;
             right: 20px;
             top: 50%;
@@ -49,23 +49,23 @@
             50% { transform: translateY(-50%) scale(1.2); }
         }
         
-        .banner-aniversario h1 {
+        .banner-comercial h1 {
             font-size: 1.8rem;
             margin: 0 0 0.5rem 0;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             padding: 0 80px;
         }
         
-        .banner-aniversario p {
+        .banner-comercial p {
             font-size: 1.1rem;
             margin: 0;
             opacity: 0.95;
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
             padding: 0 40px;
         }
         
-        .banner-aniversario .btn-fechar {
+        .banner-comercial .btn-fechar {
             position: absolute;
             top: 10px;
             right: 10px;
@@ -82,11 +82,11 @@
             z-index: 10;
         }
         
-        .banner-aniversario .btn-fechar:hover {
+        .banner-comercial .btn-fechar:hover {
             background: rgba(255,255,255,0.5);
         }
         
-        .banner-aniversario .btn-editar {
+        .banner-comercial .btn-editar {
             position: absolute;
             top: 10px;
             left: 60px;
@@ -102,8 +102,19 @@
             z-index: 10;
         }
         
-        .banner-aniversario .btn-editar:hover {
+        .banner-comercial .btn-editar:hover {
             background: rgba(255,255,255,0.5);
+        }
+        
+        .banner-comercial .novidade-badge {
+            display: inline-block;
+            background: #ffd700;
+            color: #333;
+            padding: 0.2rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
         }
         
         .modal-banner {
@@ -132,8 +143,18 @@
         }
         
         .modal-banner h2 {
-            color: #e91e63;
+            color: #8a4baf;
             margin-top: 0;
+        }
+        
+        .modal-banner input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            margin-bottom: 1rem;
+            box-sizing: border-box;
         }
         
         .modal-banner textarea {
@@ -145,6 +166,7 @@
             font-size: 1rem;
             resize: vertical;
             margin-bottom: 1rem;
+            box-sizing: border-box;
         }
         
         .modal-banner .btn-group {
@@ -162,7 +184,7 @@
         }
         
         .modal-banner .btn-salvar {
-            background: #e91e63;
+            background: #8a4baf;
             color: white;
         }
         
@@ -172,19 +194,19 @@
         }
         
         @media (max-width: 600px) {
-            .banner-aniversario::before,
-            .banner-aniversario::after {
+            .banner-comercial::before,
+            .banner-comercial::after {
                 font-size: 2rem;
             }
-            .banner-aniversario::before { left: 10px; }
-            .banner-aniversario::after { right: 10px; }
-            .banner-aniversario h1 { font-size: 1.3rem; }
-            .banner-aniversario p { font-size: 0.95rem; }
+            .banner-comercial::before { left: 10px; }
+            .banner-comercial::after { right: 10px; }
+            .banner-comercial h1 { font-size: 1.3rem; }
+            .banner-comercial p { font-size: 0.95rem; }
         }
     </style>
 </head>
 <body>
-    <div id="banner-aniversario"></div>
+    <div id="banner-comercial"></div>
     <div id="header-placeholder"></div>
 
     <main class="main-content">
@@ -267,11 +289,12 @@
 
     <div id="modal-banner" class="modal-banner">
         <div class="modal-banner-content">
-            <h2>Editar Banner</h2>
-            <textarea id="banner-texto" placeholder="Digite sua mensagem..."></textarea>
+            <h2>Comunicado às Clientes</h2>
+            <input type="text" id="banner-titulo" placeholder="Título do comunicado...">
+            <textarea id="banner-texto" placeholder="Digite sua mensagem às clientes..."></textarea>
             <div class="btn-group">
                 <button class="btn-cancelar" onclick="fecharModalBanner()">Cancelar</button>
-                <button class="btn-salvar" onclick="salvarBanner()">Salvar</button>
+                <button class="btn-salvar" onclick="salvarBanner()">Publicar</button>
             </div>
         </div>
     </div>
@@ -280,84 +303,121 @@
 
     <script>var v='1.0.0';document.write('<script src="static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="static/js/components.js?v='+v+'"><\/script>');</script>
     <script>
-        var BANNER_KEY = 'banner_aniversario';
+        var BANNER_KEY = 'banner_comercial';
+        var bannerCache = null;
         
-        function getBanner() {
-            var banner = DataStore.load(BANNER_KEY);
-            if (!banner) {
-                banner = {
+        async function getBanner() {
+            if (bannerCache) return bannerCache;
+            
+            try {
+                var response = await fetch('http://201.54.22.122/crebortoli/api/config/get', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer crebortoli-api-token-2024' },
+                    body: JSON.stringify({ chave: BANNER_KEY })
+                });
+                var result = await response.json();
+                if (result.data) {
+                    bannerCache = result.data;
+                } else {
+                    bannerCache = {
+                        ativo: true,
+                        titulo: 'Novo Serviço!',
+                        mensagem: 'Agora temos limpeza facial com produtos premium. Agende seu horário!'
+                    };
+                }
+            } catch (e) {
+                bannerCache = {
                     ativo: true,
-                    titulo: '🎉 Parabéns, meu amor! 🎉',
-                    mensagem: 'Hoje é um dia muito especial! Te amo infinitamente. Que este dia seja repleto de amor, felicidade e muitas conquistas. Você é a melhor esposa, parceira e amiga que alguém poderia ter. Te amo!'
+                    titulo: 'Novo Serviço!',
+                    mensagem: 'Agora temos limpeza facial com produtos premium. Agende seu horário!'
                 };
             }
-            return banner;
+            return bannerCache;
         }
         
-        function renderizarBanner() {
-            var banner = getBanner();
-            var container = document.getElementById('banner-aniversario');
+        async function renderizarBanner() {
+            var banner = await getBanner();
+            var container = document.getElementById('banner-comercial');
             
             if (!container) return;
             
             if (!banner.ativo) {
                 container.innerHTML = '<div style="text-align:center;padding:0.5rem;background:#f5f5f5;color:#999;">' +
-                    '<a href="#" onclick="reativarBanner();return false;">Mostrar Banner</a>' +
+                    '<a href="#" onclick="reativarBanner();return false;">Mostrar Comunicação</a>' +
                     '</div>';
                 return;
             }
             
-            container.innerHTML = 
-                '<div class="banner-aniversario">' +
-                    '<button class="btn-editar" onclick="abrirModalBanner();return false;" title="Editar">✏️</button>' +
-                    '<button class="btn-fechar" onclick="fecharBanner();return false;" title="Fechar">×</button>' +
-                    '<h1>' + banner.titulo + '</h1>' +
-                    '<p>' + banner.mensagem + '</p>' +
+            var html = '<div class="banner-comercial">';
+            if (banner.novidade) {
+                html += '<span class="novidade-badge">NOVIDADE</span>';
+            }
+            html += '<button class="btn-editar" onclick="abrirModalBanner();return false;" title="Editar">✏️</button>' +
+                '<button class="btn-fechar" onclick="fecharBanner();return false;" title="Fechar">×</button>' +
+                '<h1>' + banner.titulo + '</h1>' +
+                '<p>' + banner.mensagem + '</p>' +
                 '</div>';
+            container.innerHTML = html;
         }
         
-        function fecharBanner() {
-            var banner = getBanner();
+        async function fecharBanner() {
+            var banner = await getBanner();
             banner.ativo = false;
-            DataStore.save(BANNER_KEY, banner);
+            await salvarBannerAPI(banner);
+            bannerCache = banner;
             renderizarBanner();
         }
         
-        function reativarBanner() {
-            var banner = getBanner();
+        async function reativarBanner() {
+            var banner = await getBanner();
             banner.ativo = true;
-            DataStore.save(BANNER_KEY, banner);
+            await salvarBannerAPI(banner);
+            bannerCache = banner;
             renderizarBanner();
+        }
+        
+        async function salvarBannerAPI(banner) {
+            try {
+                await fetch('/api/config/set', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer crebortoli-api-token-2024' },
+                    body: JSON.stringify({ chave: BANNER_KEY, valor: banner })
+                });
+            } catch (e) {
+                console.error('Erro ao salvar banner:', e);
+            }
         }
         
         function abrirModalBanner() {
-            var banner = getBanner();
-            document.getElementById('banner-texto').value = banner.titulo + '\n\n' + banner.mensagem;
-            document.getElementById('modal-banner').classList.add('active');
+            getBanner().then(function(banner) {
+                document.getElementById('banner-titulo').value = banner.titulo || '';
+                document.getElementById('banner-texto').value = banner.mensagem || '';
+                document.getElementById('modal-banner').classList.add('active');
+            });
         }
         
         function fecharModalBanner() {
             document.getElementById('modal-banner').classList.remove('active');
         }
         
-        function salvarBanner() {
-            var texto = document.getElementById('banner-texto').value.trim();
-            if (!texto) {
-                alert('Digite uma mensagem');
+        async function salvarBanner() {
+            var titulo = document.getElementById('banner-titulo').value.trim();
+            var mensagem = document.getElementById('banner-texto').value.trim();
+            
+            if (!titulo && !mensagem) {
+                alert('Digite um título ou mensagem');
                 return;
             }
             
-            var partes = texto.split('\n\n');
-            var titulo = partes[0] || '🎉';
-            var mensagem = partes.slice(1).join('\n\n') || texto;
-            
             var banner = {
                 ativo: true,
-                titulo: titulo,
-                mensagem: mensagem
+                titulo: titulo || 'Comunicado',
+                mensagem: mensagem,
+                novidade: true
             };
             
-            DataStore.save(BANNER_KEY, banner);
+            await salvarBannerAPI(banner);
+            bannerCache = banner;
             fecharModalBanner();
             renderizarBanner();
         }

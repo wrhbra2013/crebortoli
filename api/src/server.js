@@ -215,6 +215,37 @@ fastify.post('/api/project/create', { preHandler: authMiddleware }, async (req, 
   return { success: true, project: name, tables: tables.map(t => t.name) };
 });
 
+fastify.post('/api/config/get', { preHandler: authMiddleware }, async (req, res) => {
+  const { chave } = req.body || {};
+  if (!chave) {
+    return res.code(400).send({ error: 'Chave requerida' });
+  }
+  const result = await query('crebortoli', `SELECT valor FROM configuracoes WHERE chave = $1`, [chave]);
+  if (!result.rows.length) {
+    return { data: null };
+  }
+  try {
+    return { data: JSON.parse(result.rows[0].valor) };
+  } catch {
+    return { data: result.rows[0].valor };
+  }
+});
+
+fastify.post('/api/config/set', { preHandler: authMiddleware }, async (req, res) => {
+  const { chave, valor } = req.body || {};
+  if (!chave) {
+    return res.code(400).send({ error: 'Chave requerida' });
+  }
+  const valorJson = typeof valor === 'object' ? JSON.stringify(valor) : valor;
+  const result = await query('crebortoli', `
+    INSERT INTO configuracoes (id, chave, valor, updated_at)
+    VALUES (gen_random_uuid(), $1, $2, NOW())
+    ON CONFLICT (chave) DO UPDATE SET valor = $2, updated_at = NOW()
+    RETURNING *
+  `, [chave, valorJson]);
+  return { success: true, data: result.rows[0] };
+});
+
 fastify.post('/api/table/create', { preHandler: authMiddleware }, async (req, res) => {
   const { project, table_name, columns } = req.body || {};
   if (!project || !PROJECTS[project] || !table_name || !columns) {
