@@ -271,7 +271,7 @@ fastify.post('/api/read', { preHandler: authMiddleware }, async (req, res) => {
     return res.code(400).send({ error: 'Invalid request' });
   }
 
-  const colList = columns === ['*'] ? '*' : columns.map(c => `"${c}"`).join(', ');
+  const colList = (!columns || columns === ['*'] || (Array.isArray(columns) && columns.length === 1 && columns[0] === '*')) ? '*' : columns.map(c => `"${c}"`).join(', ');
   const conditions = Object.keys(filters).map((k, i) => {
     if (!validateTableName(k)) return null;
     return Array.isArray(filters[k]) 
