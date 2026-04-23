@@ -1,4 +1,4 @@
-const FASTAPI_URL = 'http://201.23.76.59:3001';
+const FASTAPI_URL = 'http://201.54.22.122/crebortoli';
 const API_PROJECT = 'crebortoli';
 const API_TOKEN = process.env.API_TOKEN || 'crebortoli-api-token-2024';
 
