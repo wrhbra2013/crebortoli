@@ -25,11 +25,12 @@ var ServicosPagina = (function() {
         var html = '';
         
         servicos.forEach(function(s) {
+            var precoNum = parseFloat(s.preco) || 0;
             html += '<tr>' +
                      '<td><span class="categoria-tag">' + s.categoria + '</span><br>' + s.nome +
                      (s.desconto ? '<br><span class="desconto">' + s.desconto + '</span>' : '') +
                      '</td>' +
-                     '<td class="preco">R$ ' + s.preco.toFixed(2).replace('.', ',') + '</td>' +
+                     '<td class="preco">R$ ' + precoNum.toFixed(2).replace('.', ',') + '</td>' +
                      '<td><button class="btn-agendar-servico" onclick="ServicosPagina.agendarServico(\'' + s.id + '\')">Agendar</button></td>' +
                      '</tr>';
         });
