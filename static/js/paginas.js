@@ -207,8 +207,9 @@ var AgendaPagina = (function() {
         var options = '<option value="">Selecione...</option>';
         
         servicos.forEach(function(s) {
+            var precoNum = parseFloat(s.preco) || 0;
             options += '<option value="' + s.id + '" data-preco="' + s.preco + '">' + 
-                       s.nome + ' - R$ ' + s.preco.toFixed(2).replace('.', ',') + '</option>';
+                       s.nome + ' - R$ ' + precoNum.toFixed(2).replace('.', ',') + '</option>';
         });
         
         select.innerHTML = options;
