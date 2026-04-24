@@ -6,15 +6,32 @@ var ServicosPagina = (function() {
     'use strict';
     
     var servicosCarregados = false;
+    var servicosFallback = [
+        { id: 'dep_perna', nome: 'Depilação Perna', preco: '25', categoria: 'Depilação' },
+        { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: '50', categoria: 'Depilação' },
+        { id: 'dep_buco', nome: 'Depilação Buço', preco: '15', categoria: 'Depilação' },
+        { id: 'dep_axilas', nome: 'Depilação Axilas', preco: '20', categoria: 'Depilação' },
+        { id: 'dep_pacote', nome: 'Pacote Mensal Depilação', preco: '90', categoria: 'Depilação', desconto: 'De R$110 por R$90' },
+        { id: 'barreira_cutanea', nome: 'Reparação de Barreira Cutânea', preco: '50', categoria: 'Tratamento' },
+        { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: '100', categoria: 'Tratamento' },
+        { id: 'massagem', nome: 'Massagem Relaxante', preco: '50', categoria: 'Massagem' }
+    ];
     
-    /* -------------------------------------------------------------------------
-        Inicialização
-        --------------------------------------------------------------------- */
     async function init() {
-        await ServicosStore.init();
-        var servicos = await ServicosStore.getAll();
-        servicosCarregados = true;
-        renderizarTabela(servicos);
+        try {
+            await ServicosStore.init();
+            var servicos = await ServicosStore.getAll();
+            if (servicos && servicos.length > 0) {
+                servicosCarregados = true;
+                renderizarTabela(servicos);
+            } else {
+                console.warn('API retornou vazio, usando dados locais');
+                renderizarTabela(servicosFallback);
+            }
+        } catch (e) {
+            console.error('Erro ao carregar serviços da API:', e);
+            renderizarTabela(servicosFallback);
+        }
     }
     
     /* -------------------------------------------------------------------------

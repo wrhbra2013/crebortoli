@@ -310,7 +310,7 @@
             if (bannerCache) return bannerCache;
             
             try {
-                var response = await fetch('http://201.54.22.122/crebortoli/api/config/get', {
+                var response = await fetch('/crebortoli/api/config/get', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer crebortoli-api-token-2024' },
                     body: JSON.stringify({ chave: BANNER_KEY })
