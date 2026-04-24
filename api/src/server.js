@@ -127,12 +127,18 @@ fastify.get('/data/:table', async (req, res) => {
     return res.code(400).send({ error: 'Tabela inválida' });
   }
   const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   return res.code(200).send(result.rows);
 });
 
 fastify.get('/config/:chave', async (req, res) => {
   const { chave } = req.params;
   const result = await query('crebortoli', `SELECT valor FROM configuracoes WHERE chave = $1`, [chave]);
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (!result.rows.length) {
     return res.code(200).send({ data: null });
   }
