@@ -29,23 +29,11 @@ var ServicosPagina = (function() {
                 }
             }
         } catch (e) {
-            console.warn('JSON local não disponível, tentando API:', e);
+            console.log('JSON local não disponível:', e.message);
         }
         
-        try {
-            await ServicosStore.init();
-            var servicos = await ServicosStore.getAll();
-            if (servicos && servicos.length > 0) {
-                servicosCarregados = true;
-                renderizarTabela(servicos);
-            } else {
-                console.warn('API retornou vazio, usando dados locais');
-                renderizarTabela(servicosFallback);
-            }
-        } catch (e) {
-            console.error('Erro ao carregar serviços da API:', e);
-            renderizarTabela(servicosFallback);
-        }
+        console.log('Usando dados locais (fallback)');
+        renderizarTabela(servicosFallback);
     }
     
     /* -------------------------------------------------------------------------

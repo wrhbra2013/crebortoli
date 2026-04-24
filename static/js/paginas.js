@@ -33,33 +33,15 @@ var AgendaPagina = (function() {
     async function init() {
         carregarDadosUsuario();
         
-        try {
-            await ServicosStore.init();
-            servicosCarregados = true;
-            var servicos = await ServicosStore.getAll();
-            var agendamentos = await AgendamentoStore.getAll();
-            
-            if (!servicos || servicos.length === 0) {
-                console.warn('API servicos vazio, usando fallback');
-                servicos = servicosFallback;
-            }
-            if (!agendamentos) {
-                agendamentos = [];
-            }
-            
-            popularServicos(servicos);
-            renderizarCalendario(agendamentos);
-            renderizarMeusAgendamentos(agendamentos);
-            verificarParametroURL();
-            
-            setupEventListeners();
-        } catch (e) {
-            console.error('Erro ao carregar dados da API:', e);
-            popularServicos(servicosFallback);
-            renderizarCalendario([]);
-            renderizarMeusAgendamentos([]);
-            setupEventListeners();
-        }
+        var servicos = servicosFallback;
+        var agendamentos = [];
+        
+        popularServicos(servicos);
+        renderizarCalendario(agendamentos);
+        renderizarMeusAgendamentos(agendamentos);
+        verificarParametroURL();
+        
+        setupEventListeners();
     }
     
     function setupEventListeners() {
