@@ -1,0 +1,13 @@
+{
+    "servicos": [
+        { "id": "77fea0a1-ad70-48dc-b2d5-91a6d143fb85", "nome": "Depilação Perna", "preco": 25, "categoria": "Depilação" },
+        { "id": "e8ddaa84-e640-4d69-a1e3-ba8b0214ea02", "nome": "Depilação Virilha Completa", "preco": 50, "categoria": "Depilação" },
+        { "id": "fa50aec9-bb84-4dd8-8f61-3fd891defacc", "nome": "Depilação Buço", "preco": 15, "categoria": "Depilação" },
+        { "id": "59706c0f-3534-4210-a3f7-c2b024230302", "nome": "Depilação Axilas", "preco": 20, "categoria": "Depilação" },
+        { "id": "807b296d-eb03-4c1b-b42d-792c2029a6e6", "nome": "Pacote Mensal Depilação", "preco": 90, "categoria": "Depilação", "desconto": "De R$110 por R$90" },
+        { "id": "c0310f82-b371-43d1-acd1-2184115b1c4a", "nome": "Reparação de Barreira Cutânea", "preco": 50, "categoria": "Tratamento" },
+        { "id": "55bbb7cd-8a35-4ee4-ae6e-5c993134c41f", "nome": "Limpeza de Pele", "preco": 100, "categoria": "Tratamento" },
+        { "id": "55466b8d-4b09-4de5-81d0-bba709c55551", "nome": "Massagem Relaxante", "preco": 50, "categoria": "Massagem" }
+    ],
+    "ultimaAtualizacao": "2026-04-24T01:00:00Z"
+}

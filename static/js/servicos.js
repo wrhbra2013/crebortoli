@@ -19,6 +19,20 @@ var ServicosPagina = (function() {
     
     async function init() {
         try {
+            var response = await fetch('data/servicos.json');
+            if (response.ok) {
+                var dados = await response.json();
+                if (dados.servicos && dados.servicos.length > 0) {
+                    servicosCarregados = true;
+                    renderizarTabela(dados.servicos);
+                    return;
+                }
+            }
+        } catch (e) {
+            console.warn('JSON local não disponível, tentando API:', e);
+        }
+        
+        try {
             await ServicosStore.init();
             var servicos = await ServicosStore.getAll();
             if (servicos && servicos.length > 0) {
