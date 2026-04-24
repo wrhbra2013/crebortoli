@@ -11,6 +11,17 @@ var AgendaPagina = (function() {
     var nomeUsuario = '';
     var telefoneUsuario = '';
     
+    var servicosFallback = [
+        { id: 'dep_perna', nome: 'Depilação Perna', preco: '25', categoria: 'Depilação' },
+        { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: '50', categoria: 'Depilação' },
+        { id: 'dep_buco', nome: 'Depilação Buço', preco: '15', categoria: 'Depilação' },
+        { id: 'dep_axilas', nome: 'Depilação Axilas', preco: '20', categoria: 'Depilação' },
+        { id: 'dep_pacote', nome: 'Pacote Mensal Depilação', preco: '90', categoria: 'Depilação', desconto: 'De R$110 por R$90' },
+        { id: 'barreira_cutanea', nome: 'Reparação de Barreira Cutânea', preco: '50', categoria: 'Tratamento' },
+        { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: '100', categoria: 'Tratamento' },
+        { id: 'massagem', nome: 'Massagem Relaxante', preco: '50', categoria: 'Massagem' }
+    ];
+    
     var nomesMeses = [
         'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
         'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
@@ -22,18 +33,33 @@ var AgendaPagina = (function() {
     async function init() {
         carregarDadosUsuario();
         
-        await ServicosStore.init();
-        servicosCarregados = true;
-        
-        var servicos = await ServicosStore.getAll();
-        var agendamentos = await AgendamentoStore.getAll();
-        
-        popularServicos(servicos);
-        renderizarCalendario(agendamentos);
-        renderizarMeusAgendamentos(agendamentos);
-        verificarParametroURL();
-        
-        setupEventListeners();
+        try {
+            await ServicosStore.init();
+            servicosCarregados = true;
+            var servicos = await ServicosStore.getAll();
+            var agendamentos = await AgendamentoStore.getAll();
+            
+            if (!servicos || servicos.length === 0) {
+                console.warn('API servicos vazio, usando fallback');
+                servicos = servicosFallback;
+            }
+            if (!agendamentos) {
+                agendamentos = [];
+            }
+            
+            popularServicos(servicos);
+            renderizarCalendario(agendamentos);
+            renderizarMeusAgendamentos(agendamentos);
+            verificarParametroURL();
+            
+            setupEventListeners();
+        } catch (e) {
+            console.error('Erro ao carregar dados da API:', e);
+            popularServicos(servicosFallback);
+            renderizarCalendario([]);
+            renderizarMeusAgendamentos([]);
+            setupEventListeners();
+        }
     }
     
     function setupEventListeners() {
@@ -186,9 +212,17 @@ var AgendaPagina = (function() {
         document.getElementById('telefone').value = telefoneUsuario;
         document.getElementById('pagar-agora').checked = false;
         
-        ServicosStore.getAll().then(function(servicos) {
-            popularServicos(servicos, servicoId);
-        });
+        ServicosStore.getAll()
+            .then(function(servicos) {
+                if (servicos && servicos.length > 0) {
+                    popularServicos(servicos, servicoId);
+                } else {
+                    popularServicos(servicosFallback, servicoId);
+                }
+            })
+            .catch(function() {
+                popularServicos(servicosFallback, servicoId);
+            });
         
         modal.classList.add('active');
     }
