@@ -121,6 +121,28 @@ fastify.get('/health', async () => {
 
 fastify.get('/ping', async () => ({ pong: true }));
 
+fastify.get('/data/:table', async (req, res) => {
+  const { table } = req.params;
+  if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas'].includes(table)) {
+    return res.code(400).send({ error: 'Tabela inválida' });
+  }
+  const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
+  return res.code(200).send(result.rows);
+});
+
+fastify.get('/config/:chave', async (req, res) => {
+  const { chave } = req.params;
+  const result = await query('crebortoli', `SELECT valor FROM configuracoes WHERE chave = $1`, [chave]);
+  if (!result.rows.length) {
+    return res.code(200).send({ data: null });
+  }
+  try {
+    return res.code(200).send({ data: JSON.parse(result.rows[0].valor) });
+  } catch {
+    return res.code(200).send({ data: result.rows[0].valor });
+  }
+});
+
 fastify.post('/api.php', async (req, res) => {
   const { action, ...data } = req.body || {};
   

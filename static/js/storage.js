@@ -26,17 +26,8 @@ const DataSync = {
     
     async fetchFromAPI(entity) {
         try {
-            const result = await apiRequest('/api/read', {
-                method: 'POST',
-                body: JSON.stringify({
-                    project: API_CONFIG.project,
-                    table: entity,
-                    order_by: 'created_at',
-                    order_dir: 'DESC',
-                    limit: 1000
-                })
-            });
-            return result.data || [];
+            const result = await apiRequest('/data/' + entity);
+            return result || [];
         } catch (e) {
             console.error(`Erro ao buscar ${entity} da API:`, e);
             return [];

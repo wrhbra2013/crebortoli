@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="static/icon/favicon.ico">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <script>var v='1.0.0';document.write('<link rel="stylesheet" href="static/css/style.css?v='+v+'">');</script>
+    <script>var v='1.0.1';document.write('<link rel="stylesheet" href="static/css/style.css?v='+v+'">');</script>
     <style>
         .banner-comercial {
             background: linear-gradient(135deg, #8a4baf 0%, #a86bc9 50%, #8a4baf 100%);
@@ -301,7 +301,7 @@
 
     <div id="footer-placeholder"></div>
 
-    <script>var v='1.0.0';document.write('<script src="static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="static/js/components.js?v='+v+'"><\/script>');</script>
+    <script>var v='1.0.2';document.write('<script src="static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="static/js/components.js?v='+v+'"><\/script>');</script>
     <script>
         var BANNER_KEY = 'banner_comercial';
         var bannerCache = null;
@@ -310,11 +310,7 @@
             if (bannerCache) return bannerCache;
             
             try {
-                var response = await fetch('http://201.54.22.122/crebortoli/api/config/get', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer crebortoli-api-token-2024' },
-                    body: JSON.stringify({ chave: BANNER_KEY })
-                });
+                var response = await fetch('http://201.54.22.122/crebortoli/config/' + BANNER_KEY);
                 var result = await response.json();
                 if (result.data) {
                     bannerCache = result.data;
