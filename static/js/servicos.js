@@ -16,20 +16,32 @@ var ServicosPagina = (function() {
         { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: '100', categoria: 'Tratamento' },
         { id: 'massagem', nome: 'Massagem Relaxante', preco: '50', categoria: 'Massagem' }
     ];
+
+    var API_CONFIG = {
+        baseUrl: window.API_BASE || 'http://201.54.22.122/crebortoli',
+        token: window.API_TOKEN || 'crebortoli-api-token-2024'
+    };
+
+    async function fetchFromAPI() {
+        var res = await fetch(API_CONFIG.baseUrl + '/data/servicos', {
+            headers: {
+                'Authorization': 'Bearer ' + API_CONFIG.token,
+                'Content-Type': 'application/json'
+            }
+        });
+        return res.json();
+    }
     
     async function init() {
         try {
-            var response = await fetch('data/servicos.json');
-            if (response.ok) {
-                var dados = await response.json();
-                if (dados.servicos && dados.servicos.length > 0) {
-                    servicosCarregados = true;
-                    renderizarTabela(dados.servicos);
-                    return;
-                }
+            var dados = await fetchFromAPI();
+            if (dados && dados.length > 0) {
+                servicosCarregados = true;
+                renderizarTabela(dados);
+                return;
             }
         } catch (e) {
-            console.log('JSON local não disponível:', e.message);
+            console.log('API não disponível:', e.message);
         }
         
         console.log('Usando dados locais (fallback)');
