@@ -121,6 +121,27 @@ fastify.get('/health', async () => {
 
 fastify.get('/ping', async () => ({ pong: true }));
 
+fastify.options('/crebortoli/data/:table', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return res.code(200).send();
+});
+
+fastify.options('/crebortoli/api/read', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return res.code(200).send();
+});
+
+fastify.options('/crebortoli/api/create', async (req, res) => {
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return res.code(200).send();
+});
+
 fastify.get('/data/:table', async (req, res) => {
   const { table } = req.params;
   if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas'].includes(table)) {
