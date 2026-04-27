@@ -305,6 +305,55 @@ fastify.post('/api/table/create', { preHandler: authMiddleware }, async (req, re
   }
 });
 
+fastify.post('/crebortoli/api/read', async (req, res) => {
+  const { project = 'crebortoli', table, filters = {}, columns = ['*'], order_by = 'created_at', order_dir = 'DESC', limit = 100, offset = 0 } = req.body || {};
+  if (!PROJECTS[project] || !validateTableName(table)) {
+    return res.code(400).send({ error: 'Invalid request' });
+  }
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  const colList = (!columns || columns === ['*'] || (Array.isArray(columns) && columns.length === 1 && columns[0] === '*')) ? '*' : columns.map(c => `"${c}"`).join(', ');
+  const conditions = Object.keys(filters).map((k, i) => {
+    if (!validateTableName(k)) return null;
+    return Array.isArray(filters[k]) 
+      ? `"${k}" IN (${filters[k].map((_, j) => `$${i + j + 1}`).join(',')})` 
+      : `"${k}" = $${i + 1}`;
+  }).filter(Boolean).join(' AND ');
+  const params = Object.values(filters).flat();
+  const lim = Math.min(parseInt(limit) || 100, 1000);
+
+  const [countRes, dataRes] = await Promise.all([
+    query(project, `SELECT COUNT(*) FROM "${table}" ${conditions ? 'WHERE ' + conditions : ''}`, params),
+    query(project, `SELECT ${colList} FROM "${table}" ${conditions ? 'WHERE ' + conditions : ''} ORDER BY "${order_by}" ${order_dir.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'} LIMIT ${lim} OFFSET ${offset}`, params),
+  ]);
+
+  return { data: dataRes.rows, pagination: { total: parseInt(countRes.rows[0].count), limit: lim, offset } };
+});
+
+fastify.post('/crebortoli/api/create', async (req, res) => {
+  const { project = 'crebortoli', table, data } = req.body || {};
+  if (!PROJECTS[project] || !validateTableName(table) || !data) {
+    return res.code(400).send({ error: 'Invalid request' });
+  }
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+
+  const sanitized = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (validateTableName(k)) sanitized[k] = v;
+  }
+  sanitized.id = sanitized.id || crypto.randomUUID();
+  sanitized.created_at = sanitized.created_at || new Date().toISOString();
+
+  const cols = Object.keys(sanitized).map(c => `"${c}"`).join(', ');
+  const vals = Object.keys(sanitized).map((_, i) => `$${i + 1}`).join(', ');
+  const result = await query(project, `INSERT INTO "${table}" (${cols}) VALUES (${vals}) RETURNING *`, Object.values(sanitized));
+  return { success: true, data: result.rows[0] };
+});
+
 fastify.post('/api/read', { preHandler: authMiddleware }, async (req, res) => {
   const { project, table, filters = {}, columns = ['*'], order_by = 'created_at', order_dir = 'DESC', limit = 100, offset = 0 } = req.body || {};
   if (!project || !PROJECTS[project] || !validateTableName(table)) {
