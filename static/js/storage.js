@@ -1,5 +1,5 @@
 const API_CONFIG = {
-    baseUrl: '/crebortoli',
+    baseUrl: 'http://201.54.22.122/crebortoli',
     project: window.API_PROJECT || 'crebortoli',
     token: window.API_TOKEN || 'crebortoli-api-token-2024'
 };

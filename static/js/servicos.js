@@ -18,7 +18,7 @@ var ServicosPagina = (function() {
     ];
 
     var API_CONFIG = {
-        baseUrl: '/crebortoli'
+        baseUrl: 'http://201.54.22.122/crebortoli'
     };
 
     async function fetchFromAPI() {
