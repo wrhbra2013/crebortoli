@@ -18,14 +18,12 @@ var ServicosPagina = (function() {
     ];
 
     var API_CONFIG = {
-        baseUrl: window.API_BASE || 'http://201.54.22.122/crebortoli',
-        token: window.API_TOKEN || 'crebortoli-api-token-2024'
+        baseUrl: '/crebortoli'
     };
 
     async function fetchFromAPI() {
         var res = await fetch(API_CONFIG.baseUrl + '/data/servicos', {
             headers: {
-                'Authorization': 'Bearer ' + API_CONFIG.token,
                 'Content-Type': 'application/json'
             }
         });
