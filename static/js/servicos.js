@@ -18,16 +18,18 @@ var ServicosPagina = (function() {
     ];
 
     var API_CONFIG = {
-        baseUrl: 'http://201.54.22.122/crebortoli'
+        baseUrl: window.API_BASE_URL || 'http://201.54.22.122/crebortoli'
     };
 
     async function fetchFromAPI() {
-        var res = await fetch(API_CONFIG.baseUrl + '/data/servicos', {
+        var url = new URL(API_CONFIG.baseUrl + '/data/servicos');
+        var res = await fetch(url.toString(), {
             headers: {
                 'Content-Type': 'application/json'
             }
         });
-        return res.json();
+        var result = await res.json();
+        return result?.data || result || [];
     }
     
     async function init() {

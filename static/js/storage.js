@@ -1,5 +1,5 @@
 const API_CONFIG = {
-    baseUrl: 'http://201.54.22.122/crebortoli',
+    baseUrl: window.API_BASE_URL || 'http://201.54.22.122/crebortoli',
     project: window.API_PROJECT || 'crebortoli',
     token: window.API_TOKEN || 'crebortoli-api-token-2024'
 };
@@ -9,14 +9,22 @@ const generateId = (prefix) => {
 };
 
 const apiRequest = async (endpoint, options = {}) => {
-    const res = await fetch(`${API_CONFIG.baseUrl}${endpoint}`, {
-        ...options,
+    const url = new URL(API_CONFIG.baseUrl + endpoint);
+    if (options.params) {
+        Object.entries(options.params).forEach(([k, v]) => url.searchParams.set(k, v));
+    }
+    const fetchOptions = {
+        method: options.method || 'GET',
         headers: {
             'Authorization': `Bearer ${API_CONFIG.token}`,
             'Content-Type': 'application/json',
             ...options.headers
         }
-    });
+    };
+    if (options.body) {
+        fetchOptions.body = options.body;
+    }
+    const res = await fetch(url.toString(), fetchOptions);
     return res.json();
 };
 
@@ -26,8 +34,8 @@ const DataSync = {
     
     async fetchFromAPI(entity) {
         try {
-            const result = await apiRequest('/data/' + entity);
-            return result || [];
+            const result = await apiRequest('/data/' + entity, { method: 'GET' });
+            return result?.data || result || [];
         } catch (e) {
             console.error(`Erro ao buscar ${entity} da API:`, e);
             return [];
@@ -36,7 +44,7 @@ const DataSync = {
     
     async saveToAPI(entity, item) {
         try {
-            const result = await apiRequest('/api/create', {
+            const result = await apiRequest('/crebortoli/api/create', {
                 method: 'POST',
                 body: JSON.stringify({
                     project: API_CONFIG.project,
@@ -53,7 +61,7 @@ const DataSync = {
     
     async updateToAPI(entity, id, data) {
         try {
-            const result = await apiRequest('/api/update', {
+            const result = await apiRequest('/crebortoli/api/update', {
                 method: 'POST',
                 body: JSON.stringify({
                     project: API_CONFIG.project,
@@ -71,7 +79,7 @@ const DataSync = {
     
     async deleteToAPI(entity, id) {
         try {
-            const result = await apiRequest('/api/delete', {
+            const result = await apiRequest('/crebortoli/api/delete', {
                 method: 'POST',
                 body: JSON.stringify({
                     project: API_CONFIG.project,
