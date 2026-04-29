@@ -18,11 +18,11 @@ var ServicosPagina = (function() {
     ];
 
     var API_CONFIG = {
-        baseUrl: window.API_BASE_URL || 'https://api.crebortoli.com.br/crebortoli'
+        baseUrl: window.API_BASE_URL || 'https://api.crebortoli.com.br/crebortoli/data'
     };
 
     async function fetchFromAPI() {
-        var url = new URL(API_CONFIG.baseUrl + '/data/servicos');
+        var url = new URL(API_CONFIG.baseUrl + '/servicos');
         var res = await fetch(url.toString(), {
             headers: {
                 'Content-Type': 'application/json'

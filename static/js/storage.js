@@ -1,5 +1,5 @@
 const API_CONFIG = {
-    baseUrl: window.API_BASE_URL || 'https://api.crebortoli.com.br/crebortoli',
+    baseUrl: window.API_BASE_URL || 'https://api.crebortoli.com.br/crebortoli/data',
     project: window.API_PROJECT || 'crebortoli',
     token: window.API_TOKEN || 'crebortoli-api-token-2024'
 };
@@ -34,7 +34,7 @@ const DataSync = {
     
     async fetchFromAPI(entity) {
         try {
-            const result = await apiRequest('/data/' + entity, { method: 'GET' });
+            const result = await apiRequest('/' + entity, { method: 'GET' });
             return result?.data || result || [];
         } catch (e) {
             console.error(`Erro ao buscar ${entity} da API:`, e);
@@ -44,7 +44,7 @@ const DataSync = {
     
     async saveToAPI(entity, item) {
         try {
-            const result = await apiRequest('/crebortoli/api/create', {
+            const result = await apiRequest('/create', {
                 method: 'POST',
                 body: JSON.stringify({
                     project: API_CONFIG.project,
@@ -61,7 +61,7 @@ const DataSync = {
     
     async updateToAPI(entity, id, data) {
         try {
-            const result = await apiRequest('/crebortoli/api/update', {
+            const result = await apiRequest('/update', {
                 method: 'POST',
                 body: JSON.stringify({
                     project: API_CONFIG.project,
@@ -79,7 +79,7 @@ const DataSync = {
     
     async deleteToAPI(entity, id) {
         try {
-            const result = await apiRequest('/crebortoli/api/delete', {
+            const result = await apiRequest('/delete', {
                 method: 'POST',
                 body: JSON.stringify({
                     project: API_CONFIG.project,
