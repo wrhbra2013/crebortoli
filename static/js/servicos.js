@@ -18,7 +18,7 @@ var ServicosPagina = (function() {
     ];
 
     var API_CONFIG = {
-        baseUrl: window.API_BASE_URL || 'http://201.54.22.122/crebortoli'
+        baseUrl: window.API_BASE_URL || 'https://api.crebortoli.com.br/crebortoli'
     };
 
     async function fetchFromAPI() {
