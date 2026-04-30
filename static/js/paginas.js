@@ -281,11 +281,11 @@ var AgendaPagina = (function() {
             data: data,
             hora: 'A confirmar',
             cliente: nome,
-            telefone: telefoneLimpo,
+            telefone: teleficoLimpo,
             telefoneFormatado: telefoneFormatado,
             servico: servicoId,
             servicoNome: servico ? servico.nome : '',
-            valor: servico ? servico.preco : 0,
+            valor: servico ? parseFloat(servico.preco) || 0 : 0,
             status: pagarAgora ? 'PAGO' : 'PENDENTE',
             pago: pagarAgora
         };

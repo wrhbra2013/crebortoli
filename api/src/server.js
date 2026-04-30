@@ -8,11 +8,10 @@ import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import crypto from 'crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { Pool } = pg;
-
-const PORT = process.env.PORT || 3001;
 
 const fastify = Fastify({ logger: true });
 
@@ -77,14 +76,17 @@ await fastify.register(cors, {
       cb(null, true);
       return;
     }
-    if (isOriginAllowed(origin)) {
+    if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes('*') || isOriginAllowed(origin)) {
       cb(null, true);
     } else {
       cb(new Error('Origin not allowed'), false);
     }
   },
-  credentials: true 
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 });
+
 await fastify.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
 await fastify.register(rateLimit, { max: 100, timeWindow: '1 minute', keyGenerator: (req) => req.ip });
 
@@ -107,6 +109,7 @@ const authMiddleware = async (req, reply) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token || token !== API_TOKEN) {
     reply.code(401).send({ success: false, error: 'Unauthorized' });
+    return;
   }
 };
 
@@ -121,36 +124,13 @@ fastify.get('/health', async () => {
 
 fastify.get('/ping', async () => ({ pong: true }));
 
-fastify.options('/crebortoli/data/:table', async (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  return res.code(200).send();
-});
-
-fastify.options('/crebortoli/api/read', async (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  return res.code(200).send();
-});
-
-fastify.options('/crebortoli/api/create', async (req, res) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  return res.code(200).send();
-});
-
+// Rotas GET para dados
 fastify.get('/data/:table', async (req, res) => {
   const { table } = req.params;
   if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas'].includes(table)) {
     return res.code(400).send({ error: 'Tabela inválida' });
   }
   const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   return res.code(200).send(result.rows);
 });
 
@@ -160,18 +140,12 @@ fastify.get('/crebortoli/data/:table', async (req, res) => {
     return res.code(400).send({ error: 'Tabela inválida' });
   }
   const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   return res.code(200).send(result.rows);
 });
 
 fastify.get('/config/:chave', async (req, res) => {
   const { chave } = req.params;
   const result = await query('crebortoli', `SELECT valor FROM configuracoes WHERE chave = $1`, [chave]);
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (!result.rows.length) {
     return res.code(200).send({ data: null });
   }
@@ -182,6 +156,7 @@ fastify.get('/config/:chave', async (req, res) => {
   }
 });
 
+// Rota para compatibilidade com api.php
 fastify.post('/api.php', async (req, res) => {
   const { action, ...data } = req.body || {};
   
@@ -218,6 +193,7 @@ fastify.post('/api.php', async (req, res) => {
   }
 });
 
+// Rotas protegidas por token
 fastify.get('/api/projects', { preHandler: authMiddleware }, async () => 
   Object.keys(PROJECTS).map(name => ({ name, database: PROJECTS[name].database })));
 
@@ -258,7 +234,7 @@ fastify.post('/api/project/create', { preHandler: authMiddleware }, async (req, 
 
   for (const table of tables) {
     try {
-      await projectPool.query(`CREATE TABLE IF NOT EXISTS ${table.name} (${table.columns})`);
+      await projectPool.query(`CREATE TABLE IF NOT EXISTS "${table.name}" (${table.columns})`);
     } catch (e) {
       console.error(`Erro ao criar tabela ${table.name}:`, e.message);
     }
@@ -326,20 +302,19 @@ fastify.post('/api/table/create', { preHandler: authMiddleware }, async (req, re
   }
 });
 
+// Rotas /crebortoli/api/* (para o frontend)
 fastify.post('/crebortoli/api/read', async (req, res) => {
   const { project = 'crebortoli', table, filters = {}, columns = ['*'], order_by = 'created_at', order_dir = 'DESC', limit = 100, offset = 0 } = req.body || {};
   if (!PROJECTS[project] || !validateTableName(table)) {
     return res.code(400).send({ error: 'Invalid request' });
   }
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-  const colList = (!columns || columns === ['*'] || (Array.isArray(columns) && columns.length === 1 && columns[0] === '*')) ? '*' : columns.map(c => `"${c}"`).join(', ');
+  const colList = (!columns || (Array.isArray(columns) && columns.length === 1 && columns[0] === '*')) ? '*' : columns.map(c => `"${c}"`).join(', ');
+  if (!validateTableName(order_by)) return res.code(400).send({ error: 'Invalid order_by' });
   const conditions = Object.keys(filters).map((k, i) => {
     if (!validateTableName(k)) return null;
-    return Array.isArray(filters[k]) 
-      ? `"${k}" IN (${filters[k].map((_, j) => `$${i + j + 1}`).join(',')})` 
+    return Array.isArray(filters[k])
+      ? `"${k}" IN (${filters[k].map((_, j) => `$${i + j + 1}`).join(',')})`
       : `"${k}" = $${i + 1}`;
   }).filter(Boolean).join(' AND ');
   const params = Object.values(filters).flat();
@@ -353,14 +328,11 @@ fastify.post('/crebortoli/api/read', async (req, res) => {
   return { data: dataRes.rows, pagination: { total: parseInt(countRes.rows[0].count), limit: lim, offset } };
 });
 
-fastify.post('/crebortoli/api/create', async (req, res) => {
+fastify.post('/crebortoli/data/create', async (req, res) => {
   const { project = 'crebortoli', table, data } = req.body || {};
   if (!PROJECTS[project] || !validateTableName(table) || !data) {
     return res.code(400).send({ error: 'Invalid request' });
   }
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
   const sanitized = {};
   for (const [k, v] of Object.entries(data)) {
@@ -375,17 +347,51 @@ fastify.post('/crebortoli/api/create', async (req, res) => {
   return { success: true, data: result.rows[0] };
 });
 
+fastify.post('/crebortoli/data/update', async (req, res) => {
+  const { project = 'crebortoli', table, id, data } = req.body || {};
+  if (!PROJECTS[project] || !validateTableName(table) || !validateId(id) || !data) {
+    return res.code(400).send({ error: 'Invalid request' });
+  }
+
+  const sanitized = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (validateTableName(k) && !['id', 'created_at'].includes(k)) sanitized[k] = v;
+  }
+  if (!Object.keys(sanitized).length) return res.code(400).send({ error: 'No valid fields' });
+
+  sanitized.updated_at = new Date().toISOString();
+  const sets = Object.keys(sanitized).map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+  const result = await query(project, `UPDATE "${table}" SET ${sets} WHERE id = $${Object.keys(sanitized).length + 1} RETURNING *`, [...Object.values(sanitized), id]);
+  if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
+  return { success: true, data: result.rows[0] };
+});
+
+fastify.post('/crebortoli/data/delete', async (req, res) => {
+  const { project = 'crebortoli', table, id } = req.body || {};
+  if (!PROJECTS[project] || !validateTableName(table) || !validateId(id)) {
+    return res.code(400).send({ error: 'Invalid request' });
+  }
+
+  const result = await query(project, `DELETE FROM "${table}" WHERE id = $1 RETURNING id`, [id]);
+  if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
+  return { success: true, deleted: true, id };
+});
+
+// Rotas /api/* protegidas
 fastify.post('/api/read', { preHandler: authMiddleware }, async (req, res) => {
   const { project, table, filters = {}, columns = ['*'], order_by = 'created_at', order_dir = 'DESC', limit = 100, offset = 0 } = req.body || {};
   if (!project || !PROJECTS[project] || !validateTableName(table)) {
     return res.code(400).send({ error: 'Invalid request' });
   }
+  if (!validateTableName(order_by)) {
+    return res.code(400).send({ error: 'Invalid order_by' });
+  }
 
-  const colList = (!columns || columns === ['*'] || (Array.isArray(columns) && columns.length === 1 && columns[0] === '*')) ? '*' : columns.map(c => `"${c}"`).join(', ');
+  const colList = (!columns || (Array.isArray(columns) && columns.length === 1 && columns[0] === '*')) ? '*' : columns.map(c => `"${c}"`).join(', ');
   const conditions = Object.keys(filters).map((k, i) => {
     if (!validateTableName(k)) return null;
-    return Array.isArray(filters[k]) 
-      ? `"${k}" IN (${filters[k].map((_, j) => `$${i + j + 1}`).join(',')})` 
+    return Array.isArray(filters[k])
+      ? `"${k}" IN (${filters[k].map((_, j) => `$${i + j + 1}`).join(',')})`
       : `"${k}" = $${i + 1}`;
   }).filter(Boolean).join(' AND ');
   const params = Object.values(filters).flat();
@@ -400,8 +406,8 @@ fastify.post('/api/read', { preHandler: authMiddleware }, async (req, res) => {
 });
 
 fastify.post('/api/create', { preHandler: authMiddleware }, async (req, res) => {
-  logOperations('create', { project, table, data: req.body?.data });
   const { project, table, data } = req.body || {};
+  logOperations('create', { project, table, data });
   if (!project || !PROJECTS[project] || !validateTableName(table) || !data) {
     return res.code(400).send({ error: 'Invalid request' });
   }
@@ -420,8 +426,8 @@ fastify.post('/api/create', { preHandler: authMiddleware }, async (req, res) => 
 });
 
 fastify.post('/api/update', { preHandler: authMiddleware }, async (req, res) => {
-  logOperations('update', { project, table, id: req.body?.id });
   const { project, table, id, data } = req.body || {};
+  logOperations('update', { project, table, id });
   if (!project || !PROJECTS[project] || !validateTableName(table) || !validateId(id) || !data) {
     return res.code(400).send({ error: 'Invalid request' });
   }
@@ -440,8 +446,8 @@ fastify.post('/api/update', { preHandler: authMiddleware }, async (req, res) => 
 });
 
 fastify.post('/api/delete', { preHandler: authMiddleware }, async (req, res) => {
-  logOperations('delete', { project, table, id: req.body?.id });
   const { project, table, id } = req.body || {};
+  logOperations('delete', { project, table, id });
   if (!project || !PROJECTS[project] || !validateTableName(table) || !validateId(id)) {
     return res.code(400).send({ error: 'Invalid request' });
   }
@@ -504,7 +510,7 @@ const start = async () => {
       console.error(`Erro ao criar tabelas em ${name}:`, e.message);
     }
   }
-const PORT = process.env.PORT || 3001;
+  const PORT = process.env.PORT || 3001;
   await fastify.listen({ port: PORT, host: '0.0.0.0' });
   console.log(`Server: http://0.0.0.0:${PORT}`);
 };

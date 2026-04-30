@@ -27,11 +27,13 @@ Thumbs.db
 uploads/*
 !uploads/.gitkeep
 
-# Deploy configs (usar na VM)
-deploy/
-
-
-# API environment (never commit)
+# API (para VM Debian - não versionar)
 api/.env
 api/.env.local
 api/.env.*
+api/node_modules/
+api/package-lock.json
+
+# Arquivos específicos da VM
+*.tar.gz
+/var/www/
