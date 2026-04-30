@@ -143,6 +143,15 @@ fastify.get('/crebortoli/data/:table', async (req, res) => {
   return res.code(200).send(result.rows);
 });
 
+fastify.get('/crebortoli/:table', async (req, res) => {
+  const { table } = req.params;
+  if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas'].includes(table)) {
+    return res.code(400).send({ error: 'Tabela inválida' });
+  }
+  const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
+  return res.code(200).send(result.rows);
+});
+
 fastify.get('/config/:chave', async (req, res) => {
   const { chave } = req.params;
   const result = await query('crebortoli', `SELECT valor FROM configuracoes WHERE chave = $1`, [chave]);
@@ -372,6 +381,51 @@ fastify.post('/crebortoli/data/delete', async (req, res) => {
     return res.code(400).send({ error: 'Invalid request' });
   }
 
+  const result = await query(project, `DELETE FROM "${table}" WHERE id = $1 RETURNING id`, [id]);
+  if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
+  return { success: true, deleted: true, id };
+});
+
+// Atalhos para /crebortoli/create, /crebortoli/update, /crebortoli/delete (usados pelo frontend)
+fastify.post('/crebortoli/create', async (req, res) => {
+  const { project = 'crebortoli', table, data } = req.body || {};
+  if (!PROJECTS[project] || !validateTableName(table) || !data) {
+    return res.code(400).send({ error: 'Invalid request' });
+  }
+  const sanitized = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (validateTableName(k)) sanitized[k] = v;
+  }
+  sanitized.id = sanitized.id || crypto.randomUUID();
+  sanitized.created_at = sanitized.created_at || new Date().toISOString();
+  const cols = Object.keys(sanitized).map(c => `"${c}"`).join(', ');
+  const vals = Object.keys(sanitized).map((_, i) => `$${i + 1}`).join(', ');
+  const result = await query(project, `INSERT INTO "${table}" (${cols}) VALUES (${vals}) RETURNING *`, Object.values(sanitized));
+  return { success: true, data: result.rows[0] };
+});
+
+fastify.post('/crebortoli/update', async (req, res) => {
+  const { project = 'crebortoli', table, id, data } = req.body || {};
+  if (!PROJECTS[project] || !validateTableName(table) || !validateId(id) || !data) {
+    return res.code(400).send({ error: 'Invalid request' });
+  }
+  const sanitized = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (validateTableName(k) && !['id', 'created_at'].includes(k)) sanitized[k] = v;
+  }
+  if (!Object.keys(sanitized).length) return res.code(400).send({ error: 'No valid fields' });
+  sanitized.updated_at = new Date().toISOString();
+  const sets = Object.keys(sanitized).map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+  const result = await query(project, `UPDATE "${table}" SET ${sets} WHERE id = $${Object.keys(sanitized).length + 1} RETURNING *`, [...Object.values(sanitized), id]);
+  if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
+  return { success: true, data: result.rows[0] };
+});
+
+fastify.post('/crebortoli/delete', async (req, res) => {
+  const { project = 'crebortoli', table, id } = req.body || {};
+  if (!PROJECTS[project] || !validateTableName(table) || !validateId(id)) {
+    return res.code(400).send({ error: 'Invalid request' });
+  }
   const result = await query(project, `DELETE FROM "${table}" WHERE id = $1 RETURNING id`, [id]);
   if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
   return { success: true, deleted: true, id };

@@ -281,7 +281,7 @@ var AgendaPagina = (function() {
             data: data,
             hora: 'A confirmar',
             cliente: nome,
-            telefone: teleficoLimpo,
+            telefone: telefoneLimpo,
             telefoneFormatado: telefoneFormatado,
             servico: servicoId,
             servicoNome: servico ? servico.nome : '',
