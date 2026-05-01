@@ -293,9 +293,16 @@ var AgendaPagina = (function() {
         
         salvarDadosUsuario(nome, telefoneFormatado);
         
+        var horario = document.getElementById('horario').value;
+        
+        if (!horario) {
+            alert('Por favor, selecione um horário.');
+            return;
+        }
+        
         var agendamento = {
             data: data,
-            hora: 'A confirmar',
+            hora: horario,
             cliente: nome,
             telefone: telefoneLimpo,
             servico: servicoId,
@@ -315,6 +322,7 @@ var AgendaPagina = (function() {
         var whatsappMsg = 'Olá! Acabei de fazer um agendamento no site:\n\n' +
             '👤 Nome completo: ' + nome + '\n' +
             '📅 Data: ' + formatarData(agendamento.data) + '\n' +
+            '🕐 Horário: ' + agendamento.hora + '\n' +
             '💇 Serviço: ' + (agendamento.servico_nome || agendamento.servicoNome) + '\n' +
             '💰 Valor: R$ ' + agendamento.valor.toFixed(2).replace('.', ',');
         
