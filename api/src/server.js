@@ -149,7 +149,13 @@ fastify.get('/crebortoli/:table', async (req, res) => {
     return res.code(400).send({ error: 'Tabela inválida' });
   }
   const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
-  return res.code(200).send(result.rows);
+  const rows = result.rows.map(row => {
+    if (row.data && typeof row.data === 'string') {
+      row.data = row.data.split('T')[0];
+    }
+    return row;
+  });
+  return res.code(200).send(rows);
 });
 
 fastify.get('/config/:chave', async (req, res) => {

@@ -187,8 +187,8 @@
     <div id="footer-placeholder"></div>
     <script>var v='1.0.1';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
     <script>
-        function renderAgendamentos() {
-            const agendamentos = AgendamentoStore.getAll()
+        async function renderAgendamentos() {
+            const agendamentos = (await AgendamentoStore.getAll())
                 .filter(a => !a.pago && a.status !== 'CONCLUIDO')
                 .sort((a, b) => new Date(a.data) - new Date(b.data));
             
@@ -221,10 +221,10 @@
             return data.toLocaleDateString('pt-BR');
         }
 
-        function marcarPago(id) {
+        async function marcarPago(id) {
             if (confirm('Confirmar pagamento deste agendamento?')) {
-                AgendamentoStore.update(id, { pago: true, status: 'PAGO' });
-                renderAgendamentos();
+                await AgendamentoStore.update(id, { pago: true, status: 'PAGO' });
+                await renderAgendamentos();
                 alert('Pagamento confirmado com sucesso!');
             }
         }

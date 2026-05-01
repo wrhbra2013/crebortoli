@@ -24,8 +24,13 @@ const apiRequest = async (endpoint, options = {}) => {
     if (options.body) {
         fetchOptions.body = options.body;
     }
-    const res = await fetch(url.toString(), fetchOptions);
-    return res.json();
+    try {
+        const res = await fetch(url.toString(), fetchOptions);
+        return await res.json();
+    } catch (e) {
+        console.error(`API request failed: ${endpoint}`, e);
+        return null;
+    }
 };
 
 const DataSync = {
@@ -34,7 +39,16 @@ const DataSync = {
     
     async fetchFromAPI(entity) {
         try {
-            const result = await apiRequest('/' + entity, { method: 'GET' });
+            const result = await apiRequest('/api/read', {
+                method: 'POST',
+                body: JSON.stringify({
+                    project: API_CONFIG.project,
+                    table: entity,
+                    order_by: 'created_at',
+                    order_dir: 'DESC',
+                    limit: 1000
+                })
+            });
             return result?.data || result || [];
         } catch (e) {
             console.error(`Erro ao buscar ${entity} da API:`, e);

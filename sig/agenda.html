@@ -378,8 +378,8 @@
         let agendamentosCache = null;
 
         async function loadData() {
-            servicosCache = await servicos.getAll();
-            agendamentosCache = await agendamentos.getAll();
+            servicosCache = await ServicosStore.getAll();
+            agendamentosCache = await AgendamentoStore.getAll();
             
             const isAdminUser = typeof isAdmin === 'function' && isAdmin();
             if (!isAdminUser) {
@@ -556,12 +556,12 @@
             document.getElementById('btn-excluir').style.display = 'inline-block';
         }
 
-        function excluirAgendamento() {
+        async function excluirAgendamento() {
             const id = document.getElementById('agenda-id').value;
             if (!id) return;
             
             if (confirm('Tem certeza que deseja excluir este agendamento?')) {
-                await agendamentos.delete(id);
+                await AgendamentoStore.delete(id);
                 await loadData();
                 fecharModal();
             }
@@ -615,7 +615,7 @@
             document.getElementById('modal-agendamento').classList.remove('active');
         }
 
-        document.getElementById('form-agendamento').addEventListener('submit', function(e) {
+        document.getElementById('form-agendamento').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const id = document.getElementById('agenda-id').value;
@@ -644,9 +644,9 @@
             };
             
             if (id) {
-                await agendamentos.update(id, agendamento);
+                await AgendamentoStore.update(id, agendamento);
             } else {
-                await agendamentos.create(agendamento);
+                await AgendamentoStore.create(agendamento);
             }
             
             await loadData();

@@ -219,78 +219,7 @@
     <script>var v='1.0.1';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         let servicosCache = null;
-
-        async function init() {
-            servicosCache = await servicos.getAll();
-            if (!servicosCache || servicosCache.length === 0) {
-                servicosCache = [
-                    { id: 'dep_perna', nome: 'Depilação Perna', preco: 25, categoria: 'Depilação' },
-                    { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: 50, categoria: 'Depilação' },
-                    { id: 'dep_buco', nome: 'Depilação Buço', preco: 15, categoria: 'Depilação' },
-                    { id: 'dep_axilas', nome: 'Depilação Axilas', preco: 20, categoria: 'Depilação' },
-                    { id: 'dep_pacote', nome: 'Pacote Mensal Depilação', preco: 90, categoria: 'Depilação', desconto: 'De R$110 por R$90' },
-                    { id: 'barreira_cutanea', nome: 'Reparação de Barreira Cutânea', preco: 50, categoria: 'Tratamento' },
-                    { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: 100, categoria: 'Tratamento' },
-                    { id: 'massagem', nome: 'Massagem Relaxante', preco: 50, categoria: 'Massagem' }
-                ];
-            }
-            renderTabela();
-        }
-
-        function getAll() {
-            return servicosCache || [];
-        }
-
-        async function addServico(servico) {
-            await servicos.create(servico);
-            servicosCache = await servicos.getAll();
-        }
-
-        async function updateServico(id, dados) {
-            await servicos.update(id, dados);
-            servicosCache = await servicos.getAll();
-        }
-
-        async function deleteServico(id) {
-            await servicos.delete(id);
-            servicosCache = await servicos.getAll();
-        }
-
-        function exportJson() {
-            const servicos = getAll();
-            const data = { servicos, ultimaAtualizacao: new Date().toISOString().split('T')[0] };
-            const json = JSON.stringify(data, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'servicos.json';
-            a.click();
-            URL.revokeObjectURL(url);
-        }
-
-        function importarJson(input) {
-            const file = input.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (data.servicos && Array.isArray(data.servicos)) {
-                        for (const s of data.servicos) {
-                            await servicos.create(s);
-                        }
-                        servicosCache = await servicos.getAll();
-                        renderTabela();
-                        alert('Importado com sucesso!');
-                    }
-                } catch (err) {
-                    alert('Erro ao importar: ' + err.message);
-                }
-            };
-            reader.readAsText(file);
-            input.value = '';
-        }
+        let modoEdicao = false;
 
         window.servicos = ServicosStore;
         
@@ -304,7 +233,7 @@
                 document.querySelector('.btn-adicionar').style.display = 'none';
                 document.querySelectorAll('.btn-sync').forEach(el => el.style.display = 'none');
             }
-            servicosCache = await servicos.getAll();
+            servicosCache = await ServicosStore.getAll();
             if (!servicosCache || servicosCache.length === 0) {
                 servicosCache = [
                     { id: 'dep_perna', nome: 'Depilação Perna', preco: 25, categoria: 'Depilação' },
@@ -329,8 +258,8 @@
                 alert('Acesso restrito ao administrador');
                 return;
             }
-            await servicos.create(servico);
-            servicosCache = await servicos.getAll();
+            await ServicosStore.create(servico);
+            servicosCache = await ServicosStore.getAll();
         }
 
         async function updateServico(id, dados) {
@@ -338,8 +267,8 @@
                 alert('Acesso restrito ao administrador');
                 return;
             }
-            await servicos.update(id, dados);
-            servicosCache = await servicos.getAll();
+            await ServicosStore.update(id, dados);
+            servicosCache = await ServicosStore.getAll();
         }
 
         async function deleteServico(id) {
@@ -347,11 +276,9 @@
                 alert('Acesso restrito ao administrador');
                 return;
             }
-            await servicos.delete(id);
-            servicosCache = await servicos.getAll();
+            await ServicosStore.delete(id);
+            servicosCache = await ServicosStore.getAll();
         }
-
-        let modoEdicao = false;
 
         function renderTabela() {
             const servicos = getAll();
@@ -457,7 +384,7 @@
             URL.revokeObjectURL(url);
         }
 
-        function importarJson(input) {
+        async function importarJson(input) {
             const file = input.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -466,9 +393,9 @@
                     const data = JSON.parse(e.target.result);
                     if (data.servicos && Array.isArray(data.servicos)) {
                         for (const s of data.servicos) {
-                            await servicos.create(s);
+                            await ServicosStore.create(s);
                         }
-                        servicosCache = await servicos.getAll();
+                        servicosCache = await ServicosStore.getAll();
                         renderTabela();
                         alert('Importado com sucesso!');
                     }

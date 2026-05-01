@@ -333,12 +333,12 @@
 
         window.alternarPeriodo = alternarPeriodo;
 
-        function gerarRelatorio() {
+        async function gerarRelatorio() {
             const tipoPeriodo = document.getElementById('tipo-periodo').value;
             const mes = parseInt(document.getElementById('mes').value);
             const ano = parseInt(document.getElementById('ano').value);
             
-            let agendamentos = AgendamentoStore.getAll();
+            let agendamentos = await AgendamentoStore.getAll();
             
             if (tipoPeriodo === 'mensal') {
                 agendamentos = agendamentos.filter(a => {
@@ -626,6 +626,10 @@
         }
 
         window.gerarPDF = gerarPDF;
+
+        document.getElementById('mes').addEventListener('change', gerarRelatorio);
+        document.getElementById('ano').addEventListener('change', gerarRelatorio);
+
         init();
     </script>
 </body>
