@@ -8,8 +8,6 @@ var AgendaPagina = (function() {
     var dataAtual = new Date();
     var agendamentoSelecionado = null;
     var servicosCarregados = false;
-    var nomeUsuario = '';
-    var telefoneUsuario = '';
     
     var servicosFallback = [
         { id: 'dep_perna', nome: 'Depilação Perna', preco: '25', categoria: 'Depilação' },
@@ -31,8 +29,6 @@ var AgendaPagina = (function() {
        Inicialização
        --------------------------------------------------------------------- */
     async function init() {
-        carregarDadosUsuario();
-        
         var agendamentos = [];
         var servicos = [];
         
@@ -100,16 +96,6 @@ var AgendaPagina = (function() {
     
     function limparTelefone(telefone) {
         return telefone.replace(/\D/g, '');
-    }
-    
-    function carregarDadosUsuario() {
-        nomeUsuario = localStorage.getItem('crebortoli_nome') || '';
-        telefoneUsuario = localStorage.getItem('crebortoli_telefone') || '';
-    }
-    
-    function salvarDadosUsuario(nome, telefoneFormatado) {
-        localStorage.setItem('crebortoli_nome', nome);
-        localStorage.setItem('crebortoli_telefone', telefoneFormatado);
     }
     
     /* -------------------------------------------------------------------------
@@ -206,8 +192,8 @@ var AgendaPagina = (function() {
         document.getElementById('data-input').value = data;
         document.getElementById('data-selecionada').textContent = formatarData(data);
         
-        document.getElementById('nome').value = nomeUsuario;
-        document.getElementById('telefone').value = telefoneUsuario;
+        document.getElementById('nome').value = '';
+        document.getElementById('telefone').value = '';
         document.getElementById('pagar-agora').checked = false;
         
         ServicosStore.getAll()
@@ -290,8 +276,6 @@ var AgendaPagina = (function() {
             alert('Por favor, insira um número de WhatsApp válido.');
             return;
         }
-        
-        salvarDadosUsuario(nome, telefoneFormatado);
         
         var horario = document.getElementById('horario').value;
         
@@ -407,20 +391,11 @@ var AgendaPagina = (function() {
             return;
         }
         
-        var meusAgendamentos = agendamentos.filter(function(a) {
-            return a.cliente && a.cliente.toLowerCase() === nomeUsuario.toLowerCase();
-        });
-        
-        if (meusAgendamentos.length === 0) {
-            lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento encontrado para ' + (nomeUsuario || 'você') + '. Clique em um dia para agendar!</div>';
-            return;
-        }
-        
-        meusAgendamentos.sort(function(a, b) {
+        agendamentos.sort(function(a, b) {
             return new Date(b.data) - new Date(a.data);
         });
         
-        var html = meusAgendamentos.map(function(a) {
+        var html = agendamentos.map(function(a) {
             var badgePago = a.pago ? 
                 '<span class="badge-pago">✓ Pago</span>' : 
                 '<button class="btn-pix" onclick="AgendaPagina.abrirModalPagamento(\'' + a.id + '\')">Pagar PIX</button>';
