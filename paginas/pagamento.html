@@ -244,12 +244,12 @@
             
             container.innerHTML = agendamentos.map(a => `
                 <div class="agendamento-item">
-                    <h4>${a.servicoNome}</h4>
+                    <h4>${a.servico_nome || a.servicoNome || 'Serviço'}</h4>
                     <div class="info"><strong>Data:</strong> ${formatarData(a.data)}</div>
                     <div class="info"><strong>Cliente:</strong> ${a.cliente}</div>
-                    <div class="valor">Total: R$ ${a.valor.toFixed(2).replace('.', ',')}</div>
+                    <div class="valor">Total: R$ ${(a.valor || 0).toFixed(2).replace('.', ',')}</div>
                     <button class="btn-pagar" onclick="marcarPago('${a.id}')">✓ Confirmar Pagamento</button>
-                    <a href="https://api.whatsapp.com/send?phone=${WHATSAPP}&text=Olá!%20Estou%20enviando%20o%20comprovante%20do%20agendamento%20de%20${encodeURIComponent(a.servicoNome)}%20no%20valor%20de%20R$%20${a.valor.toFixed(2).replace('.', ',')}" 
+                    <a href="https://api.whatsapp.com/send?phone=${WHATSAPP}&text=Olá!%20Estou%20enviando%20o%20comprovante%20do%20agendamento%20de%20${encodeURIComponent(a.servico_nome || a.servicoNome || 'Serviço')}%20no%20valor%20de%20R$%20${(a.valor || 0).toFixed(2).replace('.', ',')}" 
                        target="_blank"
                        class="btn-whatsapp">
                         📱 Enviar Comprovante
