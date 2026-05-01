@@ -362,7 +362,7 @@
     </div>
 
     <div id="footer-placeholder"></div>
-    <script>var v='1.0.1';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
+    <script>var v='1.0.1';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/admin-key.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/auth-guard.js?v='+v+'"><\/script>');</script>
     <script>
         const Horarios = [
             '08:00', '09:00', '10:00', '11:00',
@@ -399,7 +399,11 @@
 
         function getAgendamentosPorData(data) {
             const dataStr = data.toISOString().split('T')[0];
-            return getAgendamentos().filter(a => a.data === dataStr);
+            return getAgendamentos().filter(a => {
+                if (!a.data) return false;
+                const aData = a.data.split('T')[0];
+                return aData === dataStr;
+            });
         }
 
         function mudarVisualizacao(view) {
@@ -455,8 +459,8 @@
                     <div class="celula-semana ${isToday ? 'today' : ''}" onclick="abrirModalAgendamento('${dataStr}')">
                         <div class="dia-numero">${data.getDate()}</div>
                         ${agendamentos.map(a => `
-                            <div class="agendamento-item ${a.status.toLowerCase()}" onclick="event.stopPropagation(); editarAgendamento('${a.id}')">
-                                ${a.hora} - ${a.cliente}
+                            <div class="agendamento-item ${(a.status || 'pendente').toLowerCase()}" onclick="event.stopPropagation(); editarAgendamento('${a.id}')">
+                                ${a.hora || ''} - ${a.cliente || ''}
                             </div>
                         `).join('')}
                     </div>
@@ -492,8 +496,8 @@
                     <div class="celula-mes ${isToday ? 'today' : ''}" onclick="abrirModalAgendamento('${dataStr}')">
                         <div class="dia-numero">${dia}</div>
                         ${agendamentos.slice(0, 2).map(a => `
-                            <div class="agendamento-item ${a.status.toLowerCase()}" onclick="event.stopPropagation(); editarAgendamento('${a.id}')">
-                                ${a.hora} ${a.cliente}
+                            <div class="agendamento-item ${(a.status || 'pendente').toLowerCase()}" onclick="event.stopPropagation(); editarAgendamento('${a.id}')">
+                                ${a.hora || ''} ${a.cliente || ''}
                             </div>
                         `).join('')}
                         ${agendamentos.length > 2 ? `<div style="font-size:0.7rem;color:#666;">+${agendamentos.length - 2} mais</div>` : ''}
@@ -537,22 +541,22 @@
             document.getElementById('modal-titulo').textContent = 'Editar Agendamento';
             document.getElementById('agenda-id').value = id;
             document.getElementById('cliente-nome').value = agendamento.cliente;
-            document.getElementById('cliente-telefone').value = agendamento.telefone;
+            document.getElementById('cliente-telefone').value = agendamento.telefone || '';
             document.getElementById('servico-select').value = agendamento.servico;
             document.getElementById('observacoes').value = agendamento.observacoes || '';
-            document.getElementById('agenda-data').value = agendamento.data;
+            document.getElementById('agenda-data').value = agendamento.data ? agendamento.data.split('T')[0] : '';
             document.getElementById('resumo-servicos').style.display = 'block';
             
             const servico = getServicos().find(s => s.id === agendamento.servico);
             document.getElementById('lista-servicos').innerHTML = `
                 <div class="servico-item">
                     <span>${servico ? servico.nome : 'Serviço'}</span>
-                    <span>R$ ${servico ? servico.preco.toFixed(2).replace('.', ',') : '0,00'}</span>
+                    <span>R$ ${(servico ? parseFloat(servico.preco) || 0 : 0).toFixed(2).replace('.', ',')}</span>
                 </div>
             `;
-            document.getElementById('total-servico').textContent = servico ? servico.preco.toFixed(2).replace('.', ',') : '0,00';
+            document.getElementById('total-servico').textContent = (servico ? parseFloat(servico.preco) || 0 : 0).toFixed(2).replace('.', ',');
             
-            renderizarHorarios(agendamento.data, agendamento.hora);
+            renderizarHorarios(agendamento.data ? agendamento.data.split('T')[0] : '', agendamento.hora);
             document.getElementById('btn-excluir').style.display = 'inline-block';
         }
 
@@ -569,7 +573,12 @@
 
         function renderizarHorarios(data, horaSelecionada = null) {
             const container = document.getElementById('horarios-grid');
-            const agendamentos = getAgendamentosPorData(new Date(data));
+            const dataStr = data ? (data.includes('T') ? data.split('T')[0] : data) : '';
+            const agendamentos = getAgendamentos().filter(a => {
+                if (!a.data) return false;
+                const aData = a.data.includes('T') ? a.data.split('T')[0] : a.data;
+                return aData === dataStr;
+            });
             const horariosOcupados = agendamentos.map(a => a.hora);
             
             container.innerHTML = Horarios.map(h => {
@@ -592,7 +601,7 @@
         function popularServicos() {
             const select = document.getElementById('servico-select');
             select.innerHTML = '<option value="">Selecione um serviço</option>' +
-                getServicos().map(s => `<option value="${s.id}" data-preco="${s.preco}">${s.nome} - R$ ${s.preco.toFixed(2).replace('.', ',')}</option>`).join('');
+                getServicos().map(s => `<option value="${s.id}" data-preco="${s.preco}">${s.nome} - R$ ${(parseFloat(s.preco) || 0).toFixed(2).replace('.', ',')}</option>`).join('');
         }
 
         function atualizarTotal() {
@@ -604,10 +613,10 @@
                 document.getElementById('lista-servicos').innerHTML = `
                     <div class="servico-item">
                         <span>${servico.nome}</span>
-                        <span>R$ ${servico.preco.toFixed(2).replace('.', ',')}</span>
+                        <span>R$ ${(parseFloat(servico.preco) || 0).toFixed(2).replace('.', ',')}</span>
                     </div>
                 `;
-                document.getElementById('total-servico').textContent = servico.preco.toFixed(2).replace('.', ',');
+                document.getElementById('total-servico').textContent = (parseFloat(servico.preco) || 0).toFixed(2).replace('.', ',');
             }
         }
 
@@ -636,8 +645,8 @@
                 cliente: document.getElementById('cliente-nome').value,
                 telefone: document.getElementById('cliente-telefone').value,
                 servico: servicoId,
-                servicoNome: servico.nome,
-                valor: servico.preco,
+                servico_nome: servico ? servico.nome : '',
+                valor: servico ? parseFloat(servico.preco) || 0 : 0,
                 observacoes: document.getElementById('observacoes').value,
                 status: 'PENDENTE',
                 pago: false

@@ -59,6 +59,8 @@ if (!API_TOKEN) {
   process.exit(1);
 }
 
+const API_WRITE_KEY = process.env.API_WRITE_KEY || process.env.API_TOKEN;
+
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
   .split(',')
   .map(o => o.trim())
@@ -109,6 +111,14 @@ const authMiddleware = async (req, reply) => {
   const token = req.headers.authorization?.replace('Bearer ', '');
   if (!token || token !== API_TOKEN) {
     reply.code(401).send({ success: false, error: 'Unauthorized' });
+    return;
+  }
+};
+
+const writeAuthMiddleware = async (req, reply) => {
+  const writeKey = req.headers['x-write-key'];
+  if (!writeKey || writeKey !== API_WRITE_KEY) {
+    reply.code(403).send({ success: false, error: 'Write access denied' });
     return;
   }
 };
@@ -320,7 +330,9 @@ fastify.post('/api/table/create', { preHandler: authMiddleware }, async (req, re
 // Rotas /crebortoli/api/* (para o frontend)
 fastify.post('/crebortoli/api/read', async (req, res) => {
   const { project = 'crebortoli', table, filters = {}, columns = ['*'], order_by = 'created_at', order_dir = 'DESC', limit = 100, offset = 0 } = req.body || {};
+  console.log('[READ]', { project, table, order_by, order_dir, limit });
   if (!PROJECTS[project] || !validateTableName(table)) {
+    console.log('[READ] Invalid request', { project: !!PROJECTS[project], table });
     return res.code(400).send({ error: 'Invalid request' });
   }
 
@@ -340,10 +352,11 @@ fastify.post('/crebortoli/api/read', async (req, res) => {
     query(project, `SELECT ${colList} FROM "${table}" ${conditions ? 'WHERE ' + conditions : ''} ORDER BY "${order_by}" ${order_dir.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'} LIMIT ${lim} OFFSET ${offset}`, params),
   ]);
 
+  console.log('[READ] Found', dataRes.rows.length, 'rows');
   return { data: dataRes.rows, pagination: { total: parseInt(countRes.rows[0].count), limit: lim, offset } };
 });
 
-fastify.post('/crebortoli/data/create', async (req, res) => {
+fastify.post('/crebortoli/data/create', { preHandler: writeAuthMiddleware }, async (req, res) => {
   const { project = 'crebortoli', table, data } = req.body || {};
   if (!PROJECTS[project] || !validateTableName(table) || !data) {
     return res.code(400).send({ error: 'Invalid request' });
@@ -362,7 +375,7 @@ fastify.post('/crebortoli/data/create', async (req, res) => {
   return { success: true, data: result.rows[0] };
 });
 
-fastify.post('/crebortoli/data/update', async (req, res) => {
+fastify.post('/crebortoli/data/update', { preHandler: writeAuthMiddleware }, async (req, res) => {
   const { project = 'crebortoli', table, id, data } = req.body || {};
   if (!PROJECTS[project] || !validateTableName(table) || !validateId(id) || !data) {
     return res.code(400).send({ error: 'Invalid request' });
@@ -381,7 +394,7 @@ fastify.post('/crebortoli/data/update', async (req, res) => {
   return { success: true, data: result.rows[0] };
 });
 
-fastify.post('/crebortoli/data/delete', async (req, res) => {
+fastify.post('/crebortoli/data/delete', { preHandler: writeAuthMiddleware }, async (req, res) => {
   const { project = 'crebortoli', table, id } = req.body || {};
   if (!PROJECTS[project] || !validateTableName(table) || !validateId(id)) {
     return res.code(400).send({ error: 'Invalid request' });
@@ -393,9 +406,11 @@ fastify.post('/crebortoli/data/delete', async (req, res) => {
 });
 
 // Atalhos para /crebortoli/create, /crebortoli/update, /crebortoli/delete (usados pelo frontend)
-fastify.post('/crebortoli/create', async (req, res) => {
+fastify.post('/crebortoli/create', { preHandler: writeAuthMiddleware }, async (req, res) => {
   const { project = 'crebortoli', table, data } = req.body || {};
+  console.log('[CREATE]', { project, table, dataKeys: data ? Object.keys(data) : null });
   if (!PROJECTS[project] || !validateTableName(table) || !data) {
+    console.log('[CREATE] Invalid request', { project: !!PROJECTS[project], table: validateTableName(table), hasData: !!data });
     return res.code(400).send({ error: 'Invalid request' });
   }
   const sanitized = {};
@@ -406,13 +421,22 @@ fastify.post('/crebortoli/create', async (req, res) => {
   sanitized.created_at = sanitized.created_at || new Date().toISOString();
   const cols = Object.keys(sanitized).map(c => `"${c}"`).join(', ');
   const vals = Object.keys(sanitized).map((_, i) => `$${i + 1}`).join(', ');
-  const result = await query(project, `INSERT INTO "${table}" (${cols}) VALUES (${vals}) RETURNING *`, Object.values(sanitized));
-  return { success: true, data: result.rows[0] };
+  console.log('[CREATE] SQL: INSERT INTO', table, '(', cols, ')');
+  try {
+    const result = await query(project, `INSERT INTO "${table}" (${cols}) VALUES (${vals}) RETURNING *`, Object.values(sanitized));
+    console.log('[CREATE] OK', result.rows[0]?.id);
+    return { success: true, data: result.rows[0] };
+  } catch (e) {
+    console.log('[CREATE] ERROR', e.message);
+    return res.code(500).send({ error: e.message });
+  }
 });
 
-fastify.post('/crebortoli/update', async (req, res) => {
+fastify.post('/crebortoli/update', { preHandler: writeAuthMiddleware }, async (req, res) => {
   const { project = 'crebortoli', table, id, data } = req.body || {};
+  console.log('[UPDATE]', { project, table, id, dataKeys: data ? Object.keys(data) : null });
   if (!PROJECTS[project] || !validateTableName(table) || !validateId(id) || !data) {
+    console.log('[UPDATE] Invalid request', { project: !!PROJECTS[project], table: validateTableName(table), idValid: validateId(id), hasData: !!data });
     return res.code(400).send({ error: 'Invalid request' });
   }
   const sanitized = {};
@@ -422,12 +446,18 @@ fastify.post('/crebortoli/update', async (req, res) => {
   if (!Object.keys(sanitized).length) return res.code(400).send({ error: 'No valid fields' });
   sanitized.updated_at = new Date().toISOString();
   const sets = Object.keys(sanitized).map((k, i) => `"${k}" = $${i + 1}`).join(', ');
-  const result = await query(project, `UPDATE "${table}" SET ${sets} WHERE id = $${Object.keys(sanitized).length + 1} RETURNING *`, [...Object.values(sanitized), id]);
-  if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
-  return { success: true, data: result.rows[0] };
+  try {
+    const result = await query(project, `UPDATE "${table}" SET ${sets} WHERE id = $${Object.keys(sanitized).length + 1} RETURNING *`, [...Object.values(sanitized), id]);
+    if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
+    console.log('[UPDATE] OK', id);
+    return { success: true, data: result.rows[0] };
+  } catch (e) {
+    console.log('[UPDATE] ERROR', e.message);
+    return res.code(500).send({ error: e.message });
+  }
 });
 
-fastify.post('/crebortoli/delete', async (req, res) => {
+fastify.post('/crebortoli/delete', { preHandler: writeAuthMiddleware }, async (req, res) => {
   const { project = 'crebortoli', table, id } = req.body || {};
   if (!PROJECTS[project] || !validateTableName(table) || !validateId(id)) {
     return res.code(400).send({ error: 'Invalid request' });

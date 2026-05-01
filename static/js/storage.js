@@ -1,7 +1,8 @@
 const API_CONFIG = {
     baseUrl: window.API_BASE_URL || 'https://api.crebortoli.com.br/crebortoli',
     project: window.API_PROJECT || 'crebortoli',
-    token: window.API_TOKEN || 'crebortoli-api-token-2024'
+    token: window.API_TOKEN || 'crebortoli-api-token-2024',
+    writeKey: window.API_WRITE_KEY || null
 };
 
 const generateId = (prefix) => {
@@ -25,6 +26,9 @@ const apiRequest = async (endpoint, options = {}) => {
             ...options.headers
         }
     };
+    if (API_CONFIG.writeKey && ['POST', 'PUT', 'DELETE'].includes(options.method || 'GET')) {
+        fetchOptions.headers['X-Write-Key'] = API_CONFIG.writeKey;
+    }
     if (options.body) {
         fetchOptions.body = options.body;
     }
@@ -43,16 +47,19 @@ const DataSync = {
     
     async fetchFromAPI(entity) {
         try {
+            const body = {
+                project: API_CONFIG.project,
+                table: entity,
+                order_by: 'created_at',
+                order_dir: 'DESC',
+                limit: 1000
+            };
+            console.log('[API] Fetching', entity, 'from', API_CONFIG.baseUrl + '/api/read');
             const result = await apiRequest('/api/read', {
                 method: 'POST',
-                body: JSON.stringify({
-                    project: API_CONFIG.project,
-                    table: entity,
-                    order_by: 'created_at',
-                    order_dir: 'DESC',
-                    limit: 1000
-                })
+                body: JSON.stringify(body)
             });
+            console.log('[API] Result for', entity, ':', result?.data ? result.data.length : 0, 'rows');
             return result?.data || result || [];
         } catch (e) {
             console.error(`Erro ao buscar ${entity} da API:`, e);
@@ -62,15 +69,17 @@ const DataSync = {
     
     async saveToAPI(entity, item) {
         try {
+            const body = {
+                project: API_CONFIG.project,
+                table: entity,
+                data: item
+            };
+            console.log('[API] Saving to', entity, ':', JSON.stringify(item).substring(0, 200));
             const result = await apiRequest('/create', {
                 method: 'POST',
-                body: JSON.stringify({
-                    project: API_CONFIG.project,
-                    table: entity,
-                    data: item
-                })
+                body: JSON.stringify(body)
             });
-            console.log('API save result:', result);
+            console.log('[API] Save result:', result);
             return result?.success ? result.data : null;
         } catch (e) {
             console.error(`Erro ao salvar ${entity} na API:`, e);
@@ -80,16 +89,19 @@ const DataSync = {
     
     async updateToAPI(entity, id, data) {
         try {
+            const body = {
+                project: API_CONFIG.project,
+                table: entity,
+                id: id,
+                data: data
+            };
+            console.log('[API] Updating', entity, id, ':', JSON.stringify(data).substring(0, 200));
             const result = await apiRequest('/update', {
                 method: 'POST',
-                body: JSON.stringify({
-                    project: API_CONFIG.project,
-                    table: entity,
-                    id: id,
-                    data: data
-                })
+                body: JSON.stringify(body)
             });
-            return result.success ? result.data : null;
+            console.log('[API] Update result:', result);
+            return result?.success ? result.data : null;
         } catch (e) {
             console.error(`Erro ao atualizar ${entity} na API:`, e);
             return null;
@@ -282,6 +294,7 @@ if (typeof window !== 'undefined') {
     window.ContatosStore = ContatosStore;
     window.UsuariosStore = UsuariosStore;
     window.API_CONFIG = API_CONFIG;
+    window.hasWriteAccess = !!API_CONFIG.writeKey;
 }
 
 DataSync.loadAll();
