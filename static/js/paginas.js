@@ -1,44 +1,18 @@
-/* =============================================================================
-   JavaScript da Página de Agenda
-   ============================================================================= */
-
 var AgendaPagina = (function() {
     'use strict';
     
     var dataAtual = new Date();
-    var agendamentoSelecionado = null;
-    var servicosCarregados = false;
     var agendamentosCache = [];
     
-    var servicosFallback = [
-        { id: 'dep_perna', nome: 'Depilação Perna', preco: '25', categoria: 'Depilação' },
-        { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: '50', categoria: 'Depilação' },
-        { id: 'dep_buco', nome: 'Depilação Buço', preco: '15', categoria: 'Depilação' },
-        { id: 'dep_axilas', nome: 'Depilação Axilas', preco: '20', categoria: 'Depilação' },
-        { id: 'dep_pacote', nome: 'Pacote Mensal Depilação', preco: '90', categoria: 'Depilação', desconto: 'De R$110 por R$90' },
-        { id: 'barreira_cutanea', nome: 'Reparação de Barreira Cutânea', preco: '50', categoria: 'Tratamento' },
-        { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: '100', categoria: 'Tratamento' },
-        { id: 'massagem', nome: 'Massagem Relaxante', preco: '50', categoria: 'Massagem' }
-    ];
-    
-    var nomesMeses = [
-        'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-        'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-    ];
-    
-    /* -------------------------------------------------------------------------
-       Inicialização
-       --------------------------------------------------------------------- */
     async function init() {
-        var servicos = [];
-        
         try {
             agendamentosCache = await AgendamentoStore.getAll();
+            console.log('Agendamentos carregados:', agendamentosCache.length);
         } catch(e) {
             console.error('Erro ao carregar agendamentos:', e);
-            agendamentosCache = [];
         }
         
+        var servicos = [];
         try {
             servicos = await ServicosStore.getAll();
         } catch(e) {
@@ -46,126 +20,63 @@ var AgendaPagina = (function() {
         }
         
         if (!servicos || servicos.length === 0) {
-            servicos = servicosFallback;
+            servicos = [
+                { id: 'massagem', nome: 'Massagem', preco: '50' }
+            ];
         }
         
         popularServicos(servicos);
         renderizarCalendario();
         renderizarMeusAgendamentos();
-        verificarParametroURL();
-        
         setupEventListeners();
     }
     
     function setupEventListeners() {
-        document.getElementById('form-agendamento').addEventListener('submit', handleSubmit);
-        
-        document.getElementById('data-input').addEventListener('change', function() {
-            var data = this.value;
-            if (data) {
-                document.getElementById('data-selecionada').textContent = formatarData(data);
-            }
-        });
-        
-        var telInput = document.getElementById('telefone');
-        if (telInput) {
-            telInput.addEventListener('input', function(e) {
-                formatarTelefone(e.target);
-            });
-            telInput.addEventListener('blur', function(e) {
-                if (e.target.value.length >= 10) {
-                    formatarTelefone(e.target);
-                }
-            });
+        var form = document.getElementById('form-agendamento');
+        if (form) {
+            form.addEventListener('submit', handleSubmit);
         }
     }
     
-    function formatarTelefone(input) {
-        var value = input.value.replace(/\D/g, '');
-        if (value.length > 11) value = value.slice(0, 11);
-        
-        if (value.length > 7) {
-            value = '(' + value.slice(0,2) + ') ' + value.slice(2,7) + '-' + value.slice(7);
-        } else if (value.length > 2) {
-            value = '(' + value.slice(0,2) + ') ' + value.slice(2);
-        } else if (value.length > 0) {
-            value = '(' + value;
-        }
-        
-        input.value = value;
-    }
-    
-    function limparTelefone(telefone) {
-        return telefone.replace(/\D/g, '');
-    }
-    
-    /* -------------------------------------------------------------------------
-       Renderização do Calendário
-       --------------------------------------------------------------------- */
     function renderizarCalendario() {
         var grid = document.getElementById('calendario-grid');
         var mesAno = document.getElementById('mes-ano');
-        
         if (!grid || !mesAno) return;
         
-        var dataAux = dataAtual;
-        var ano = dataAux.getFullYear();
-        var mes = dataAux.getMonth();
-        
+        var ano = dataAtual.getFullYear();
+        var mes = dataAtual.getMonth();
+        var nomesMeses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
         mesAno.textContent = nomesMeses[mes] + ' ' + ano;
         
         var primeiroDia = new Date(ano, mes, 1);
         var ultimoDia = new Date(ano, mes + 1, 0);
-        var inicioSemana = primeiroDia.getDay();
+        var diaSemana = primeiroDia.getDay();
         
         var html = '';
-        
-        for (var i = 0; i < inicioSemana; i++) {
-            var dia = new Date(ano, mes, -inicioSemana + i + 1);
-            html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia.getDate() + '</div></div>';
+        for (var i = 0; i < diaSemana; i++) {
+            html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + new Date(ano, mes, -diaSemana + i + 1).getDate() + '</div></div>';
         }
         
         for (var dia = 1; dia <= ultimoDia.getDate(); dia++) {
             var data = new Date(ano, mes, dia);
             var dataStr = data.toISOString().split('T')[0];
-            var isToday = data.toDateString() === new Date().toDateString();
-            var isPast = data < new Date().setHours(0,0,0,0);
             
-            var agendamentosDoDia = (agendamentosCache || []).filter(function(a) { 
-                return a.data === dataStr; 
+            var agendamentosDoDia = agendamentosCache.filter(function(a) {
+                var d = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
+                return d === dataStr;
             });
             
-            var badgeClass = '';
-            var badgeText = '';
-            
-            if (agendamentosDoDia.length > 0) {
-                var temNaoPago = agendamentosDoDia.some(function(a) { return !a.pago; });
-                var temPago = agendamentosDoDia.some(function(a) { return a.pago; });
-                
-                if (temNaoPago && temPago) {
-                    badgeClass = 'nao-pago';
-                    badgeText = 'Agendado(s)';
-                } else if (temNaoPago) {
-                    badgeClass = 'nao-pago';
-                    badgeText = agendamentosDoDia.length + ' agendado(s)';
-                } else {
-                    badgeClass = 'pago';
-                    badgeText = 'Pago(s)';
-                }
-            }
+            var isToday = data.toDateString() === new Date().toDateString();
+            var isPast = data < new Date().setHours(0,0,0,0);
             
             if (isPast) {
                 html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia + '</div></div>';
             } else {
-                html += '<div class="dia-cell ' + (isToday ? 'today' : '') + '" onclick="AgendaPagina.selecionarDia(\'' + dataStr + '\')">' +
-                        '<div class="dia-numero">' + dia + '</div>';
-                
+                html += '<div class="dia-cell ' + (isToday ? 'today' : '') + '" onclick="AgendaPagina.selecionarDia(\'' + dataStr + '\')">';
+                html += '<div class="dia-numero">' + dia + '</div>';
                 if (agendamentosDoDia.length > 0) {
-                    html += '<span class="agendamento-badge ' + badgeClass + '">' + badgeText + '</span>';
-                } else {
-                    html += '<span style="font-size:0.75rem; color:#999;">Disponível</span>';
+                    html += '<span class="agendamento-badge">' + agendamentosDoDia.length + ' agendado(s)</span>';
                 }
-                
                 html += '</div>';
             }
         }
@@ -173,289 +84,89 @@ var AgendaPagina = (function() {
         grid.innerHTML = html;
     }
     
-    function navegarMes(direcao) {
-        dataAtual.setMonth(dataAtual.getMonth() + direcao);
-        renderizarCalendario();
-        renderizarMeusAgendamentos();
-    }
-    
-    /* -------------------------------------------------------------------------
-       Modal de Agendamento
-       --------------------------------------------------------------------- */
-    function selecionarDia(data) {
-        abrirModal(data);
-    }
-    
-    function abrirModal(data, servicoId) {
-        var modal = document.getElementById('modal-agendamento');
-        if (!modal) return;
-        
-        document.getElementById('data-selecao').value = data;
-        document.getElementById('data-input').value = data;
-        document.getElementById('data-selecionada').textContent = formatarData(data);
-        
-        document.getElementById('nome').value = '';
-        document.getElementById('telefone').value = '';
-        document.getElementById('pagar-agora').checked = false;
-        
-        ServicosStore.getAll()
-            .then(function(servicos) {
-                if (servicos && servicos.length > 0) {
-                    popularServicos(servicos, servicoId);
-                } else {
-                    popularServicos(servicosFallback, servicoId);
-                }
-            })
-            .catch(function() {
-                popularServicos(servicosFallback, servicoId);
-            });
-        
-        modal.classList.add('active');
-    }
-    
-    function fecharModal() {
-        document.getElementById('modal-agendamento').classList.remove('active');
-        document.getElementById('form-agendamento').reset();
-        document.getElementById('preco-total').textContent = '0,00';
-        document.getElementById('pagar-agora').checked = false;
-    }
-    
-    function popularServicos(servicos, servicoIdPreselecionado) {
-        if (!servicos || servicos.length === 0) return;
-        
-        var select = document.getElementById('servico');
-        var options = '<option value="">Selecione...</option>';
-        
-        servicos.forEach(function(s) {
-            var precoNum = parseFloat(s.preco) || 0;
-            options += '<option value="' + s.id + '" data-preco="' + s.preco + '">' + 
-                       s.nome + ' - R$ ' + precoNum.toFixed(2).replace('.', ',') + '</option>';
-        });
-        
-        select.innerHTML = options;
-        
-        if (servicoIdPreselecionado) {
-            for (var i = 0; i < select.options.length; i++) {
-                if (select.options[i].value === servicoIdPreselecionado) {
-                    select.selectedIndex = i;
-                    atualizarPreco();
-                    break;
-                }
-            }
-        }
-    }
-    
-    function atualizarPreco() {
-        var select = document.getElementById('servico');
-        var option = select.options[select.selectedIndex];
-        if (option && option.dataset.preco) {
-            document.getElementById('preco-total').textContent = parseFloat(option.dataset.preco).toFixed(2).replace('.', ',');
-        } else {
-            document.getElementById('preco-total').textContent = '0,00';
-        }
-    }
-    
-    /* -------------------------------------------------------------------------
-       Submit do Formulário
-       --------------------------------------------------------------------- */
-    async function handleSubmit(e) {
-        e.preventDefault();
-        
-        var servicoId = document.getElementById('servico').value;
-        var servico = await ServicosStore.getById(servicoId);
-        var data = document.getElementById('data-input').value;
-        var nome = document.getElementById('nome').value;
-        var telefoneFormatado = document.getElementById('telefone').value;
-        var telefoneLimpo = limparTelefone(telefoneFormatado);
-        var pagarAgora = document.getElementById('pagar-agora').checked;
-        
-        if (!data || !servicoId || !nome || !telefoneLimpo) {
-            alert('Por favor, preencha todos os campos.');
-            return;
-        }
-        
-        if (telefoneLimpo.length < 10 || telefoneLimpo.length > 11) {
-            alert('Por favor, insira um número de WhatsApp válido.');
-            return;
-        }
-        
-        var horario = document.getElementById('horario').value;
-        
-        if (!horario) {
-            alert('Por favor, selecione um horário.');
-            return;
-        }
-        
-        var agendamento = {
-            data: data,
-            hora: horario,
-            cliente: nome,
-            telefone: telefoneLimpo,
-            servico: servicoId,
-            servico_nome: servico ? servico.nome : '',
-            valor: servico ? parseFloat(servico.preco) || 0 : 0,
-            status: pagarAgora ? 'PAGO' : 'PENDENTE',
-            pago: pagarAgora
-        };
-        
-        var resultado = await AgendamentoStore.save(agendamento);
-        console.log('Agendamento salvo:', resultado);
-        
-        agendamentosCache = await AgendamentoStore.getAll();
-        renderizarCalendario();
-        renderizarMeusAgendamentos();
-        
-        var whatsappMsg = 'Olá! Acabei de fazer um agendamento no site:\n\n' +
-            '👤 Nome completo: ' + nome + '\n' +
-            '📅 Data: ' + formatarData(agendamento.data) + '\n' +
-            '🕐 Horário: ' + agendamento.hora + '\n' +
-            '💇 Serviço: ' + (agendamento.servico_nome || agendamento.servicoNome) + '\n' +
-            '💰 Valor: R$ ' + agendamento.valor.toFixed(2).replace('.', ',');
-        
-        if (pagarAgora) {
-            whatsappMsg += '\n\n✅ Pagamento: Efetuado via PIX';
-            whatsappMsg += '\n\n📋 Instruções para pagamento:';
-            whatsappMsg += '\n1. Abra o app do seu banco';
-            whatsappMsg += '\n2. Escolha PIX ou Transferência';
-            whatsappMsg += '\n3. Use a chave: 14996638056';
-            whatsappMsg += '\n4. Valor: R$ ' + agendamento.valor.toFixed(2).replace('.', ',');
-            whatsappMsg += '\n5. Escreva seu nome completo na mensagem do PIX';
-        }
-        
-        fecharModal();
-        
-        alert('Agendamento realizado com sucesso!' + (pagarAgora ? '\nPagamento registrado!' : ''));
-        window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + encodeURIComponent(whatsappMsg), '_blank');
-    }
-    
-    /* -------------------------------------------------------------------------
-       Modal de Pagamento
-       --------------------------------------------------------------------- */
-    async function abrirModalPagamento(id) {
-        var agendamentos = await AgendamentoStore.getAll();
-        agendamentoSelecionado = agendamentos.find(function(a) { 
-            return a.id === id; 
-        });
-        
-        if (!agendamentoSelecionado) return;
-        
-        document.getElementById('info-pagamento-selecionado').innerHTML = 
-            '<p><strong>Cliente:</strong> ' + agendamentoSelecionado.cliente + '</p>' +
-            '<p><strong>Serviço:</strong> ' + (agendamentoSelecionado.servico_nome || agendamentoSelecionado.servicoNome) + '</p>' +
-            '<p><strong>Data:</strong> ' + formatarData(agendamentoSelecionado.data) + '</p>' +
-            '<p><strong>Valor:</strong> <span style="font-size:1.3rem; color:#2e7d32; font-weight:bold;">R$ ' + 
-            agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '</span></p>';
-        
-        document.getElementById('modal-pagamento').classList.add('active');
-    }
-    
-    function fecharModalPagamento() {
-        document.getElementById('modal-pagamento').classList.remove('active');
-        agendamentoSelecionado = null;
-    }
-    
-    function copiarChavePix() {
-        navigator.clipboard.writeText('14996638056').then(function() {
-            alert('Chave PIX copiada!');
-        });
-    }
-    
-    async function confirmarPagamento() {
-        if (!agendamentoSelecionado) return;
-        
-        await AgendamentoStore.update(agendamentoSelecionado.id, { pago: true, status: 'PAGO' });
-        
-        var whatsappMsg = 'Olá! Já fiz o pagamento do meu agendamento:\n\n' +
-            '👤 Nome: ' + agendamentoSelecionado.cliente + '\n' +
-            '📅 Data: ' + formatarData(agendamentoSelecionado.data) + '\n' +
-            '💇 Serviço: ' + (agendamentoSelecionado.servico_nome || agendamentoSelecionado.servicoNome) + '\n' +
-            '💰 Valor: R$ ' + agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '\n\n' +
-            'Por favor, confirmem o recebimento!';
-        
-        var agendamentos = await AgendamentoStore.getAll();
-        fecharModalPagamento();
-        renderizarCalendario(agendamentos);
-        renderizarMeusAgendamentos(agendamentos);
-        
-        alert('Pagamento registrado! Entraremos em contato para confirmar.');
-        window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + encodeURIComponent(whatsappMsg), '_blank');
-    }
-    
-    /* -------------------------------------------------------------------------
-       Meus Agendamentos
-       --------------------------------------------------------------------- */
     function renderizarMeusAgendamentos() {
         var lista = document.getElementById('lista-meus-agendamentos');
         if (!lista) return;
         
         if (!agendamentosCache || agendamentosCache.length === 0) {
-            lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
+            lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento.</div>';
             return;
         }
         
-        agendamentosCache.sort(function(a, b) {
-            return new Date(b.data) - new Date(a.data);
-        });
-        
         var html = agendamentosCache.map(function(a) {
-            var badgePago = a.pago ? 
-                '<span class="badge-pago">✓ Pago</span>' : 
-                '<button class="btn-pix" onclick="AgendaPagina.abrirModalPagamento(\'' + a.id + '\')">Pagar PIX</button>';
-            
-            return '<div class="meu-agendamento ' + (a.pago ? 'pago' : 'nao-pago') + '">' +
-                   '<div class="info-agendamento">' +
-                   '<div class="servico">' + (a.servico_nome || a.servicoNome) + '</div>' +
-                   '<div class="data">' + formatarData(a.data) + '</div>' +
-                   '<div class="valor">R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
-                   '</div>' +
-                   '<div>' + badgePago + '</div>' +
+            return '<div class="meu-agendamento">' +
+                   '<div>' + (a.servico_nome || 'Servico') + '</div>' +
+                   '<div>' + a.data + ' ' + (a.hora || '') + '</div>' +
+                   '<div>R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
                    '</div>';
         }).join('');
         
         lista.innerHTML = html;
     }
     
-    /* -------------------------------------------------------------------------
-       Parâmetros da URL
-       --------------------------------------------------------------------- */
-    function verificarParametroURL() {
-        var params = new URLSearchParams(window.location.search);
-        var servicoId = params.get('servico');
-        var data = params.get('data');
+    function selecionarDia(data) {
+        abrirModal(data);
+    }
+    
+    function abrirModal(data) {
+        var modal = document.getElementById('modal-agendamento');
+        if (!modal) return;
         
-        if (servicoId || data) {
-            if (!data) {
-                data = new Date().toISOString().split('T')[0];
-            }
-            abrirModal(data, servicoId);
+        document.getElementById('data-selecao').value = data;
+        document.getElementById('data-input').value = data;
+        document.getElementById('nome').value = '';
+        document.getElementById('telefone').value = '';
+        modal.classList.add('active');
+    }
+    
+    function handleSubmit(e) {
+        e.preventDefault();
+        
+        var servicoId = document.getElementById('servico').value;
+        var data = document.getElementById('data-input').value;
+        var nome = document.getElementById('nome').value;
+        var telefone = document.getElementById('telefone').value.replace(/\D/g, '');
+        var horario = document.getElementById('horario').value;
+        
+        if (!data || !servicoId || !nome || !telefone || !horario) {
+            alert('Preencha todos os campos.');
+            return;
         }
+        
+        AgendamentoStore.save({
+            data: data,
+            hora: horario,
+            cliente: nome,
+            telefone: telefone,
+            servico: servicoId,
+            status: 'PENDENTE',
+            pago: false
+        }).then(function() {
+            alert('Agendamento realizado!');
+            return AgendamentoStore.getAll();
+        }).then(function(dados) {
+            agendamentosCache = dados;
+            renderizarCalendario();
+            renderizarMeusAgendamentos();
+            document.getElementById('modal-agendamento').classList.remove('active');
+        });
     }
     
-    /* -------------------------------------------------------------------------
-       Utilitários
-       --------------------------------------------------------------------- */
-    function formatarData(dataStr) {
-        if (!dataStr) return '';
-        var data = new Date(dataStr + 'T00:00:00');
-        return data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+    function popularServicos(servicos) {
+        var select = document.getElementById('servico');
+        if (!select) return;
+        
+        var options = '<option value="">Selecione...</option>';
+        servicos.forEach(function(s) {
+            options += '<option value="' + s.id + '">' + s.nome + ' - R$ ' + parseFloat(s.preco || 0).toFixed(2).replace('.', ',') + '</option>';
+        });
+        select.innerHTML = options;
     }
     
-    /* -------------------------------------------------------------------------
-       API Pública
-       --------------------------------------------------------------------- */
     return {
         init: init,
-        selecionarDia: selecionarDia,
-        navegarMes: navegarMes,
-        fecharModal: fecharModal,
-        atualizarPreco: atualizarPreco,
-        abrirModalPagamento: abrirModalPagamento,
-        fecharModalPagamento: fecharModalPagamento,
-        copiarChavePix: copiarChavePix,
-        confirmarPagamento: confirmarPagamento,
-        abrirModal: abrirModal
+        selecionarDia: selecionarDia
     };
-    
 })();
 
 document.addEventListener('DOMContentLoaded', function() {
