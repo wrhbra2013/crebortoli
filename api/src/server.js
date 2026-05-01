@@ -566,6 +566,26 @@ const start = async () => {
         await pool.query(`CREATE TABLE IF NOT EXISTS "${table.name}" (${table.columns})`);
         console.log(`Tabela "${table.name}" verificada/criada em ${name}`);
       }
+
+      const columns = await pool.query(`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'agendamentos' AND table_schema = 'public'
+      `);
+      const existingCols = columns.rows.map(r => r.column_name);
+
+      const newCols = [
+        { name: 'telefone', sql: `ALTER TABLE "agendamentos" ADD COLUMN IF NOT EXISTS telefone TEXT` },
+        { name: 'servico_nome', sql: `ALTER TABLE "agendamentos" ADD COLUMN IF NOT EXISTS servico_nome TEXT` },
+        { name: 'valor', sql: `ALTER TABLE "agendamentos" ADD COLUMN IF NOT EXISTS valor DECIMAL(10,2)` },
+        { name: 'pago', sql: `ALTER TABLE "agendamentos" ADD COLUMN IF NOT EXISTS pago BOOLEAN DEFAULT false` },
+      ];
+
+      for (const col of newCols) {
+        if (!existingCols.includes(col.name)) {
+          await pool.query(col.sql);
+          console.log(`Coluna "${col.name}" adicionada à tabela agendamentos em ${name}`);
+        }
+      }
     } catch (e) {
       console.error(`Erro ao criar tabelas em ${name}:`, e.message);
     }

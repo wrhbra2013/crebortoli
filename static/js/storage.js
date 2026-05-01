@@ -5,7 +5,11 @@ const API_CONFIG = {
 };
 
 const generateId = (prefix) => {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
 };
 
 const apiRequest = async (endpoint, options = {}) => {
@@ -66,7 +70,8 @@ const DataSync = {
                     data: item
                 })
             });
-            return result.success ? result.data : null;
+            console.log('API save result:', result);
+            return result?.success ? result.data : null;
         } catch (e) {
             console.error(`Erro ao salvar ${entity} na API:`, e);
             return null;
@@ -146,6 +151,10 @@ const DataSync = {
             return saved;
         }
         
+        if (!this._cachedData[entity]) {
+            this._cachedData[entity] = [];
+        }
+        this._cachedData[entity].unshift(item);
         return item;
     },
     

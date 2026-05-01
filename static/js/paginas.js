@@ -305,7 +305,12 @@ var AgendaPagina = (function() {
             pago: pagarAgora
         };
         
-        await AgendamentoStore.save(agendamento);
+        var resultado = await AgendamentoStore.save(agendamento);
+        console.log('Agendamento salvo:', resultado);
+        
+        var agendamentos = await AgendamentoStore.getAll();
+        renderizarCalendario(agendamentos);
+        renderizarMeusAgendamentos(agendamentos);
         
         var whatsappMsg = 'Olá! Acabei de fazer um agendamento no site:\n\n' +
             '👤 Nome completo: ' + nome + '\n' +
@@ -324,9 +329,6 @@ var AgendaPagina = (function() {
         }
         
         fecharModal();
-        var agendamentos = await AgendamentoStore.getAll();
-        renderizarCalendario(agendamentos);
-        renderizarMeusAgendamentos(agendamentos);
         
         alert('Agendamento realizado com sucesso!' + (pagarAgora ? '\nPagamento registrado!' : ''));
         window.open('https://api.whatsapp.com/send?phone=5514996638056&text=' + encodeURIComponent(whatsappMsg), '_blank');
