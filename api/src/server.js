@@ -37,7 +37,7 @@ const PROJECTS = {
 
 const TABLES = {
   default: [
-    { name: 'agendamentos', columns: 'id UUID PRIMARY KEY, cliente TEXT, servico TEXT, data TIMESTAMP, hora TEXT, status TEXT DEFAULT \'pendente\', observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()' },
+    { name: 'agendamentos', columns: 'id UUID PRIMARY KEY, cliente TEXT, telefone TEXT, servico TEXT, servico_nome TEXT, valor DECIMAL(10,2), data TIMESTAMP, hora TEXT, status TEXT DEFAULT \'pendente\', pago BOOLEAN DEFAULT false, observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'servicos', columns: 'id UUID PRIMARY KEY, nome TEXT, descricao TEXT, preco DECIMAL(10,2), duracao_minutos INTEGER, ativo BOOLEAN DEFAULT true, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'clientes', columns: 'id UUID PRIMARY KEY, nome TEXT, telefone TEXT, email TEXT, cpf TEXT, endereco TEXT, observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'receitas', columns: 'id UUID PRIMARY KEY, cliente_id UUID, diagnostico TEXT, prescricao TEXT, validado BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()' },

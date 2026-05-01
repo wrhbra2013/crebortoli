@@ -33,8 +33,24 @@ var AgendaPagina = (function() {
     async function init() {
         carregarDadosUsuario();
         
-        var servicos = servicosFallback;
         var agendamentos = [];
+        var servicos = [];
+        
+        try {
+            agendamentos = await AgendamentoStore.getAll();
+        } catch(e) {
+            console.error('Erro ao carregar agendamentos:', e);
+        }
+        
+        try {
+            servicos = await ServicosStore.getAll();
+        } catch(e) {
+            console.error('Erro ao carregar servicos:', e);
+        }
+        
+        if (!servicos || servicos.length === 0) {
+            servicos = servicosFallback;
+        }
         
         popularServicos(servicos);
         renderizarCalendario(agendamentos);
@@ -282,9 +298,8 @@ var AgendaPagina = (function() {
             hora: 'A confirmar',
             cliente: nome,
             telefone: telefoneLimpo,
-            telefoneFormatado: telefoneFormatado,
             servico: servicoId,
-            servicoNome: servico ? servico.nome : '',
+            servico_nome: servico ? servico.nome : '',
             valor: servico ? parseFloat(servico.preco) || 0 : 0,
             status: pagarAgora ? 'PAGO' : 'PENDENTE',
             pago: pagarAgora
@@ -295,7 +310,7 @@ var AgendaPagina = (function() {
         var whatsappMsg = 'Olá! Acabei de fazer um agendamento no site:\n\n' +
             '👤 Nome completo: ' + nome + '\n' +
             '📅 Data: ' + formatarData(agendamento.data) + '\n' +
-            '💇 Serviço: ' + agendamento.servicoNome + '\n' +
+            '💇 Serviço: ' + (agendamento.servico_nome || agendamento.servicoNome) + '\n' +
             '💰 Valor: R$ ' + agendamento.valor.toFixed(2).replace('.', ',');
         
         if (pagarAgora) {
@@ -330,7 +345,7 @@ var AgendaPagina = (function() {
         
         document.getElementById('info-pagamento-selecionado').innerHTML = 
             '<p><strong>Cliente:</strong> ' + agendamentoSelecionado.cliente + '</p>' +
-            '<p><strong>Serviço:</strong> ' + agendamentoSelecionado.servicoNome + '</p>' +
+            '<p><strong>Serviço:</strong> ' + (agendamentoSelecionado.servico_nome || agendamentoSelecionado.servicoNome) + '</p>' +
             '<p><strong>Data:</strong> ' + formatarData(agendamentoSelecionado.data) + '</p>' +
             '<p><strong>Valor:</strong> <span style="font-size:1.3rem; color:#2e7d32; font-weight:bold;">R$ ' + 
             agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '</span></p>';
@@ -357,7 +372,7 @@ var AgendaPagina = (function() {
         var whatsappMsg = 'Olá! Já fiz o pagamento do meu agendamento:\n\n' +
             '👤 Nome: ' + agendamentoSelecionado.cliente + '\n' +
             '📅 Data: ' + formatarData(agendamentoSelecionado.data) + '\n' +
-            '💇 Serviço: ' + agendamentoSelecionado.servicoNome + '\n' +
+            '💇 Serviço: ' + (agendamentoSelecionado.servico_nome || agendamentoSelecionado.servicoNome) + '\n' +
             '💰 Valor: R$ ' + agendamentoSelecionado.valor.toFixed(2).replace('.', ',') + '\n\n' +
             'Por favor, confirmem o recebimento!';
         
@@ -393,7 +408,7 @@ var AgendaPagina = (function() {
             
             return '<div class="meu-agendamento ' + (a.pago ? 'pago' : 'nao-pago') + '">' +
                    '<div class="info-agendamento">' +
-                   '<div class="servico">' + a.servicoNome + '</div>' +
+                   '<div class="servico">' + (a.servico_nome || a.servicoNome) + '</div>' +
                    '<div class="data">' + formatarData(a.data) + '</div>' +
                    '<div class="valor">R$ ' + a.valor.toFixed(2).replace('.', ',') + '</div>' +
                    '</div>' +
