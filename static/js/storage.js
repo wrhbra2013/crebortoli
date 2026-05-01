@@ -68,12 +68,15 @@ const DataSync = {
     
     async saveToAPI(entity, item) {
         try {
+            const cleanItem = { ...item };
+            delete cleanItem._entity;
+            
             const body = {
                 project: API_CONFIG.project,
                 table: entity,
-                data: item
+                data: cleanItem
             };
-            console.log('[API] Saving to', entity, ':', JSON.stringify(item).substring(0, 200));
+            console.log('[API] Saving to', entity, ':', JSON.stringify(cleanItem).substring(0, 200));
             const result = await apiRequest('/create', {
                 method: 'POST',
                 body: JSON.stringify(body)
@@ -88,13 +91,16 @@ const DataSync = {
     
     async updateToAPI(entity, id, data) {
         try {
+            const cleanData = { ...data };
+            delete cleanData._entity;
+            
             const body = {
                 project: API_CONFIG.project,
                 table: entity,
                 id: id,
-                data: data
+                data: cleanData
             };
-            console.log('[API] Updating', entity, id, ':', JSON.stringify(data).substring(0, 200));
+            console.log('[API] Updating', entity, id, ':', JSON.stringify(cleanData).substring(0, 200));
             const result = await apiRequest('/update', {
                 method: 'POST',
                 body: JSON.stringify(body)

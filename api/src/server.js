@@ -3,7 +3,7 @@ import fastifyStatic from '@fastify/static';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
-import pg from 'pg';
+import pg from 'pg';/*  */
 import 'dotenv/config';
 import path from 'path';
 import { fileURLToPath } from 'url';
