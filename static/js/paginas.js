@@ -397,11 +397,20 @@ var AgendaPagina = (function() {
             return;
         }
         
-        agendamentos.sort(function(a, b) {
-            return new Date(a.data) - new Date(b.data);
+        var meusAgendamentos = agendamentos.filter(function(a) {
+            return a.cliente && a.cliente.toLowerCase() === nomeUsuario.toLowerCase();
         });
         
-        var html = agendamentos.map(function(a) {
+        if (meusAgendamentos.length === 0) {
+            lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento encontrado para ' + (nomeUsuario || 'você') + '. Clique em um dia para agendar!</div>';
+            return;
+        }
+        
+        meusAgendamentos.sort(function(a, b) {
+            return new Date(b.data) - new Date(a.data);
+        });
+        
+        var html = meusAgendamentos.map(function(a) {
             var badgePago = a.pago ? 
                 '<span class="badge-pago">✓ Pago</span>' : 
                 '<button class="btn-pix" onclick="AgendaPagina.abrirModalPagamento(\'' + a.id + '\')">Pagar PIX</button>';
@@ -410,7 +419,7 @@ var AgendaPagina = (function() {
                    '<div class="info-agendamento">' +
                    '<div class="servico">' + (a.servico_nome || a.servicoNome) + '</div>' +
                    '<div class="data">' + formatarData(a.data) + '</div>' +
-                   '<div class="valor">R$ ' + a.valor.toFixed(2).replace('.', ',') + '</div>' +
+                   '<div class="valor">R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
                    '</div>' +
                    '<div>' + badgePago + '</div>' +
                    '</div>';
