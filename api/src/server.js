@@ -425,17 +425,18 @@ fastify.post('/crebortoli/create', { preHandler: writeAuthMiddleware }, async (r
     console.log('[CREATE] Invalid request', { project: !!PROJECTS[project], table: validateTableName(table), hasData: !!data });
     return res.code(400).send({ error: 'Invalid request' });
   }
-  const sanitized = {};
+  const item = {};
   for (const [k, v] of Object.entries(data)) {
-    if (validateTableName(k)) sanitized[k] = v;
+    if (validateTableName(k)) item[k] = v;
   }
-  sanitized.id = sanitized.id || crypto.randomUUID();
-  sanitized.created_at = sanitized.created_at || new Date().toISOString();
-  const cols = Object.keys(sanitized).map(c => `"${c}"`).join(', ');
-  const vals = Object.keys(sanitized).map((_, i) => `$${i + 1}`).join(', ');
-  console.log('[CREATE] SQL: INSERT INTO', table, '(', cols, ')');
+  item.id = item.id || crypto.randomUUID();
+  item.created_at = item.created_at || new Date().toISOString();
+  const cols = Object.keys(item).map(c => `"${c}"`).join(', ');
+  const vals = Object.keys(item).map((_, i) => `$${i + 1}`).join(', ');
+  const params = Object.values(item);
+  console.log('[CREATE] SQL: INSERT INTO', table, '(', cols, ') VALUES (', vals, ')');
   try {
-    const result = await query(project, `INSERT INTO "${table}" (${cols}) VALUES (${vals}) RETURNING *`, Object.values(sanitized));
+    const result = await query(project, `INSERT INTO "${table}" (${cols}) VALUES (${vals}) RETURNING *`, params);
     console.log('[CREATE] OK', result.rows[0]?.id);
     return { success: true, data: result.rows[0] };
   } catch (e) {
@@ -451,15 +452,15 @@ fastify.post('/crebortoli/update', { preHandler: writeAuthMiddleware }, async (r
     console.log('[UPDATE] Invalid request', { project: !!PROJECTS[project], table: validateTableName(table), idValid: validateId(id), hasData: !!data });
     return res.code(400).send({ error: 'Invalid request' });
   }
-  const sanitized = {};
+  const item = {};
   for (const [k, v] of Object.entries(data)) {
-    if (validateTableName(k) && !['id', 'created_at'].includes(k)) sanitized[k] = v;
+    if (validateTableName(k) && !['id', 'created_at'].includes(k)) item[k] = v;
   }
-  if (!Object.keys(sanitized).length) return res.code(400).send({ error: 'No valid fields' });
-  sanitized.updated_at = new Date().toISOString();
-  const sets = Object.keys(sanitized).map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+  if (!Object.keys(item).length) return res.code(400).send({ error: 'No valid fields' });
+  item.updated_at = new Date().toISOString();
+  const sets = Object.keys(item).map((k, i) => `"${k}" = $${i + 1}`).join(', ');
   try {
-    const result = await query(project, `UPDATE "${table}" SET ${sets} WHERE id = $${Object.keys(sanitized).length + 1} RETURNING *`, [...Object.values(sanitized), id]);
+    const result = await query(project, `UPDATE "${table}" SET ${sets} WHERE id = $${Object.keys(item).length + 1} RETURNING *`, [...Object.values(item), id]);
     if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
     console.log('[UPDATE] OK', id);
     return { success: true, data: result.rows[0] };
