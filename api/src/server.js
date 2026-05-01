@@ -117,8 +117,20 @@ const authMiddleware = async (req, reply) => {
 
 const writeAuthMiddleware = async (req, reply) => {
   const writeKey = req.headers['x-write-key'];
-  if (!writeKey || writeKey !== API_WRITE_KEY) {
+  const authToken = req.headers.authorization?.replace('Bearer ', '');
+  
+  if (!writeKey && !authToken) {
     reply.code(403).send({ success: false, error: 'Write access denied' });
+    return;
+  }
+  
+  if (writeKey && writeKey !== API_WRITE_KEY) {
+    reply.code(403).send({ success: false, error: 'Invalid write key' });
+    return;
+  }
+  
+  if (authToken && authToken !== API_TOKEN) {
+    reply.code(403).send({ success: false, error: 'Invalid token' });
     return;
   }
 };

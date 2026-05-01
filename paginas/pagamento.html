@@ -231,7 +231,8 @@
         }
 
         async function renderAgendamentos() {
-            const agendamentos = (await AgendamentoStore.getAll())
+            const todosAgendamentos = await AgendamentoStore.getAll();
+            const agendamentos = todosAgendamentos
                 .filter(a => !a.pago && a.status !== 'CONCLUIDO')
                 .sort((a, b) => new Date(a.data) - new Date(b.data));
             

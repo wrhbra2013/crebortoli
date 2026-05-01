@@ -1,8 +1,7 @@
 const API_CONFIG = {
     baseUrl: window.API_BASE_URL || 'https://api.crebortoli.com.br/crebortoli',
     project: window.API_PROJECT || 'crebortoli',
-    token: window.API_TOKEN || 'crebortoli-api-token-2024',
-    writeKey: window.API_WRITE_KEY || null
+    token: window.API_TOKEN || 'crebortoli-api-token-2024'
 };
 
 const generateId = (prefix) => {

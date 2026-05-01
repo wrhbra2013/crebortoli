@@ -8,6 +8,7 @@ var AgendaPagina = (function() {
     var dataAtual = new Date();
     var agendamentoSelecionado = null;
     var servicosCarregados = false;
+    var agendamentosCache = [];
     
     var servicosFallback = [
         { id: 'dep_perna', nome: 'Depilação Perna', preco: '25', categoria: 'Depilação' },
@@ -29,13 +30,13 @@ var AgendaPagina = (function() {
        Inicialização
        --------------------------------------------------------------------- */
     async function init() {
-        var agendamentos = [];
         var servicos = [];
         
         try {
-            agendamentos = await AgendamentoStore.getAll();
+            agendamentosCache = await AgendamentoStore.getAll();
         } catch(e) {
             console.error('Erro ao carregar agendamentos:', e);
+            agendamentosCache = [];
         }
         
         try {
@@ -49,8 +50,8 @@ var AgendaPagina = (function() {
         }
         
         popularServicos(servicos);
-        renderizarCalendario(agendamentos);
-        renderizarMeusAgendamentos(agendamentos);
+        renderizarCalendario();
+        renderizarMeusAgendamentos();
         verificarParametroURL();
         
         setupEventListeners();
@@ -101,7 +102,7 @@ var AgendaPagina = (function() {
     /* -------------------------------------------------------------------------
        Renderização do Calendário
        --------------------------------------------------------------------- */
-    function renderizarCalendario(agendamentos) {
+    function renderizarCalendario() {
         var grid = document.getElementById('calendario-grid');
         var mesAno = document.getElementById('mes-ano');
         
@@ -130,7 +131,7 @@ var AgendaPagina = (function() {
             var isToday = data.toDateString() === new Date().toDateString();
             var isPast = data < new Date().setHours(0,0,0,0);
             
-            var agendamentosDoDia = (agendamentos || []).filter(function(a) { 
+            var agendamentosDoDia = (agendamentosCache || []).filter(function(a) { 
                 return a.data === dataStr; 
             });
             
@@ -175,6 +176,7 @@ var AgendaPagina = (function() {
     function navegarMes(direcao) {
         dataAtual.setMonth(dataAtual.getMonth() + direcao);
         renderizarCalendario();
+        renderizarMeusAgendamentos();
     }
     
     /* -------------------------------------------------------------------------
@@ -299,9 +301,9 @@ var AgendaPagina = (function() {
         var resultado = await AgendamentoStore.save(agendamento);
         console.log('Agendamento salvo:', resultado);
         
-        var agendamentos = await AgendamentoStore.getAll();
-        renderizarCalendario(agendamentos);
-        renderizarMeusAgendamentos(agendamentos);
+        agendamentosCache = await AgendamentoStore.getAll();
+        renderizarCalendario();
+        renderizarMeusAgendamentos();
         
         var whatsappMsg = 'Olá! Acabei de fazer um agendamento no site:\n\n' +
             '👤 Nome completo: ' + nome + '\n' +
@@ -382,20 +384,20 @@ var AgendaPagina = (function() {
     /* -------------------------------------------------------------------------
        Meus Agendamentos
        --------------------------------------------------------------------- */
-    function renderizarMeusAgendamentos(agendamentos) {
+    function renderizarMeusAgendamentos() {
         var lista = document.getElementById('lista-meus-agendamentos');
         if (!lista) return;
         
-        if (!agendamentos || agendamentos.length === 0) {
+        if (!agendamentosCache || agendamentosCache.length === 0) {
             lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
             return;
         }
         
-        agendamentos.sort(function(a, b) {
+        agendamentosCache.sort(function(a, b) {
             return new Date(b.data) - new Date(a.data);
         });
         
-        var html = agendamentos.map(function(a) {
+        var html = agendamentosCache.map(function(a) {
             var badgePago = a.pago ? 
                 '<span class="badge-pago">✓ Pago</span>' : 
                 '<button class="btn-pix" onclick="AgendaPagina.abrirModalPagamento(\'' + a.id + '\')">Pagar PIX</button>';
