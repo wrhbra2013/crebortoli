@@ -10,6 +10,7 @@ var AgendaPagina = (function() {
             console.log('Agendamentos carregados:', agendamentosCache.length);
         } catch(e) {
             console.error('Erro ao carregar agendamentos:', e);
+            agendamentosCache = [];
         }
         
         var servicos = [];
@@ -45,7 +46,7 @@ var AgendaPagina = (function() {
         
         var ano = dataAtual.getFullYear();
         var mes = dataAtual.getMonth();
-        var nomesMeses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+        var nomesMeses = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
         mesAno.textContent = nomesMeses[mes] + ' ' + ano;
         
         var primeiroDia = new Date(ano, mes, 1);
@@ -54,7 +55,8 @@ var AgendaPagina = (function() {
         
         var html = '';
         for (var i = 0; i < diaSemana; i++) {
-            html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + new Date(ano, mes, -diaSemana + i + 1).getDate() + '</div></div>';
+            var dia = new Date(ano, mes, -diaSemana + i + 1);
+            html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia.getDate() + '</div></div>';
         }
         
         for (var dia = 1; dia <= ultimoDia.getDate(); dia++) {
@@ -66,13 +68,10 @@ var AgendaPagina = (function() {
                 return d === dataStr;
             });
             
-            var isToday = data.toDateString() === new Date().toDateString();
-            var isPast = data < new Date().setHours(0,0,0,0);
-            
-            if (isPast) {
+            if (data < new Date().setHours(0,0,0,0)) {
                 html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia + '</div></div>';
             } else {
-                html += '<div class="dia-cell ' + (isToday ? 'today' : '') + '" onclick="AgendaPagina.selecionarDia(\'' + dataStr + '\')">';
+                html += '<div class="dia-cell" onclick="AgendaPagina.selecionarDia(\'' + dataStr + '\')">';
                 html += '<div class="dia-numero">' + dia + '</div>';
                 if (agendamentosDoDia.length > 0) {
                     html += '<span class="agendamento-badge">' + agendamentosDoDia.length + ' agendado(s)</span>';
@@ -86,18 +85,32 @@ var AgendaPagina = (function() {
     
     function renderizarMeusAgendamentos() {
         var lista = document.getElementById('lista-meus-agendamentos');
-        if (!lista) return;
-        
-        if (!agendamentosCache || agendamentosCache.length === 0) {
-            lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento.</div>';
+        if (!lista) {
+            console.error('Elemento lista-meus-agendamentos não encontrado');
             return;
         }
         
+        console.log('Renderizando Meus Agendamentos:', agendamentosCache.length);
+        
+        if (!agendamentosCache || agendamentosCache.length === 0) {
+            lista.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
+            return;
+        }
+        
+        agendamentosCache.sort(function(a, b) {
+            var dA = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
+            var dB = b.data && b.data.includes('T') ? b.data.split('T')[0] : b.data;
+            return new Date(dB) - new Date(dA);
+        });
+        
         var html = agendamentosCache.map(function(a) {
             return '<div class="meu-agendamento">' +
-                   '<div>' + (a.servico_nome || 'Servico') + '</div>' +
-                   '<div>' + a.data + ' ' + (a.hora || '') + '</div>' +
-                   '<div>R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
+                   '<div class="info-agendamento">' +
+                   '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Serviço') + '</div>' +
+                   '<div class="data">' + a.data + ' às ' + (a.hora || '') + '</div>' +
+                   '<div class="valor">R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
+                   '</div>' +
+                   '<div><button class="btn-excluir" onclick="AgendaPagina.excluirAgendamento(\'' + a.id + '\')">Excluir</button></div>' +
                    '</div>';
         }).join('');
         
@@ -152,6 +165,19 @@ var AgendaPagina = (function() {
         });
     }
     
+    function excluirAgendamento(id) {
+        if (confirm('Tem certeza que deseja excluir este agendamento?')) {
+            AgendamentoStore.delete(id).then(function() {
+                alert('Agendamento excluido!');
+                return AgendamentoStore.getAll();
+            }).then(function(dados) {
+                agendamentosCache = dados;
+                renderizarCalendario();
+                renderizarMeusAgendamentos();
+            });
+        }
+    }
+    
     function popularServicos(servicos) {
         var select = document.getElementById('servico');
         if (!select) return;
@@ -165,7 +191,8 @@ var AgendaPagina = (function() {
     
     return {
         init: init,
-        selecionarDia: selecionarDia
+        selecionarDia: selecionarDia,
+        excluirAgendamento: excluirAgendamento
     };
 })();
 
