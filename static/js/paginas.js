@@ -131,6 +131,27 @@ var AgendaPagina = (function() {
         modal.classList.add('active');
     }
     
+    function fecharModal() {
+        var modal = document.getElementById('modal-agendamento');
+        if (modal) modal.classList.remove('active');
+    }
+    
+    function atualizarPreco() {
+        var select = document.getElementById('servico');
+        var precoSpan = document.getElementById('preco-total');
+        if (!select || !precoSpan) return;
+        
+        var selectedOption = select.options[select.selectedIndex];
+        if (!selectedOption.value) {
+            precoSpan.textContent = '0,00';
+            return;
+        }
+        
+        var match = selectedOption.text.match(/R\$\s*([\d,.]+)/);
+        var preco = match ? parseFloat(match[1].replace(',', '.')) : 0;
+        precoSpan.textContent = preco.toFixed(2).replace('.', ',');
+    }
+    
     function handleSubmit(e) {
         e.preventDefault();
         
@@ -177,7 +198,9 @@ var AgendaPagina = (function() {
     
     return {
         init: init,
-        selecionarDia: selecionarDia
+        selecionarDia: selecionarDia,
+        fecharModal: fecharModal,
+        atualizarPreco: atualizarPreco
     };
 })();
 
