@@ -456,6 +456,13 @@
     flex-wrap: wrap;
 }
 
+.meu-agendamento .cliente {
+    font-weight: bold;
+    margin-bottom: 0.3rem;
+    color: #333;
+    width: 100%;
+}
+
 .meu-agendamento .servico {
     font-weight: bold;
     color: #333;

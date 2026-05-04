@@ -202,8 +202,14 @@
             </div>
 
             <div class="agendamentos-pendentes">
-                <h3>Meus Agendamentos</h3>
-                <div id="lista-agendamentos"></div>
+                <h3>Agendamentos Confirmados</h3>
+                <div id="lista-meus-agendamentos"></div>
+                
+                <h3 style="margin-top: 2rem;">Pagamentos Confirmados</h3>
+                <div id="lista-pagamentos-confirmados"></div>
+                
+                <h3 style="margin-top: 2rem;">Agendamentos Pendentes de Pagamento</h3>
+                <div id="lista-agendamentos-pendentes"></div>
             </div>
         </div>
     </main>
@@ -229,51 +235,99 @@
                 prompt('Copie a chave PIX:', CHAVE_PIX);
             });
         }
-
-        async function renderAgendamentos() {
-            const todosAgendamentos = await AgendamentoStore.getAll();
-            const agendamentos = todosAgendamentos
-                .filter(a => !a.pago && a.status !== 'CONCLUIDO')
-                .sort((a, b) => new Date(a.data) - new Date(b.data));
-            
-            const container = document.getElementById('lista-agendamentos');
-            
-            if (agendamentos.length === 0) {
-                container.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento pendente de pagamento.</div>';
-                return;
+ 
+        function formatarTelefone(tel) {
+            if (!tel) return '';
+            var digits = tel.replace(/\D/g, '');
+            if (digits.length === 11) {
+                return '(' + digits.substring(0, 2) + ') ' + digits.substring(2, 7) + '-' + digits.substring(7);
+            } else if (digits.length === 10) {
+                return '(' + digits.substring(0, 2) + ') ' + digits.substring(2, 6) + '-' + digits.substring(6);
             }
-            
-            container.innerHTML = agendamentos.map(a => `
-                <div class="agendamento-item">
-                    <h4>${a.servico_nome || a.servicoNome || 'Serviço'}</h4>
-                    <div class="info"><strong>Data:</strong> ${formatarData(a.data)}</div>
-                    <div class="info"><strong>Cliente:</strong> ${a.cliente}</div>
-                    <div class="valor">Total: R$ ${(a.valor || 0).toFixed(2).replace('.', ',')}</div>
-                    <button class="btn-pagar" onclick="marcarPago('${a.id}')">✓ Confirmar Pagamento</button>
-                    <a href="https://api.whatsapp.com/send?phone=${WHATSAPP}&text=Olá!%20Estou%20enviando%20o%20comprovante%20do%20agendamento%20de%20${encodeURIComponent(a.servico_nome || a.servicoNome || 'Serviço')}%20no%20valor%20de%20R$%20${(a.valor || 0).toFixed(2).replace('.', ',')}" 
-                       target="_blank"
-                       class="btn-whatsapp">
-                        📱 Enviar Comprovante
-                    </a>
-                </div>
-            `).join('');
+            return tel;
         }
-
+ 
+        function gerarHtmlAgendamento(a) {
+            return '<div class="meu-agendamento">' +
+                   '<div class="info-agendamento">' +
+                   '<div class="cliente"><strong>' + (a.cliente || 'Cliente') + '</strong></div>' +
+                   '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Serviço') + '</div>' +
+                   '<div class="data">' + a.data + ' às ' + (a.hora || '') + '</div>' +
+                   '</div>' +
+                   '</div>';
+        }
+ 
         function formatarData(dataStr) {
             const data = new Date(dataStr + 'T00:00:00');
             return data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
         }
-
+ 
+        async function renderTodosAgendamentos() {
+            const todos = await AgendamentoStore.getAll();
+            if (!todos) return;
+            
+            todos.sort((a, b) => {
+                const dA = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
+                const dB = b.data && b.data.includes('T') ? b.data.split('T')[0] : b.data;
+                return new Date(dB) - new Date(dA);
+            });
+            
+            // Card 1: Todos os agendamentos confirmados
+            const listaTodos = document.getElementById('lista-meus-agendamentos');
+            if (listaTodos) {
+                if (todos.length === 0) {
+                    listaTodos.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda.</div>';
+                } else {
+                    listaTodos.innerHTML = todos.map(gerarHtmlAgendamento).join('');
+                }
+            }
+            
+            // Card 2: Apenas pagos
+            const listaPagos = document.getElementById('lista-pagamentos-confirmados');
+            if (listaPagos) {
+                const pagos = todos.filter(a => a.pago);
+                if (pagos.length === 0) {
+                    listaPagos.innerHTML = '<div class="sem-agendamentos">Nenhum pagamento confirmado ainda.</div>';
+                } else {
+                    listaPagos.innerHTML = pagos.map(gerarHtmlAgendamento).join('');
+                }
+            }
+            
+            // Card 3: Pendentes de pagamento (original)
+            const listaPendentes = document.getElementById('lista-agendamentos-pendentes');
+            if (listaPendentes) {
+                const pendentes = todos.filter(a => !a.pago && a.status !== 'CONCLUIDO');
+                if (pendentes.length === 0) {
+                    listaPendentes.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento pendente de pagamento.</div>';
+                } else {
+                    listaPendentes.innerHTML = pendentes.map(a => `
+                        <div class="agendamento-item">
+                            <h4>${a.servico_nome || a.servicoNome || 'Serviço'}</h4>
+                            <div class="info"><strong>Data:</strong> ${formatarData(a.data)}</div>
+                            <div class="info"><strong>Cliente:</strong> ${a.cliente}</div>
+                            <div class="valor">Total: R$ ${(a.valor || 0).toFixed(2).replace('.', ',')}</div>
+                            <button class="btn-pagar" onclick="marcarPago('${a.id}')">✓ Confirmar Pagamento</button>
+                            <a href="https://api.whatsapp.com/send?phone=${WHATSAPP}&text=Olá!%20Estou%20enviando%20o%20comprovante%20do%20agendamento%20de%20${encodeURIComponent(a.servico_nome || a.servicoNome || 'Serviço')}%20no%20valor%20de%20R$%20${(a.valor || 0).toFixed(2).replace('.', ',')}" 
+                               target="_blank"
+                               class="btn-whatsapp">
+                                📱 Enviar Comprovante
+                            </a>
+                        </div>
+                    `).join('');
+                }
+            }
+        }
+ 
         async function marcarPago(id) {
             if (confirm('Confirmar pagamento deste agendamento?')) {
                 await AgendamentoStore.update(id, { pago: true, status: 'PAGO' });
-                renderAgendamentos();
+                renderTodosAgendamentos();
                 alert('Pagamento confirmado com sucesso!');
             }
         }
-
+ 
         document.addEventListener('DOMContentLoaded', function() {
-            renderAgendamentos();
+            renderTodosAgendamentos();
         });
     </script>
 </body>
