@@ -16,25 +16,10 @@ var ServicosPagina = (function() {
         { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: '100', categoria: 'Tratamento' },
         { id: 'massagem', nome: 'Massagem Relaxante', preco: '50', categoria: 'Massagem' }
     ];
-
-    var API_CONFIG = {
-        baseUrl: window.API_BASE_URL || 'https://api.crebortoli.com.br/crebortoli/data'
-    };
-
-    async function fetchFromAPI() {
-        var url = new URL(API_CONFIG.baseUrl + '/servicos');
-        var res = await fetch(url.toString(), {
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        var result = await res.json();
-        return result?.data || result || [];
-    }
     
     async function init() {
         try {
-            var dados = await fetchFromAPI();
+            var dados = await ServicosStore.getAll();
             if (dados && dados.length > 0) {
                 servicosCarregados = true;
                 renderizarTabela(dados);

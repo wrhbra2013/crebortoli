@@ -108,7 +108,7 @@ var AgendaPagina = (function() {
                    '<div class="info-agendamento">' +
                    '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Serviço') + '</div>' +
                    '<div class="data">' + a.data + ' às ' + (a.hora || '') + '</div>' +
-                   '<div class="valor">R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
+                   '<div class="valor">R$ ' + parseFloat(a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
                    '</div>' +
                    '</div>';
         }).join('');
