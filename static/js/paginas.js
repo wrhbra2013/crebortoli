@@ -15,6 +15,15 @@ var AgendaPagina = (function() {
         return tel;
     }
     
+    function formatarData(dataStr) {
+        if (!dataStr) return '';
+        var data = new Date(dataStr);
+        var dia = data.getDate().toString().padStart(2, '0');
+        var mes = (data.getMonth() + 1).toString().padStart(2, '0');
+        var ano = data.getFullYear();
+        return dia + '/' + mes + '/' + ano;
+    }
+    
     async function init() {
         try {
             agendamentosCache = await AgendamentoStore.getAll();
@@ -102,7 +111,6 @@ var AgendaPagina = (function() {
     
     function renderizarMeusAgendamentos() {
         var listaTodos = document.getElementById('lista-meus-agendamentos');
-        var listaPagos = document.getElementById('lista-pagamentos-confirmados');
         
         if (!listaTodos) {
             console.error('Elemento lista-meus-agendamentos não encontrado');
@@ -113,7 +121,6 @@ var AgendaPagina = (function() {
         
         if (!agendamentosCache || agendamentosCache.length === 0) {
             listaTodos.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
-            if (listaPagos) listaPagos.innerHTML = '<div class="sem-agendamentos">Nenhum pagamento confirmado ainda.</div>';
             return;
         }
         
@@ -128,21 +135,12 @@ var AgendaPagina = (function() {
                    '<div class="info-agendamento">' +
                    '<div class="cliente"><strong>' + (a.cliente || 'Cliente') + '</strong></div>' +
                    '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Serviço') + '</div>' +
-                   '<div class="data">' + a.data + ' às ' + (a.hora || '') + '</div>' +
+                   '<div class="data">' + formatarData(a.data) + ' às ' + (a.hora || '') + '</div>' +
                    '</div>' +
                    '</div>';
         }
         
         listaTodos.innerHTML = agendamentosCache.map(gerarHtmlAgendamento).join('');
-        
-        if (listaPagos) {
-            var pagos = agendamentosCache.filter(function(a) { return a.pago; });
-            if (pagos.length === 0) {
-                listaPagos.innerHTML = '<div class="sem-agendamentos">Nenhum pagamento confirmado ainda.</div>';
-            } else {
-                listaPagos.innerHTML = pagos.map(gerarHtmlAgendamento).join('');
-            }
-        }
     }
     
     function selecionarDia(data) {
