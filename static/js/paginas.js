@@ -124,7 +124,16 @@ var AgendaPagina = (function() {
             return;
         }
         
-        agendamentosCache.sort(function(a, b) {
+        var agendamentosConfirmados = agendamentosCache.filter(function(a) {
+            return a.status === 'CONFIRMADO';
+        });
+        
+        if (agendamentosConfirmados.length === 0) {
+            listaTodos.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento confirmado ainda.</div>';
+            return;
+        }
+        
+        agendamentosConfirmados.sort(function(a, b) {
             var dA = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
             var dB = b.data && b.data.includes('T') ? b.data.split('T')[0] : b.data;
             return new Date(dB) - new Date(dA);
@@ -137,10 +146,11 @@ var AgendaPagina = (function() {
                    '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Serviço') + '</div>' +
                    '<div class="data">' + formatarData(a.data) + ' às ' + (a.hora || '') + '</div>' +
                    '</div>' +
+                   '<button class="btn-excluir-agendamento" onclick="AgendaPagina.excluirAgendamento(\'' + a.id + '\')">Excluir</button>' +
                    '</div>';
         }
         
-        listaTodos.innerHTML = agendamentosCache.map(gerarHtmlAgendamento).join('');
+        listaTodos.innerHTML = agendamentosConfirmados.map(gerarHtmlAgendamento).join('');
     }
     
     function selecionarDia(data) {
@@ -212,7 +222,22 @@ var AgendaPagina = (function() {
         });
     }
     
-    function popularServicos(servicos) {
+        async function excluirAgendamento(id) {
+            if (!confirm('Tem certeza que deseja excluir este agendamento?')) return;
+            
+            try {
+                await AgendamentoStore.delete(id);
+                alert('Agendamento excluído com sucesso!');
+                agendamentosCache = await AgendamentoStore.getAll();
+                renderizarCalendario();
+                renderizarMeusAgendamentos();
+            } catch(e) {
+                console.error('Erro ao excluir agendamento:', e);
+                alert('Erro ao excluir agendamento. Tente novamente.');
+            }
+        }
+        
+        function popularServicos(servicos) {
         var select = document.getElementById('servico');
         if (!select) return;
         
@@ -223,12 +248,13 @@ var AgendaPagina = (function() {
         select.innerHTML = options;
     }
     
-    return {
-        init: init,
-        selecionarDia: selecionarDia,
-        fecharModal: fecharModal,
-        atualizarPreco: atualizarPreco
-    };
+        return {
+            init: init,
+            selecionarDia: selecionarDia,
+            fecharModal: fecharModal,
+            atualizarPreco: atualizarPreco,
+            excluirAgendamento: excluirAgendamento
+        };
 })();
 
 document.addEventListener('DOMContentLoaded', function() {

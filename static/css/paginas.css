@@ -492,6 +492,21 @@
     font-style: italic;
 }
 
+.btn-excluir-agendamento {
+    background: #f44336;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+}
+
+.btn-excluir-agendamento:hover {
+    background: #d32f2f;
+}
+
 .total-box {
     background: #e8f5e9;
     padding: 1rem;
