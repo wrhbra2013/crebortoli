@@ -98,114 +98,111 @@
             font-size: 0.9rem;
             color: #e65100;
         }
-        .btn-quite {
-            background: #4caf50;
-            color: white;
-            border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: 600;
-            margin-top: 0.5rem;
-        }
-        .btn-quite:hover {
-            background: #388e3c;
-        }
-        .pagamentos-section {
+        .meus-pagamentos {
             background: #fff;
             border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
         }
-        .pagamentos-section h3 {
+        .meus-pagamentos h3 {
+            color: #e91e63;
             margin-top: 0;
             margin-bottom: 1rem;
-            color: #333;
-            border-bottom: 2px solid #e0e0e0;
-            padding-bottom: 0.5rem;
         }
-        .pagos-section h3 {
-            color: #2e7d32;
-            border-color: #4caf50;
-        }
-        .pendentes-section h3 {
-            color: #e65100;
-            border-color: #f44336;
-        }
-        .agendamento-item {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background: #fff;
-        }
-        .agendamento-item.pago {
-            background: #e8f5e9;
-            border-color: #4caf50;
-            border-left: 4px solid #4caf50;
-        }
-        .agendamento-item.pendente {
-            background: #fff8e1;
-            border-color: #ff9800;
-            border-left: 4px solid #f44336;
-        }
-        .info-agendamento {
+        .lista-pagamentos {
             display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
+            flex-direction: column;
+            gap: 0.8rem;
         }
-        .cliente {
+        .pagamento-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 4px solid #e91e63;
+            background: #fce4ec;
+        }
+        .pagamento-item.pendente {
+            background: #fff3e0;
+            border-left-color: #ff9800;
+        }
+        .pagamento-item.quite {
+            background: #e8f5e9;
+            border-left-color: #4caf50;
+        }
+        .pagamento-item .info {
+            flex: 1;
+        }
+        .pagamento-item .cliente {
             font-weight: bold;
             margin-bottom: 0.3rem;
             color: #333;
-            width: 100%;
         }
-        .servico {
+        .pagamento-item .servico {
             font-weight: bold;
             color: #333;
         }
-        .data {
+        .pagamento-item .data {
             color: #666;
         }
-        .valor {
+        .pagamento-item .valor {
             font-weight: bold;
             color: #2e7d32;
-            margin-top: 0.5rem;
+            margin-top: 0.3rem;
         }
-        .btn-pagar-vermelho {
-            background: #f44336;
+        .pagamento-item .acoes {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            align-items: flex-end;
+        }
+        .btn-pagar {
+            background: #e91e63;
             color: white;
             border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
-            margin-top: 0.5rem;
-            display: inline-block;
-            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
         }
-        .btn-pagar-vermelho:hover {
-            background: #d32f2f;
+        .btn-pagar:hover {
+            background: #c2185b;
         }
-        .btn-whatsapp {
-            background: #25d366;
+        .btn-comprovante {
+            background: #4caf50;
             color: white;
             border: none;
-            padding: 0.8rem 1.5rem;
-            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1rem;
-            margin-top: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+        .btn-comprovante:hover {
+            background: #388e3c;
+        }
+        .badge-status {
             display: inline-block;
-            text-decoration: none;
-            margin-left: 0.5rem;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
         }
-        .btn-whatsapp:hover {
-            background: #128c7e;
+        .badge-status.pendente {
+            background: #fff3e0;
+            color: #e65100;
+            border: 1px solid #ff9800;
         }
-        .sem-agendamentos {
+        .badge-status.quite {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border: 1px solid #4caf50;
+        }
+        .sem-pagamentos {
             text-align: center;
             padding: 2rem;
             color: #999;
@@ -235,7 +232,7 @@
                 </div>
                 
                 <button class="btn-copiar" id="btn-copiar" onclick="copiarChave()">
-                    📋 Copiar Chave PIX
+                    &#128203; Copiar Chave PIX
                 </button>
                 
                 <div class="alert-importante">
@@ -244,49 +241,40 @@
                 </div>
             </div>
 
-            <div class="pagamentos-section">
-                <h2 style="text-align: center; color: #e91e63; margin-bottom: 1.5rem;">Meus Pagamentos</h2>
-                
-                <div class="pagos-section">
-                    <h3>&#10004; Pagos</h3>
-                    <div id="lista-pagos"></div>
-                </div>
-                
-                <div class="pendentes-section" style="margin-top: 2rem;">
-                    <h3>&#9888; Não Pagos</h3>
-                    <div id="lista-pendentes"></div>
-                </div>
+            <div class="meus-pagamentos">
+                <h3>Meus Pagamentos</h3>
+                <div id="lista-pagamentos" class="lista-pagamentos"></div>
             </div>
         </div>
     </main>
 
-            <div id="footer-placeholder"></div>
+    <div id="modal-pagamento" class="modal">
+        <div class="modal-content">
+            <button class="btn-fechar" onclick="fecharModalPagamento()">&times;</button>
+            <h2>Pagamento via PIX</h2>
+            <div id="info-pagamento-selecionado"></div>
             
-            <div id="modal-pagamento" class="modal">
-                <div class="modal-content">
-                    <button class="btn-fechar" onclick="fecharModalPagamento()">&times;</button>
-                    <h2>Pagamento via PIX</h2>
-                    <div id="info-pagamento-selecionado"></div>
-                    
-                    <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0;">
-                        <p style="margin: 0; color: #2e7d32; font-weight: bold;">Chave PIX (Celular)</p>
-                        <p style="font-size: 1.3rem; font-weight: bold; margin: 0.5rem 0; color: #1b5e20;">14996638056</p>
-                        <button class="btn-copiar" onclick="copiarChave()">Copiar Chave</button>
-                    </div>
-                    
-                    <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin: 1rem 0; border: 1px solid #ff9800;">
-                        <p style="margin: 0; font-size: 0.9rem; color: #e65100;">
-                            <strong>⚠️ Importante:</strong><br>
-                            Ao fazer o PIX, escreva <strong>seu nome completo</strong> na mensagem do pagamento para facilitar a identificação.
-                        </p>
-                    </div>
-                    
-                    <button class="btn-pagar-vermelho" onclick="confirmarPagamentoModal()">✓ Já fiz o pagamento</button>
-                    <button class="btn-pagar-vermelho" style="background: #666; margin-left: 0.5rem;" onclick="fecharModalPagamento()">Fechar</button>
-                </div>
+            <div style="background: #e8f5e9; padding: 1rem; border-radius: 8px; text-align: center; margin: 1rem 0;">
+                <p style="margin: 0; color: #2e7d32; font-weight: bold;">Chave PIX (Celular)</p>
+                <p style="font-size: 1.3rem; font-weight: bold; margin: 0.5rem 0; color: #1b5e20;">14996638056</p>
+                <button class="btn-copiar" onclick="copiarChave()">Copiar Chave</button>
             </div>
             
-            <script>var v='1.0.6';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
+            <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin: 1rem 0; border: 1px solid #ff9800;">
+                <p style="margin: 0; font-size: 0.9rem; color: #e65100;">
+                    <strong>&#9888; Importante:</strong><br>
+                    Ao fazer o PIX, escreva <strong>seu nome completo</strong> na mensagem do pagamento para facilitar a identificação.
+                </p>
+            </div>
+            
+            <button class="btn-pix" onclick="confirmarPagamentoModal()">&#10004; Já fiz o pagamento</button>
+            <button class="btn-agendar" style="background: #666; margin-top: 0.5rem;" onclick="fecharModalPagamento()">Fechar</button>
+        </div>
+    </div>
+
+    <div id="footer-placeholder"></div>
+    
+    <script>var v='1.0.6';document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');</script>
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
     <script>
         const CHAVE_PIX = '14996638056';
@@ -296,10 +284,10 @@
         function copiarChave() {
             navigator.clipboard.writeText(CHAVE_PIX).then(() => {
                 const btn = document.getElementById('btn-copiar');
-                btn.textContent = '✓ Chave Copiada!';
+                btn.textContent = '&#10004; Chave Copiada!';
                 btn.classList.add('copiado');
                 setTimeout(() => {
-                    btn.textContent = '📋 Copiar Chave PIX';
+                    btn.textContent = '&#128203; Copiar Chave PIX';
                     btn.classList.remove('copiado');
                 }, 2000);
             }).catch(() => {
@@ -318,21 +306,30 @@
             return tel;
         }
  
-        function gerarHtmlAgendamento(a, tipo) {
-            const isPago = tipo === 'pago';
-            const classe = isPago ? 'pago' : 'pendente';
+        function formatarData(dataStr) {
+            const data = new Date(dataStr + 'T00:00:00');
+            return data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+
+        function gerarHtmlPagamento(a) {
+            const isPago = a.pago || a.status === 'PAGO' || a.status === 'CONCLUIDO';
+            const classe = isPago ? 'quite' : 'pendente';
+            const badge = isPago 
+                ? '<span class="badge-status quite">Quite</span>'
+                : '<span class="badge-status pendente">Pendente</span>';
             const botao = isPago 
-                ? '<button class="btn-quite" onclick="imprimirComprovante(\'' + a.id + '\')">✓ Quite</button>'
-                : '<button class="btn-pagar-vermelho" onclick="abrirModalPagamento(\'' + a.id + '\')">Pagar</button>';
+                ? '<button class="btn-comprovante" onclick="imprimirComprovante(\'' + a.id + '\')">&#128438; Imprimir Comprovante</button>'
+                : '<button class="btn-pagar" onclick="abrirModalPagamento(\'' + a.id + '\')">&#128179; Pagar</button>';
             
-            return '<div class="agendamento-item ' + classe + '">' +
-                   '<div class="info-agendamento">' +
+            return '<div class="pagamento-item ' + classe + '">' +
+                   '<div class="info">' +
                    '<div class="cliente"><strong>' + (a.cliente || 'Cliente') + '</strong></div>' +
-                   '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Serviço') + '</div>' +
-                   '<div class="data">' + formatarData(a.data) + ' às ' + (a.hora || '') + '</div>' +
-                   '<div class="valor">Total: R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
+                   '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Servi&#231;o') + '</div>' +
+                   '<div class="data">' + formatarData(a.data) + ' &#224;s ' + (a.hora || '') + '</div>' +
+                   '<div class="valor">R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
+                   '<div class="status">' + badge + '</div>' +
                    '</div>' +
-                   botao +
+                   '<div class="acoes">' + botao + '</div>' +
                    '</div>';
         }
 
@@ -356,13 +353,13 @@
                 </style></head>
                 <body>
                     <div class="comprovante">
-                        <h2>✓ PAGAMENTO CONFIRMADO</h2>
+                        <h2>&#10004; PAGAMENTO CONFIRMADO</h2>
                         <div class="linha"><span class="label">Cliente:</span> <span class="valor">${a.cliente}</span></div>
-                        <div class="linha"><span class="label">Serviço:</span> <span class="valor">${a.servico_nome || a.servicoNome}</span></div>
-                        <div class="linha"><span class="label">Data:</span> <span class="valor">${formatarData(a.data)} às ${a.hora}</span></div>
+                        <div class="linha"><span class="label">Servi&#231;o:</span> <span class="valor">${a.servico_nome || a.servicoNome}</span></div>
+                        <div class="linha"><span class="label">Data:</span> <span class="valor">${formatarData(a.data)} &#224;s ${a.hora}</span></div>
                         <div class="linha"><span class="label">Valor:</span> <span class="valor">R$ ${(a.valor || 0).toFixed(2).replace('.', ',')}</span></div>
                         <div class="linha"><span class="label">Status:</span> <span class="valor" style="color: #4caf50;">PAGO</span></div>
-                        <div class="footer">Espaço Cre Bortoli - Comprovante de Pagamento</div>
+                        <div class="footer">Espa&#231;o Cre Bortoli - Comprovante de Pagamento</div>
                     </div>
                     <script>window.print();<\/script>
                 </body></html>
@@ -370,12 +367,7 @@
             janela.document.close();
         }
  
-        function formatarData(dataStr) {
-            const data = new Date(dataStr + 'T00:00:00');
-            return data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-        }
- 
-        async function renderTodosAgendamentos() {
+        async function renderTodosPagamentos() {
             const todos = await AgendamentoStore.getAll();
             if (!todos) return;
             
@@ -387,23 +379,12 @@
                 return new Date(dB) - new Date(dA);
             });
             
-            const listaPagos = document.getElementById('lista-pagos');
-            if (listaPagos) {
-                const pagos = todos.filter(a => a.pago);
-                if (pagos.length === 0) {
-                    listaPagos.innerHTML = '<div class="sem-agendamentos">Nenhum pagamento confirmado ainda.</div>';
+            const listaPagamentos = document.getElementById('lista-pagamentos');
+            if (listaPagamentos) {
+                if (todos.length === 0) {
+                    listaPagamentos.innerHTML = '<div class="sem-pagamentos">Nenhum agendamento encontrado.</div>';
                 } else {
-                    listaPagos.innerHTML = pagos.map(a => gerarHtmlAgendamento(a, 'pago')).join('');
-                }
-            }
-            
-            const listaPendentes = document.getElementById('lista-pendentes');
-            if (listaPendentes) {
-                const pendentes = todos.filter(a => !a.pago && a.status !== 'CONCLUIDO');
-                if (pendentes.length === 0) {
-                    listaPendentes.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento pendente de pagamento.</div>';
-                } else {
-                    listaPendentes.innerHTML = pendentes.map(a => gerarHtmlAgendamento(a, 'pendente')).join('');
+                    listaPagamentos.innerHTML = todos.map(a => gerarHtmlPagamento(a)).join('');
                 }
             }
         }
@@ -411,7 +392,7 @@
         async function marcarPago(id) {
             if (confirm('Confirmar pagamento deste agendamento?')) {
                 await AgendamentoStore.update(id, { pago: true, status: 'PAGO' });
-                renderTodosAgendamentos();
+                renderTodosPagamentos();
                 alert('Pagamento confirmado com sucesso!');
             }
         }
@@ -429,9 +410,9 @@
             if (infoDiv) {
                 infoDiv.innerHTML = `
                     <div style="margin: 1rem 0;">
-                        <h4>${agendamento.servico_nome || agendamento.servicoNome || 'Serviço'}</h4>
+                        <h4>${agendamento.servico_nome || agendamento.servicoNome || 'Servi&#231;o'}</h4>
                         <p><strong>Cliente:</strong> ${agendamento.cliente}</p>
-                        <p><strong>Data:</strong> ${formatarData(agendamento.data)} às ${agendamento.hora || ''}</p>
+                        <p><strong>Data:</strong> ${formatarData(agendamento.data)} &#224;s ${agendamento.hora || ''}</p>
                         <p><strong>Total:</strong> R$ ${(agendamento.valor || 0).toFixed(2).replace('.', ',')}</p>
                     </div>
                 `;
@@ -450,13 +431,13 @@
             if (confirm('Confirmar pagamento deste agendamento?')) {
                 await AgendamentoStore.update(agendamentoAtualId, { pago: true, status: 'PAGO' });
                 fecharModalPagamento();
-                renderTodosAgendamentos();
+                renderTodosPagamentos();
                 alert('Pagamento confirmado com sucesso!');
             }
         }
         
         document.addEventListener('DOMContentLoaded', function() {
-            renderTodosAgendamentos();
+            renderTodosPagamentos();
         });
     </script>
 </body>
