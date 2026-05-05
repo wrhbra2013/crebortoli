@@ -326,7 +326,7 @@
                    '<div class="cliente"><strong>' + (a.cliente || 'Cliente') + '</strong></div>' +
                    '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Servi&#231;o') + '</div>' +
                    '<div class="data">' + formatarData(a.data) + ' &#224;s ' + (a.hora || '') + '</div>' +
-                   '<div class="valor">R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
+                   '<div class="valor">R$ ' + Number(a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
                    '<div class="status">' + badge + '</div>' +
                    '</div>' +
                    '<div class="acoes">' + botao + '</div>' +
@@ -357,7 +357,7 @@
                         <div class="linha"><span class="label">Cliente:</span> <span class="valor">${a.cliente}</span></div>
                         <div class="linha"><span class="label">Servi&#231;o:</span> <span class="valor">${a.servico_nome || a.servicoNome}</span></div>
                         <div class="linha"><span class="label">Data:</span> <span class="valor">${formatarData(a.data)} &#224;s ${a.hora}</span></div>
-                        <div class="linha"><span class="label">Valor:</span> <span class="valor">R$ ${(a.valor || 0).toFixed(2).replace('.', ',')}</span></div>
+                        <div class="linha"><span class="label">Valor:</span> <span class="valor">R$ ${Number(a.valor || 0).toFixed(2).replace('.', ',')}</span></div>
                         <div class="linha"><span class="label">Status:</span> <span class="valor" style="color: #4caf50;">PAGO</span></div>
                         <div class="footer">Espa&#231;o Cre Bortoli - Comprovante de Pagamento</div>
                     </div>
@@ -413,7 +413,7 @@
                         <h4>${agendamento.servico_nome || agendamento.servicoNome || 'Servi&#231;o'}</h4>
                         <p><strong>Cliente:</strong> ${agendamento.cliente}</p>
                         <p><strong>Data:</strong> ${formatarData(agendamento.data)} &#224;s ${agendamento.hora || ''}</p>
-                        <p><strong>Total:</strong> R$ ${(agendamento.valor || 0).toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Total:</strong> R$ ${Number(agendamento.valor || 0).toFixed(2).replace('.', ',')}</p>
                     </div>
                 `;
             }
