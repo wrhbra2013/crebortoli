@@ -290,15 +290,20 @@ var AgendaPagina = (function() {
         select.innerHTML = options;
     }
     
-        return {
-            init: init,
-            selecionarDia: selecionarDia,
-            fecharModal: fecharModal,
-            atualizarPreco: atualizarPreco,
-            excluirAgendamento: excluirAgendamento,
-            recarregarAgendamentos: recarregarAgendamentos,
-            navegarMes: navegarMes
-        };
+    function navegarMes(direcao) {
+        dataAtual.setMonth(dataAtual.getMonth() + direcao);
+        renderizarCalendario();
+    }
+    
+    return {
+        init: init,
+        selecionarDia: selecionarDia,
+        fecharModal: fecharModal,
+        atualizarPreco: atualizarPreco,
+        excluirAgendamento: excluirAgendamento,
+        recarregarAgendamentos: recarregarAgendamentos,
+        navegarMes: navegarMes
+    };
 })();
 
 document.addEventListener('DOMContentLoaded', function() {
