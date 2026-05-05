@@ -124,33 +124,45 @@ var AgendaPagina = (function() {
             return;
         }
         
-        var agendamentosConfirmados = agendamentosCache.filter(function(a) {
-            return a.status === 'CONFIRMADO';
+        var agendamentosParaExibir = agendamentosCache.filter(function(a) {
+            return a.status && a.status.toUpperCase() !== 'CANCELADO';
         });
         
-        if (agendamentosConfirmados.length === 0) {
-            listaTodos.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento confirmado ainda.</div>';
+        if (agendamentosParaExibir.length === 0) {
+            listaTodos.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
             return;
         }
         
-        agendamentosConfirmados.sort(function(a, b) {
+        agendamentosParaExibir.sort(function(a, b) {
             var dA = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
             var dB = b.data && b.data.includes('T') ? b.data.split('T')[0] : b.data;
             return new Date(dB) - new Date(dA);
         });
         
         function gerarHtmlAgendamento(a) {
+            var statusBadge = '';
+            if (a.status === 'PENDENTE' || (a.status && a.status.toUpperCase() === 'PENDENTE')) {
+                statusBadge = '<span class="badge-status pendente">Pendente</span>';
+            } else if (a.status === 'CONFIRMADO' || (a.status && a.status.toUpperCase() === 'CONFIRMADO')) {
+                statusBadge = '<span class="badge-status confirmado">Confirmado</span>';
+            } else if (a.status === 'APROVADO' || (a.status && a.status.toUpperCase() === 'APROVADO')) {
+                statusBadge = '<span class="badge-status aprovado">Aprovado</span>';
+            }
+            
             return '<div class="meu-agendamento">' +
                    '<div class="info-agendamento">' +
                    '<div class="cliente"><strong>' + (a.cliente || 'Cliente') + '</strong></div>' +
                    '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Serviço') + '</div>' +
                    '<div class="data">' + formatarData(a.data) + ' às ' + (a.hora || '') + '</div>' +
+                   (statusBadge ? '<div class="status">' + statusBadge + '</div>' : '') +
                    '</div>' +
-                   '<button class="btn-excluir-agendamento" onclick="AgendaPagina.excluirAgendamento(\'' + a.id + '\')">Excluir</button>' +
+                   '<button class="btn-excluir-agendamento" onclick="AgendaPagina.excluirAgendamento(\'' + a.id + '\')" title="Excluir agendamento">' +
+                   '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>' +
+                   '</button>' +
                    '</div>';
         }
         
-        listaTodos.innerHTML = agendamentosConfirmados.map(gerarHtmlAgendamento).join('');
+        listaTodos.innerHTML = agendamentosParaExibir.map(gerarHtmlAgendamento).join('');
     }
     
     function selecionarDia(data) {
