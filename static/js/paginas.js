@@ -52,6 +52,17 @@ var AgendaPagina = (function() {
         setupEventListeners();
     }
     
+    async function recarregarAgendamentos() {
+        try {
+            agendamentosCache = await AgendamentoStore.getAll();
+            console.log('Agendamentos recarregados:', agendamentosCache.length);
+            renderizarCalendario();
+            renderizarMeusAgendamentos();
+        } catch(e) {
+            console.error('Erro ao recarregar agendamentos:', e);
+        }
+    }
+    
     function setupEventListeners() {
         var form = document.getElementById('form-agendamento');
         if (form) {
@@ -79,6 +90,9 @@ var AgendaPagina = (function() {
         var ultimoDia = new Date(ano, mes + 1, 0);
         var diaSemana = primeiroDia.getDay();
         
+        var hoje = new Date();
+        hoje.setHours(0,0,0,0);
+        
         var html = '';
         for (var i = 0; i < diaSemana; i++) {
             var dia = new Date(ano, mes, -diaSemana + i + 1);
@@ -94,14 +108,30 @@ var AgendaPagina = (function() {
                 return d === dataStr;
             });
             
-            if (data < new Date().setHours(0,0,0,0)) {
+            var isHoje = data.getTime() === hoje.getTime();
+            var isPassado = data < hoje;
+            
+            if (isPassado) {
                 html += '<div class="dia-cell outro-mes"><div class="dia-numero">' + dia + '</div></div>';
             } else {
-                html += '<div class="dia-cell" onclick="AgendaPagina.selecionarDia(\'' + dataStr + '\')">';
+                var classes = 'dia-cell';
+                if (isHoje) classes += ' today';
+                
+                html += '<div class="' + classes + '" onclick="AgendaPagina.selecionarDia(\'' + dataStr + '\')">';
                 html += '<div class="dia-numero">' + dia + '</div>';
+                
                 if (agendamentosDoDia.length > 0) {
-                    html += '<span class="agendamento-badge">' + agendamentosDoDia.length + ' agendado(s)</span>';
+                    var pendentes = agendamentosDoDia.filter(function(a) { return !a.pago && a.status !== 'CONCLUIDO' && a.status !== 'PAGO'; }).length;
+                    var pagos = agendamentosDoDia.length - pendentes;
+                    
+                    if (pendentes > 0) {
+                        html += '<span class="agendamento-badge nao-pago">' + pendentes + ' pendente(s)</span>';
+                    }
+                    if (pagos > 0) {
+                        html += '<span class="agendamento-badge pago">' + pagos + ' pago(s)</span>';
+                    }
                 }
+                
                 html += '</div>';
             }
         }
@@ -265,7 +295,9 @@ var AgendaPagina = (function() {
             selecionarDia: selecionarDia,
             fecharModal: fecharModal,
             atualizarPreco: atualizarPreco,
-            excluirAgendamento: excluirAgendamento
+            excluirAgendamento: excluirAgendamento,
+            recarregarAgendamentos: recarregarAgendamentos,
+            navegarMes: navegarMes
         };
 })();
 

@@ -184,6 +184,19 @@
         .btn-comprovante:hover {
             background: #388e3c;
         }
+        .btn-excluir {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 0.5rem 0.7rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 0.3rem;
+        }
+        .btn-excluir:hover {
+            background: #d32f2f;
+        }
         .badge-status {
             display: inline-block;
             padding: 0.2rem 0.6rem;
@@ -307,7 +320,24 @@
         }
  
         function formatarData(dataStr) {
-            const data = new Date(dataStr + 'T00:00:00');
+            if (!dataStr) return 'Data não informada';
+            let data;
+            if (dataStr.includes('T')) {
+                data = new Date(dataStr.split('T')[0] + 'T00:00:00');
+            } else if (dataStr.includes('-')) {
+                const parts = dataStr.split('-');
+                if (parts[0].length === 4) {
+                    data = new Date(dataStr + 'T00:00:00');
+                } else {
+                    data = new Date(parts[2] + '-' + parts[1] + '-' + parts[0] + 'T00:00:00');
+                }
+            } else if (dataStr.includes('/')) {
+                const parts = dataStr.split('/');
+                data = new Date(parts[2] + '-' + parts[1] + '-' + parts[0] + 'T00:00:00');
+            } else {
+                data = new Date(dataStr + 'T00:00:00');
+            }
+            if (isNaN(data.getTime())) return 'Data inválida';
             return data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
         }
 
@@ -317,9 +347,10 @@
             const badge = isPago 
                 ? '<span class="badge-status quite">Quite</span>'
                 : '<span class="badge-status pendente">Pendente</span>';
-            const botao = isPago 
+            let botoes = isPago 
                 ? '<button class="btn-comprovante" onclick="imprimirComprovante(\'' + a.id + '\')">&#128438; Imprimir Comprovante</button>'
                 : '<button class="btn-pagar" onclick="abrirModalPagamento(\'' + a.id + '\')">&#128179; Pagar</button>';
+            botoes += '<button class="btn-excluir" onclick="excluirPagamento(\'' + a.id + '\')" title="Excluir">&#128465;</button>';
             
             return '<div class="pagamento-item ' + classe + '">' +
                    '<div class="info">' +
@@ -329,8 +360,20 @@
                    '<div class="valor">R$ ' + Number(a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
                    '<div class="status">' + badge + '</div>' +
                    '</div>' +
-                   '<div class="acoes">' + botao + '</div>' +
+                   '<div class="acoes">' + botoes + '</div>' +
                    '</div>';
+        }
+
+        async function excluirPagamento(id) {
+            if (!confirm('Excluir este agendamento e seu registro de pagamento?')) return;
+            try {
+                await AgendamentoStore.delete(id);
+                alert('Agendamento e registro de pagamento exclu&#237;dos!');
+                renderTodosPagamentos();
+            } catch(e) {
+                console.error('Erro ao excluir:', e);
+                alert('Erro ao excluir. Tente novamente.');
+            }
         }
 
         function imprimirComprovante(id) {
