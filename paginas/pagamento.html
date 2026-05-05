@@ -250,7 +250,7 @@
                 
                 <div class="alert-importante">
                     <p><strong>&#9888; Importante:</strong><br>
-                    Ao fazer o PIX, escreva <strong>seu nome completo</strong> na mensagem do pagamento para facilitar a identificação.</p>
+                    Ao fazer o PIX, escreva <strong>seu nome completo</strong> na mensagem do pagamento para facilitar a identifica&#231;&#227;o.</p>
                 </div>
             </div>
 
@@ -276,11 +276,11 @@
             <div style="background: #fff3e0; padding: 1rem; border-radius: 8px; margin: 1rem 0; border: 1px solid #ff9800;">
                 <p style="margin: 0; font-size: 0.9rem; color: #e65100;">
                     <strong>&#9888; Importante:</strong><br>
-                    Ao fazer o PIX, escreva <strong>seu nome completo</strong> na mensagem do pagamento para facilitar a identificação.
+                    Ao fazer o PIX, escreva <strong>seu nome completo</strong> na mensagem do pagamento para facilitar a identifica&#231;&#227;o.
                 </p>
             </div>
             
-            <button class="btn-pix" onclick="confirmarPagamentoModal()">&#10004; Já fiz o pagamento</button>
+            <button class="btn-pix" onclick="confirmarPagamentoModal()">&#10004; J&#225; fiz o pagamento</button>
             <button class="btn-agendar" style="background: #666; margin-top: 0.5rem;" onclick="fecharModalPagamento()">Fechar</button>
         </div>
     </div>
@@ -293,6 +293,7 @@
         const CHAVE_PIX = '14996638056';
         const TELEFONE_FORMATADO = '(14) 99663-8056';
         const WHATSAPP = '5514996638056';
+        let servicosCache = [];
         
         function copiarChave() {
             navigator.clipboard.writeText(CHAVE_PIX).then(() => {
@@ -320,25 +321,35 @@
         }
  
         function formatarData(dataStr) {
-            if (!dataStr) return 'Data não informada';
+            if (!dataStr) return 'Data n&#227;o informada';
             let data;
             if (dataStr.includes('T')) {
                 data = new Date(dataStr.split('T')[0] + 'T00:00:00');
-            } else if (dataStr.includes('-')) {
+            } else if (dataStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
                 const parts = dataStr.split('-');
-                if (parts[0].length === 4) {
-                    data = new Date(dataStr + 'T00:00:00');
-                } else {
-                    data = new Date(parts[2] + '-' + parts[1] + '-' + parts[0] + 'T00:00:00');
-                }
+                data = new Date(parts[0], parts[1] - 1, parts[2]);
             } else if (dataStr.includes('/')) {
                 const parts = dataStr.split('/');
-                data = new Date(parts[2] + '-' + parts[1] + '-' + parts[0] + 'T00:00:00');
+                data = new Date(parts[2], parts[1] - 1, parts[0]);
             } else {
-                data = new Date(dataStr + 'T00:00:00');
+                data = new Date(dataStr);
             }
-            if (isNaN(data.getTime())) return 'Data inválida';
+            if (isNaN(data.getTime())) return 'Data inv&#225;lida';
             return data.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+        }
+
+        function formatarMoeda(valor) {
+            return Number(valor || 0).toFixed(2).replace('.', ',');
+        }
+
+        function getNomeServico(servicoId) {
+            const servico = servicosCache.find(s => s.id === servicoId);
+            return servico ? servico.nome : null;
+        }
+
+        function getPrecoServico(servicoId) {
+            const servico = servicosCache.find(s => s.id === servicoId);
+            return servico ? servico.preco : null;
         }
 
         function gerarHtmlPagamento(a) {
@@ -352,12 +363,20 @@
                 : '<button class="btn-pagar" onclick="abrirModalPagamento(\'' + a.id + '\')">&#128179; Pagar</button>';
             botoes += '<button class="btn-excluir" onclick="excluirPagamento(\'' + a.id + '\')" title="Excluir">&#128465;</button>';
             
+            const servicoId = a.servico || a.servicoId || '';
+            const nomeServico = a.servico_nome || a.servicoNome || getNomeServico(servicoId) || 'Servi&#231;o';
+            
+            let valor = a.valor || getPrecoServico(servicoId) || 0;
+            if (typeof valor === 'string') {
+                valor = parseFloat(valor.replace(',', '.')) || 0;
+            }
+            
             return '<div class="pagamento-item ' + classe + '">' +
                    '<div class="info">' +
                    '<div class="cliente"><strong>' + (a.cliente || 'Cliente') + '</strong></div>' +
-                   '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Servi&#231;o') + '</div>' +
+                   '<div class="servico">' + nomeServico + '</div>' +
                    '<div class="data">' + formatarData(a.data) + ' &#224;s ' + (a.hora || '') + '</div>' +
-                   '<div class="valor">R$ ' + Number(a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
+                   '<div class="valor">R$ ' + formatarMoeda(valor) + '</div>' +
                    '<div class="status">' + badge + '</div>' +
                    '</div>' +
                    '<div class="acoes">' + botoes + '</div>' +
@@ -381,6 +400,13 @@
             const a = todos.find(x => x.id === id);
             if (!a) return;
             
+            const servicoId = a.servico || a.servicoId || '';
+            const nomeServico = a.servico_nome || a.servicoNome || getNomeServico(servicoId) || 'Servi&#231;o';
+            let valor = a.valor || getPrecoServico(servicoId) || 0;
+            if (typeof valor === 'string') {
+                valor = parseFloat(valor.replace(',', '.')) || 0;
+            }
+            
             const janela = window.open('', '_blank', 'width=600,height=400');
             janela.document.write(`
                 <html>
@@ -398,9 +424,9 @@
                     <div class="comprovante">
                         <h2>&#10004; PAGAMENTO CONFIRMADO</h2>
                         <div class="linha"><span class="label">Cliente:</span> <span class="valor">${a.cliente}</span></div>
-                        <div class="linha"><span class="label">Servi&#231;o:</span> <span class="valor">${a.servico_nome || a.servicoNome}</span></div>
+                        <div class="linha"><span class="label">Servi&#231;o:</span> <span class="valor">${nomeServico}</span></div>
                         <div class="linha"><span class="label">Data:</span> <span class="valor">${formatarData(a.data)} &#224;s ${a.hora}</span></div>
-                        <div class="linha"><span class="label">Valor:</span> <span class="valor">R$ ${Number(a.valor || 0).toFixed(2).replace('.', ',')}</span></div>
+                        <div class="linha"><span class="label">Valor:</span> <span class="valor">R$ ${formatarMoeda(valor)}</span></div>
                         <div class="linha"><span class="label">Status:</span> <span class="valor" style="color: #4caf50;">PAGO</span></div>
                         <div class="footer">Espa&#231;o Cre Bortoli - Comprovante de Pagamento</div>
                     </div>
@@ -411,6 +437,13 @@
         }
  
         async function renderTodosPagamentos() {
+            try {
+                servicosCache = await ServicosStore.getAll();
+            } catch(e) {
+                console.error('Erro ao carregar servi&#231;os:', e);
+                servicosCache = [];
+            }
+            
             const todos = await AgendamentoStore.getAll();
             if (!todos) return;
             
@@ -449,14 +482,21 @@
             
             agendamentoAtualId = id;
             
+            const servicoId = agendamento.servico || agendamento.servicoId || '';
+            const nomeServico = agendamento.servico_nome || agendamento.servicoNome || getNomeServico(servicoId) || 'Servi&#231;o';
+            let valor = agendamento.valor || getPrecoServico(servicoId) || 0;
+            if (typeof valor === 'string') {
+                valor = parseFloat(valor.replace(',', '.')) || 0;
+            }
+            
             const infoDiv = document.getElementById('info-pagamento-selecionado');
             if (infoDiv) {
                 infoDiv.innerHTML = `
                     <div style="margin: 1rem 0;">
-                        <h4>${agendamento.servico_nome || agendamento.servicoNome || 'Servi&#231;o'}</h4>
+                        <h4>${nomeServico}</h4>
                         <p><strong>Cliente:</strong> ${agendamento.cliente}</p>
                         <p><strong>Data:</strong> ${formatarData(agendamento.data)} &#224;s ${agendamento.hora || ''}</p>
-                        <p><strong>Total:</strong> R$ ${Number(agendamento.valor || 0).toFixed(2).replace('.', ',')}</p>
+                        <p><strong>Total:</strong> R$ ${formatarMoeda(valor)}</p>
                     </div>
                 `;
             }
