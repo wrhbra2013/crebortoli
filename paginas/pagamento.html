@@ -98,40 +98,58 @@
             font-size: 0.9rem;
             color: #e65100;
         }
-        .pagamentos-confirmados {
+        .btn-quite {
+            background: #4caf50;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+        .btn-quite:hover {
+            background: #388e3c;
+        }
+        .pagamentos-section {
             background: #fff;
             border-radius: 12px;
             box-shadow: 0 4px 16px rgba(0,0,0,0.1);
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            border: 3px solid #4caf50;
         }
-        .pagamentos-confirmados h3 {
+        .pagamentos-section h3 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+            color: #333;
+            border-bottom: 2px solid #e0e0e0;
+            padding-bottom: 0.5rem;
+        }
+        .pagos-section h3 {
             color: #2e7d32;
-            margin-top: 0;
-            margin-bottom: 1rem;
+            border-color: #4caf50;
         }
-        .agendamentos-pendentes {
-            background: #fff;
-            border-radius: 12px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-        }
-        .agendamentos-pendentes h3 {
+        .pendentes-section h3 {
             color: #e65100;
-            margin-top: 0;
-            margin-bottom: 1rem;
+            border-color: #f44336;
         }
-        .meu-agendamento {
+        .agendamento-item {
             border: 1px solid #ddd;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
-            background: #fff8e1;
+            background: #fff;
         }
-        .meu-agendamento.pago {
+        .agendamento-item.pago {
             background: #e8f5e9;
             border-color: #4caf50;
+            border-left: 4px solid #4caf50;
+        }
+        .agendamento-item.pendente {
+            background: #fff8e1;
+            border-color: #ff9800;
+            border-left: 4px solid #f44336;
         }
         .info-agendamento {
             display: flex;
@@ -226,15 +244,18 @@
                 </div>
             </div>
 
-            <div class="agendamentos-pendentes">
-                <h3>Agendamentos Confirmados</h3>
-                <div id="lista-meus-agendamentos"></div>
+            <div class="pagamentos-section">
+                <h2 style="text-align: center; color: #e91e63; margin-bottom: 1.5rem;">Meus Pagamentos</h2>
                 
-                <h3 style="margin-top: 2rem;">Pagamentos Confirmados</h3>
-                <div id="lista-pagamentos-confirmados"></div>
+                <div class="pagos-section">
+                    <h3>&#10004; Pagos</h3>
+                    <div id="lista-pagos"></div>
+                </div>
                 
-                <h3 style="margin-top: 2rem;">Agendamentos Pendentes de Pagamento</h3>
-                <div id="lista-agendamentos-pendentes"></div>
+                <div class="pendentes-section" style="margin-top: 2rem;">
+                    <h3>&#9888; Não Pagos</h3>
+                    <div id="lista-pendentes"></div>
+                </div>
             </div>
         </div>
     </main>
@@ -297,14 +318,56 @@
             return tel;
         }
  
-        function gerarHtmlAgendamento(a) {
-            return '<div class="meu-agendamento">' +
+        function gerarHtmlAgendamento(a, tipo) {
+            const isPago = tipo === 'pago';
+            const classe = isPago ? 'pago' : 'pendente';
+            const botao = isPago 
+                ? '<button class="btn-quite" onclick="imprimirComprovante(\'' + a.id + '\')">✓ Quite</button>'
+                : '<button class="btn-pagar-vermelho" onclick="abrirModalPagamento(\'' + a.id + '\')">Pagar</button>';
+            
+            return '<div class="agendamento-item ' + classe + '">' +
                    '<div class="info-agendamento">' +
                    '<div class="cliente"><strong>' + (a.cliente || 'Cliente') + '</strong></div>' +
                    '<div class="servico">' + (a.servico_nome || a.servicoNome || 'Serviço') + '</div>' +
                    '<div class="data">' + formatarData(a.data) + ' às ' + (a.hora || '') + '</div>' +
+                   '<div class="valor">Total: R$ ' + (a.valor || 0).toFixed(2).replace('.', ',') + '</div>' +
                    '</div>' +
+                   botao +
                    '</div>';
+        }
+
+        function imprimirComprovante(id) {
+            const todos = window._agendamentosCache || [];
+            const a = todos.find(x => x.id === id);
+            if (!a) return;
+            
+            const janela = window.open('', '_blank', 'width=600,height=400');
+            janela.document.write(`
+                <html>
+                <head><title>Comprovante - ${a.cliente}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; padding: 2rem; }
+                    .comprovante { max-width: 400px; margin: 0 auto; border: 2px solid #4caf50; padding: 1.5rem; border-radius: 8px; }
+                    h2 { color: #2e7d32; text-align: center; }
+                    .linha { margin: 0.5rem 0; }
+                    .label { color: #666; }
+                    .valor { font-weight: bold; }
+                    .footer { text-align: center; margin-top: 2rem; color: #999; font-size: 0.8rem; }
+                </style></head>
+                <body>
+                    <div class="comprovante">
+                        <h2>✓ PAGAMENTO CONFIRMADO</h2>
+                        <div class="linha"><span class="label">Cliente:</span> <span class="valor">${a.cliente}</span></div>
+                        <div class="linha"><span class="label">Serviço:</span> <span class="valor">${a.servico_nome || a.servicoNome}</span></div>
+                        <div class="linha"><span class="label">Data:</span> <span class="valor">${formatarData(a.data)} às ${a.hora}</span></div>
+                        <div class="linha"><span class="label">Valor:</span> <span class="valor">R$ ${(a.valor || 0).toFixed(2).replace('.', ',')}</span></div>
+                        <div class="linha"><span class="label">Status:</span> <span class="valor" style="color: #4caf50;">PAGO</span></div>
+                        <div class="footer">Espaço Cre Bortoli - Comprovante de Pagamento</div>
+                    </div>
+                    <script>window.print();<\/script>
+                </body></html>
+            `);
+            janela.document.close();
         }
  
         function formatarData(dataStr) {
@@ -324,45 +387,23 @@
                 return new Date(dB) - new Date(dA);
             });
             
-            // Card 1: Todos os agendamentos confirmados
-            const listaTodos = document.getElementById('lista-meus-agendamentos');
-            if (listaTodos) {
-                if (todos.length === 0) {
-                    listaTodos.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda.</div>';
-                } else {
-                    listaTodos.innerHTML = todos.map(gerarHtmlAgendamento).join('');
-                }
-            }
-            
-            // Card 2: Apenas pagos
-            const listaPagos = document.getElementById('lista-pagamentos-confirmados');
+            const listaPagos = document.getElementById('lista-pagos');
             if (listaPagos) {
                 const pagos = todos.filter(a => a.pago);
                 if (pagos.length === 0) {
                     listaPagos.innerHTML = '<div class="sem-agendamentos">Nenhum pagamento confirmado ainda.</div>';
                 } else {
-                    listaPagos.innerHTML = pagos.map(gerarHtmlAgendamento).join('');
+                    listaPagos.innerHTML = pagos.map(a => gerarHtmlAgendamento(a, 'pago')).join('');
                 }
             }
             
-        // Card 2: Pendentes de pagamento (vermelho - clicável para pagar)
-            const listaPendentes = document.getElementById('lista-agendamentos-pendentes');
+            const listaPendentes = document.getElementById('lista-pendentes');
             if (listaPendentes) {
                 const pendentes = todos.filter(a => !a.pago && a.status !== 'CONCLUIDO');
                 if (pendentes.length === 0) {
                     listaPendentes.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento pendente de pagamento.</div>';
                 } else {
-                    listaPendentes.innerHTML = pendentes.map(a => `
-                        <div class="meu-agendamento" onclick="abrirModalPagamento('${a.id}')" style="cursor: pointer; border-left: 4px solid #f44336;">
-                            <div class="info-agendamento">
-                                <div class="cliente"><strong>${a.cliente}</strong></div>
-                                <div class="servico">${a.servico_nome || a.servicoNome || 'Serviço'}</div>
-                                <div class="data">${formatarData(a.data)} às ${a.hora || ''}</div>
-                                <div class="valor">Total: R$ ${(a.valor || 0).toFixed(2).replace('.', ',')}</div>
-                                <button class="btn-pagar-vermelho" onclick="event.stopPropagation(); marcarPago('${a.id}')">✓ Confirmar Pagamento</button>
-                            </div>
-                        </div>
-                    `).join('');
+                    listaPendentes.innerHTML = pendentes.map(a => gerarHtmlAgendamento(a, 'pendente')).join('');
                 }
             }
         }
