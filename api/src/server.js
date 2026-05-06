@@ -40,7 +40,7 @@ const TABLES = {
     { name: 'agendamentos', columns: 'id UUID PRIMARY KEY, cliente TEXT, telefone TEXT, servico TEXT, servico_nome TEXT, valor DECIMAL(10,2), data TIMESTAMP, hora TEXT, status TEXT DEFAULT \'pendente\', pago BOOLEAN DEFAULT false, observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'servicos', columns: 'id UUID PRIMARY KEY, nome TEXT, descricao TEXT, preco DECIMAL(10,2), duracao_minutos INTEGER, ativo BOOLEAN DEFAULT true, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'clientes', columns: 'id UUID PRIMARY KEY, nome TEXT, telefone TEXT, email TEXT, cpf TEXT, endereco TEXT, observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()' },
-    { name: 'receitas', columns: 'id UUID PRIMARY KEY, cliente_id UUID, diagnostico TEXT, prescricao TEXT, validado BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()' },
+    { name: 'receitas', columns: 'id UUID PRIMARY KEY, paciente TEXT, data TEXT, data_formatada TEXT, indicacao TEXT, medicamentos TEXT, observacoes TEXT, comentarios TEXT, nome_arquivo TEXT, cliente_id UUID, diagnostico TEXT, prescricao TEXT, validado BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'contatos', columns: 'id UUID PRIMARY KEY, nome TEXT, email TEXT, telefone TEXT, mensagem TEXT, lido BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'sessoes', columns: 'id UUID PRIMARY KEY, token TEXT UNIQUE, url_aprovacao TEXT, status TEXT DEFAULT \'pendente\', last_sync TIMESTAMP, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'usuarios', columns: 'id UUID PRIMARY KEY, email TEXT UNIQUE, senha TEXT, nome TEXT, nivel TEXT DEFAULT \'user\', created_at TIMESTAMP DEFAULT NOW()' },
@@ -149,7 +149,7 @@ fastify.get('/ping', async () => ({ pong: true }));
 // Rotas GET para dados
 fastify.get('/data/:table', async (req, res) => {
   const { table } = req.params;
-  if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas'].includes(table)) {
+  if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas', 'sessoes'].includes(table)) {
     return res.code(400).send({ error: 'Tabela inválida' });
   }
   const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
@@ -158,7 +158,7 @@ fastify.get('/data/:table', async (req, res) => {
 
 fastify.get('/crebortoli/data/:table', async (req, res) => {
   const { table } = req.params;
-  if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas'].includes(table)) {
+  if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas', 'sessoes'].includes(table)) {
     return res.code(400).send({ error: 'Tabela inválida' });
   }
   const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
@@ -167,7 +167,7 @@ fastify.get('/crebortoli/data/:table', async (req, res) => {
 
 fastify.get('/crebortoli/:table', async (req, res) => {
   const { table } = req.params;
-  if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas'].includes(table)) {
+  if (!['servicos', 'agendamentos', 'clientes', 'contatos', 'receitas', 'sessoes'].includes(table)) {
     return res.code(400).send({ error: 'Tabela inválida' });
   }
   const result = await query('crebortoli', `SELECT * FROM "${table}" ORDER BY created_at DESC LIMIT 100`);
@@ -610,23 +610,47 @@ const start = async () => {
         console.log(`Tabela "${table.name}" verificada/criada em ${name}`);
       }
 
-      const columns = await pool.query(`
+      const agendamentosColumns = await pool.query(`
         SELECT column_name FROM information_schema.columns 
         WHERE table_name = 'agendamentos' AND table_schema = 'public'
       `);
-      const existingCols = columns.rows.map(r => r.column_name);
+      const existingAgendamentosCols = agendamentosColumns.rows.map(r => r.column_name);
 
-      const newCols = [
+      const agendamentosNewCols = [
         { name: 'telefone', sql: `ALTER TABLE "agendamentos" ADD COLUMN IF NOT EXISTS telefone TEXT` },
         { name: 'servico_nome', sql: `ALTER TABLE "agendamentos" ADD COLUMN IF NOT EXISTS servico_nome TEXT` },
         { name: 'valor', sql: `ALTER TABLE "agendamentos" ADD COLUMN IF NOT EXISTS valor DECIMAL(10,2)` },
         { name: 'pago', sql: `ALTER TABLE "agendamentos" ADD COLUMN IF NOT EXISTS pago BOOLEAN DEFAULT false` },
       ];
 
-      for (const col of newCols) {
-        if (!existingCols.includes(col.name)) {
+      for (const col of agendamentosNewCols) {
+        if (!existingAgendamentosCols.includes(col.name)) {
           await pool.query(col.sql);
           console.log(`Coluna "${col.name}" adicionada à tabela agendamentos em ${name}`);
+        }
+      }
+
+      const receitasColumns = await pool.query(`
+        SELECT column_name FROM information_schema.columns 
+        WHERE table_name = 'receitas' AND table_schema = 'public'
+      `);
+      const existingReceitasCols = receitasColumns.rows.map(r => r.column_name);
+
+      const receitasNewCols = [
+        { name: 'paciente', sql: `ALTER TABLE "receitas" ADD COLUMN IF NOT EXISTS paciente TEXT` },
+        { name: 'data', sql: `ALTER TABLE "receitas" ADD COLUMN IF NOT EXISTS data TEXT` },
+        { name: 'data_formatada', sql: `ALTER TABLE "receitas" ADD COLUMN IF NOT EXISTS data_formatada TEXT` },
+        { name: 'indicacao', sql: `ALTER TABLE "receitas" ADD COLUMN IF NOT EXISTS indicacao TEXT` },
+        { name: 'medicamentos', sql: `ALTER TABLE "receitas" ADD COLUMN IF NOT EXISTS medicamentos TEXT` },
+        { name: 'observacoes', sql: `ALTER TABLE "receitas" ADD COLUMN IF NOT EXISTS observacoes TEXT` },
+        { name: 'comentarios', sql: `ALTER TABLE "receitas" ADD COLUMN IF NOT EXISTS comentarios TEXT` },
+        { name: 'nome_arquivo', sql: `ALTER TABLE "receitas" ADD COLUMN IF NOT EXISTS nome_arquivo TEXT` },
+      ];
+
+      for (const col of receitasNewCols) {
+        if (!existingReceitasCols.includes(col.name)) {
+          await pool.query(col.sql);
+          console.log(`Coluna "${col.name}" adicionada à tabela receitas em ${name}`);
         }
       }
     } catch (e) {

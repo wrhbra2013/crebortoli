@@ -135,6 +135,13 @@ const DataSync = {
         return this._cachedData;
     },
     
+    async loadEntity(entity) {
+        if (!this._cachedData[entity]) {
+            this._cachedData[entity] = await this.fetchFromAPI(entity);
+        }
+        return this._cachedData[entity] || [];
+    },
+    
     async getAll(entity) {
         if (!this._loaded) {
             await this.loadAll();
@@ -168,6 +175,10 @@ const DataSync = {
         return item;
     },
     
+    async create(item) {
+        return this.save(item);
+    },
+    
     async delete(item) {
         const entity = item._entity || 'agendamentos';
         await this.deleteToAPI(entity, item.id);
@@ -191,15 +202,15 @@ const DataSync = {
     },
     
     async getById(entity, id) {
-        if (!this._loaded) {
-            await this.loadAll();
+        if (!this._cachedData[entity]) {
+            await this.loadEntity(entity);
         }
         return (this._cachedData[entity] || []).find(item => item.id === id);
     },
     
     async search(entity, term) {
-        if (!this._loaded) {
-            await this.loadAll();
+        if (!this._cachedData[entity]) {
+            await this.loadEntity(entity);
         }
         const items = this._cachedData[entity] || [];
         const lower = term.toLowerCase();
@@ -211,8 +222,8 @@ const DataSync = {
     },
     
     async getByField(entity, field, value) {
-        if (!this._loaded) {
-            await this.loadAll();
+        if (!this._cachedData[entity]) {
+            await this.loadEntity(entity);
         }
         return (this._cachedData[entity] || []).filter(item => item[field] === value);
     },
@@ -221,13 +232,18 @@ const DataSync = {
         this._cachedData = {};
         this._loaded = false;
         return await this.loadAll();
+    },
+    
+    async refreshEntity(entity) {
+        delete this._cachedData[entity];
+        return await this.loadEntity(entity);
     }
 };
 
 function createEntityStore(entityName) {
     return {
         async init() {
-            await DataSync.loadAll();
+            await DataSync.loadEntity(entityName);
             return this;
         },
         
@@ -242,7 +258,7 @@ function createEntityStore(entityName) {
         
         async create(item) {
             item._entity = entityName;
-            return await DataSync.save(item);
+            return await DataSync.create(item);
         },
         
         async update(id, dados) {
@@ -263,6 +279,10 @@ function createEntityStore(entityName) {
         
         async getByField(field, value) {
             return await DataSync.getByField(entityName, field, value);
+        },
+        
+        async refresh() {
+            return await DataSync.refreshEntity(entityName);
         }
     };
 }
@@ -273,6 +293,7 @@ const ClientesStore = createEntityStore('clientes');
 const ReceitasStore = createEntityStore('receitas');
 const ContatosStore = createEntityStore('contatos');
 const UsuariosStore = createEntityStore('usuarios');
+const SessoesStore = createEntityStore('sessoes');
 
 const AgendamentoStore = AgendamentosStore;
 
@@ -291,6 +312,7 @@ if (typeof window !== 'undefined') {
     window.ReceitasStore = ReceitasStore;
     window.ContatosStore = ContatosStore;
     window.UsuariosStore = UsuariosStore;
+    window.SessoesStore = SessoesStore;
     window.API_CONFIG = API_CONFIG;
     window.hasWriteAccess = !!API_CONFIG.writeKey;
 }

@@ -50,51 +50,65 @@
         <div class="timer">Expira em: <span class="countdown" id="countdown">60</span>s</div>
     </div>
 
+    <script src="../static/js/storage.js"></script>
     <script>
         let codigoLido = '';
         let countdownInterval = null;
         let remainingTime = 60;
-        const SESSION_KEY = 'sig_qr_session';
-        
+
+        async function updateSessionStatus(token, status) {
+            try {
+                const result = await fetch(`${API_CONFIG.baseUrl}/update`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.token}`
+                    },
+                    body: JSON.stringify({
+                        project: API_CONFIG.project,
+                        table: 'sessoes',
+                        id: token,
+                        data: { status: status }
+                    })
+                });
+                return await result.json();
+            } catch (e) {
+                console.warn('API update session failed, using localStorage fallback:', e);
+                localStorage.setItem('sig_qr_session', JSON.stringify({ token, status: 'aprovado', created: Date.now() }));
+                return null;
+            }
+        }
+
         function startTimer() {
             const countdownEl = document.getElementById('countdown');
             countdownEl.textContent = remainingTime;
-            
+
             if (countdownInterval) clearInterval(countdownInterval);
-            
+
             countdownInterval = setInterval(() => {
                 remainingTime--;
                 countdownEl.textContent = remainingTime;
-                
+
                 if (remainingTime <= 0) {
                     clearInterval(countdownInterval);
                 }
             }, 1000);
         }
-        
-        function setSessionStatus(status) {
-            const sessionData = {
-                token: codigoLido,
-                status: status,
-                created: Date.now()
-            };
-            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
-        }
-        
-        function init() {
+
+        async function init() {
             const urlParams = new URLSearchParams(window.location.search);
             codigoLido = urlParams.get('token') || '';
-            
+
             if (!codigoLido) {
                 document.getElementById('codigo-lido').textContent = 'Link inválido';
                 return;
             }
-            
+
             document.getElementById('codigo-lido').textContent = codigoLido;
-            setSessionStatus('aprovado');
+            await updateSessionStatus(codigoLido, 'aprovado');
             startTimer();
         }
-        
+
         init();
     </script>
 </body>

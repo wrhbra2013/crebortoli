@@ -9,6 +9,12 @@
     <meta http-equiv="Pragma" content="no-cache">
     <script>var v='1.0.0';document.write('<link rel="stylesheet" href="../static/css/style.css?v='+v+'">');</script>
     <style>
+        @font-face {
+            font-family: 'WorldDiscoveryFive';
+            src: url('../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
         
         .clinic-header {
             display: none;
@@ -174,8 +180,18 @@
                     </div>
 
                     <div class="form-group">
+                        <label for="medicamentos">Lista de Medicamentos</label>
+                        <textarea id="medicamentos" name="medicamentos" placeholder="Liste os medicamentos indicados..." style="min-height: 120px;"></textarea>
+                    </div>
+
+                    <div class="form-group">
                         <label for="observacoes">Observações (opcional)</label>
-                        <textarea id="observacoes" name="observacoes" placeholder="Observações adicionais..."></textarea>
+                        <textarea id="observacoes" name="observacoes" placeholder="Observações adicionais..." style="min-height: 100px;"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="comentarios">Comentários (opcional)</label>
+                        <textarea id="comentarios" name="comentarios" placeholder="Comentários sobre o tratamento..." style="min-height: 100px;"></textarea>
                     </div>
 
                     <div class="btn-group">
@@ -363,36 +379,110 @@
             document.getElementById('data').valueAsDate = new Date();
         };
 
-        function criarHeaderPDF() {
-            return function(currentPage, pageCount, pageSize) {
-                return {
-                    stack: [
-                        {
-                            columns: [
-                                {
-                                    width: '*',
-                                    stack: [
-                                        { text: 'Espaço Cre Bortoli', fontSize: 22, color: '#e91e63', bold: true, font: 'WorldOfWater' },
-                                        { text: 'Estética & Depilação', fontSize: 9, color: '#666', margin: [0, 2, 0, 0] }
-                                    ]
-                                },
-                                {
-                                    width: '*',
-                                    text: 'Rua Francisco Martineli, 492 - Palmital\nMarília, SP | (14) 99663.8056',
-                                    fontSize: 9,
-                                    color: '#666',
-                                    alignment: 'right'
-                                }
-                            ]
-                        },
-                        {
-                            canvas: [{ type: 'line', x1: 0, y1: 5, x2: 555, y2: 5, lineWidth: 2, lineColor: '#e91e63' }],
-                            margin: [0, 10, 0, 0]
+async function carregarFonteCustomizada(doc) {
+            try {
+                const fontUrl = '../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf';
+                const response = await fetch(fontUrl);
+                if (!response.ok) throw new Error('Fonte não encontrada');
+                const arrayBuffer = await response.arrayBuffer();
+                const base64 = btoa(String.fromCharCode(...new Uint8Array(arrayBuffer)));
+                doc.addFileToVFS('WorldDiscoveryFive.ttf', base64);
+                doc.addFont('WorldDiscoveryFive.ttf', 'WorldDiscoveryFive', 'normal');
+                return true;
+            } catch (err) {
+                console.warn('Erro ao carregar fonte customizada, usando fallback:', err);
+                return false;
+            }
+        }
+
+        async function desenharHeaderCustomizado(texto) {
+            await document.fonts.load('36px WorldDiscoveryFive');
+
+            return new Promise((resolve) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 600;
+                canvas.height = 60;
+
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.font = '36px WorldDiscoveryFive, cursive, sans-serif';
+                ctx.fillStyle = '#e91e63';
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(texto, 20, 30);
+
+                canvas.toBlob((blob) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+            });
+        }
+
+        function desenharTabelaFormulario(doc, campos, startY, pageWidth, margin) {
+            let y = startY;
+            const lineHeight = 8;
+            const boxPadding = 6;
+            const labelColor = [60, 60, 60];
+            const valueColor = [0, 0, 0];
+
+            for (const campo of campos) {
+                if (campo.tipo === 'titulo') {
+                    doc.setFontSize(12);
+                    doc.setTextColor(233, 30, 99);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text(campo.texto.toUpperCase(), margin + boxPadding, y);
+                    y += 3;
+                    doc.setDrawColor(233, 30, 99);
+                    doc.setLineWidth(0.8);
+                    doc.line(margin, y, pageWidth - margin, y);
+                    y += 8;
+                    continue;
+                }
+
+                if (campo.tipo === 'linha') {
+                    const maxBoxWidth = pageWidth - (margin * 2);
+                    const linhas = doc.splitTextToSize(campo.conteudo || '', maxBoxWidth - (boxPadding * 2));
+
+                    const boxHeight = Math.max(linhas.length * lineHeight + boxPadding * 2, 25);
+
+                    doc.setFillColor(250, 250, 252);
+                    doc.rect(margin, y, maxBoxWidth, boxHeight, 'F');
+                    doc.setDrawColor(200, 200, 210);
+                    doc.setLineWidth(0.5);
+                    doc.rect(margin, y, maxBoxWidth, boxHeight, 'S');
+
+                    if (campo.rotulo) {
+                        doc.setFontSize(9);
+                        doc.setTextColor(...labelColor);
+                        doc.setFont('helvetica', 'bold');
+                        doc.text(campo.rotulo, margin + boxPadding, y + boxPadding + 2);
+                    }
+
+                    doc.setFontSize(10);
+                    doc.setTextColor(...valueColor);
+                    doc.setFont('helvetica', 'normal');
+
+                    let contentY = campo.rotulo ? y + boxPadding + 7 : y + boxPadding + 3;
+                    for (const linha of linhas) {
+                        if (contentY < doc.internal.pageSize.getHeight() - 20) {
+                            doc.text(linha, margin + boxPadding + 4, contentY);
+                            contentY += lineHeight;
                         }
-                    ],
-                    margin: [20, 20, 20, 10]
-                };
-            };
+                    }
+
+                    y += boxHeight + 6;
+                }
+
+                if (y > doc.internal.pageSize.getHeight() - 30) {
+                    doc.addPage();
+                    y = 20;
+                }
+            }
+
+            return y;
         }
 
 async function gerarPDF() {
@@ -405,7 +495,9 @@ async function gerarPDF() {
             try {
                 const paciente = document.getElementById('paciente').value;
                 const indicacao = document.getElementById('indicacao').value;
+                const medicamentos = document.getElementById('medicamentos').value;
                 const observacoes = document.getElementById('observacoes').value;
+                const comentarios = document.getElementById('comentarios').value;
                 const dataInput = document.getElementById('data').value;
 
                 if (!paciente || !indicacao) {
@@ -415,84 +507,98 @@ async function gerarPDF() {
 
                 const dataFormatada = dataInput ? new Date(dataInput + 'T00:00:00').toLocaleDateString('pt-BR') : new Date().toLocaleDateString('pt-BR');
 
-                const headerEl = document.querySelector('.clinic-header');
-                const logo = headerEl?.querySelector('.clinic-logo')?.textContent || 'Espaço Cre Bortoli';
-                const tagline = headerEl?.querySelector('.clinic-tagline')?.textContent || 'Estética & Depilação';
-                const address = headerEl?.querySelector('.clinic-address')?.textContent || 'Rua Francisco Martineli, 492 - Marília, SP';
-
-                const canvas = document.createElement('canvas');
-                canvas.width = 100;
-                canvas.height = 25;
-                const ctx = canvas.getContext('2d');
-                ctx.font = '14px cursive';
-                ctx.fillStyle = '#e91e63';
-                ctx.fillText(logo, 2, 16);
-                ctx.font = 'italic 6px sans-serif';
-                ctx.fillStyle = '#666';
-                ctx.fillText(tagline, 2, 22);
-                const logoDataUrl = canvas.toDataURL('image/png');
-
                 const doc = new jsPDF();
                 const pageWidth = doc.internal.pageSize.getWidth();
-                const margin = 20;
-                let y = margin + 5;
+                const pageHeight = doc.internal.pageSize.getHeight();
+                const margin = 15;
 
-                doc.addImage(logoDataUrl, 'PNG', margin, y, 40, 10);
-                
+                const fonteCarregada = await carregarFonteCustomizada(doc);
+
+                const headerImgData = await desenharHeaderCustomizado('Espaço CreBortoli');
+                doc.addImage(headerImgData, 'PNG', margin, 10, pageWidth - (margin * 2), 30);
+
+                doc.setDrawColor(233, 30, 99);
+                doc.setLineWidth(1.5);
+                doc.line(margin, 42, pageWidth - margin, 42);
+
                 doc.setFont('helvetica', 'normal');
                 doc.setFontSize(8);
-                doc.setTextColor(60, 60, 60);
-                doc.text(address, pageWidth - margin, y + 4, { align: 'right' });
-                
-                y += 15;
-                doc.setDrawColor(233, 30, 99);
-                doc.setLineWidth(1);
-                doc.line(margin, y, pageWidth - margin, y);
-                y += 12;
+                doc.setTextColor(100, 100, 100);
+                doc.text('Rua Francisco Martineli, 492 - Palmital | Marília, SP | (14) 99663.8056', pageWidth / 2, 48, { align: 'center' });
 
-                doc.setFontSize(14);
-                doc.setTextColor(128, 0, 128);
-                doc.text('INDICAÇÃO TERAPÊUTICA', pageWidth / 2, y, { align: 'center' });
+                let y = 58;
+
+                if (fonteCarregada) {
+                    doc.setFont('WorldDiscoveryFive', 'normal');
+                    doc.setFontSize(10);
+                    doc.setTextColor(233, 30, 99);
+                    doc.text('Documento de Indicação Terapêutica', pageWidth / 2, y, { align: 'center' });
+                } else {
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(10);
+                    doc.setTextColor(233, 30, 99);
+                    doc.text('Documento de Indicação Terapêutica', pageWidth / 2, y, { align: 'center' });
+                }
                 y += 8;
-                doc.setDrawColor(147, 112, 219);
-                doc.setLineWidth(0.5);
-                doc.line(70, y, pageWidth - 70, y);
-                y += 12;
 
-                doc.setFillColor(250, 250, 252);
-                doc.rect(20, y, pageWidth - 40, 25, 'F');
-                
-                doc.setFontSize(11);
-                doc.setTextColor(60, 60, 60);
-                doc.text('Paciente:', 25, y + 10);
-                doc.setFontSize(13);
-                doc.setTextColor(0, 0, 0);
-                doc.text(paciente, 60, y + 10);
-                
-                doc.setFontSize(11);
-                doc.setTextColor(60, 60, 60);
-                doc.text('Data:', 25, y + 20);
-                doc.setFontSize(12);
-                doc.setTextColor(0, 0, 0);
-                doc.text(dataFormatada, 50, y + 20);
-                
-                y += 35;
+                const campos = [
+                    { tipo: 'titulo', texto: 'Identificação do Paciente' },
+                    {
+                        tipo: 'linha',
+                        rotulo: 'Paciente:',
+                        conteudo: paciente
+                    },
+                    {
+                        tipo: 'linha',
+                        rotulo: 'Data:',
+                        conteudo: dataFormatada
+                    },
+                    { tipo: 'titulo', texto: 'Indicação Terapêutica' },
+                    {
+                        tipo: 'linha',
+                        conteudo: indicacao
+                    },
+                ];
 
-                const lines = doc.splitTextToSize(indicacao, pageWidth - 40);
-                doc.setFontSize(11);
-                doc.setTextColor(0, 0, 0);
-                doc.text(lines, 20, y);
-                y += lines.length * 5 + 15;
+                if (medicamentos && medicamentos.trim()) {
+                    campos.push({ tipo: 'titulo', texto: 'Lista de Medicamentos' });
+                    campos.push({
+                        tipo: 'linha',
+                        conteudo: medicamentos
+                    });
+                }
 
                 if (observacoes && observacoes.trim()) {
-                    doc.setFontSize(10);
-                    doc.setTextColor(60, 60, 60);
-                    doc.text('Observações:', 20, y);
-                    y += 5;
-                    const obsLines = doc.splitTextToSize(observacoes, pageWidth - 40);
-                    doc.setTextColor(0, 0, 0);
-                    doc.text(obsLines, 20, y);
+                    campos.push({ tipo: 'titulo', texto: 'Observações' });
+                    campos.push({
+                        tipo: 'linha',
+                        conteudo: observacoes
+                    });
                 }
+
+                if (comentarios && comentarios.trim()) {
+                    campos.push({ tipo: 'titulo', texto: 'Comentários' });
+                    campos.push({
+                        tipo: 'linha',
+                        conteudo: comentarios
+                    });
+                }
+
+                const finalY = desenharTabelaFormulario(doc, campos, y, pageWidth, margin);
+
+                const rodapeY = Math.min(finalY + 20, pageHeight - 40);
+                doc.setDrawColor(180, 180, 190);
+                doc.setLineWidth(0.3);
+                doc.line(margin + 30, rodapeY, pageWidth / 2 - 10, rodapeY);
+                doc.line(pageWidth / 2 + 10, rodapeY, pageWidth - margin - 30, rodapeY);
+
+                doc.setFontSize(8);
+                doc.setTextColor(100, 100, 100);
+                doc.text('Assinatura do Profissional', pageWidth / 2, rodapeY + 5, { align: 'center' });
+
+                doc.setFontSize(7);
+                doc.setTextColor(150, 150, 150);
+                doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, pageWidth / 2, pageHeight - 10, { align: 'center' });
 
                 const nomeArquivo = `receituario-${paciente.replace(/\s+/g, '-').toLowerCase()}-${dataInput}.pdf`;
                 doc.save(nomeArquivo);
@@ -502,12 +608,13 @@ async function gerarPDF() {
                     data: dataInput,
                     dataFormatada: dataFormatada,
                     indicacao: indicacao,
+                    medicamentos: medicamentos,
                     observacoes: observacoes,
+                    comentarios: comentarios,
                     nomeArquivo: nomeArquivo
                 });
 
                 renderHistorico();
-
                 alert('Receita gerada com sucesso!');
             } catch (err) {
                 console.error('Erro ao gerar PDF:', err);

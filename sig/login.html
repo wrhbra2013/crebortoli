@@ -110,36 +110,36 @@
             <input type="text" id="codigo-manual" placeholder="XXXXXXXX" maxlength="8" autocomplete="off">
         </div>
         <button class="btn-primary" id="btn-gerar" onclick="gerarQR()">Gerar QR Code</button>
-        <button class="btn-whatsapp" id="btn-whatsapp" onclick="compartilharQR()">📱 Compartilhar Código</button>
+        <button class="btn-whatsapp" id="btn-whatsapp" onclick="compartilharQR()">📱 Compartilhar via whatsapp</button>
     </div>
 
+    <script src="../static/js/storage.js"></script>
     <script>
-        const SESSION_KEY = 'sig_qr_session';
         const AUTH_KEY = 'sig_authenticated';
         const SESSION_TIMEOUT = 60;
-        
+
         let currentToken = '';
         let countdownInterval = null;
         let pollTimeout = null;
         let remainingTime = SESSION_TIMEOUT;
-        
+
         const BASE_URL = window.location.origin;
-        
+
         function getBaseUrl() {
             return BASE_URL;
         }
-        
+
         function showStatus(msg, type) {
             const el = document.getElementById('status-message');
             el.textContent = msg;
             el.className = 'status-message ' + type;
             el.style.display = 'block';
         }
-        
+
         function hideStatus() {
             document.getElementById('status-message').style.display = 'none';
         }
-        
+
         function gerarToken() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let token = '';
@@ -148,7 +148,7 @@
             }
             return token;
         }
-        
+
         function displayToken(token) {
             const container = document.getElementById('qr-code');
             container.innerHTML = '';
@@ -162,45 +162,86 @@
                 correctLevel: QRCode.CorrectLevel.H
             });
         }
-        
-        function saveSessionLocal(sessionData) {
-            localStorage.setItem(SESSION_KEY, JSON.stringify(sessionData));
+
+        async function criarSessao(token) {
+            try {
+                const urlAprovacao = getBaseUrl() + '/sig/aprovar.html?token=' + token;
+                const sessao = {
+                    token: token,
+                    url_aprovacao: urlAprovacao,
+                    status: 'aguardando'
+                };
+                const result = await fetch(`${API_CONFIG.baseUrl}/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.token}`
+                    },
+                    body: JSON.stringify({ project: API_CONFIG.project, table: 'sessoes', data: sessao })
+                });
+                return await result.json();
+            } catch (e) {
+                console.warn('API criar sessao failed, using localStorage fallback:', e);
+                localStorage.setItem('sig_qr_session', JSON.stringify({ token, status: 'gerado', created: Date.now() }));
+                return null;
+            }
         }
-        
-        function clearSessionLocal() {
-            localStorage.removeItem(SESSION_KEY);
+
+        async function verificarSessao(token) {
+            try {
+                const result = await fetch(`${API_CONFIG.baseUrl}/read`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.token}`
+                    },
+                    body: JSON.stringify({
+                        project: API_CONFIG.project,
+                        table: 'sessoes',
+                        filters: { token: token },
+                        limit: 1
+                    })
+                });
+                const data = await result.json();
+                if (data.data && data.data.length > 0) {
+                    return data.data[0].status;
+                }
+                return 'nao_encontrado';
+            } catch (e) {
+                console.warn('API verificar sessao failed:', e);
+                const stored = localStorage.getItem('sig_qr_session');
+                if (stored) {
+                    const s = JSON.parse(stored);
+                    if (s.token === token) return s.status;
+                }
+                return 'erro';
+            }
         }
-        
-        function loadSessionLocal() {
-            const stored = localStorage.getItem(SESSION_KEY);
-            return stored ? JSON.parse(stored) : null;
-        }
-        
+
         function startTimer() {
             let countdown = remainingTime;
             const countdownEl = document.getElementById('countdown');
             const timerEl = document.getElementById('timer');
-            
+
             timerEl.style.display = 'block';
             countdownEl.textContent = countdown;
-            
+
             if (countdownInterval) clearInterval(countdownInterval);
-            
+
             countdownInterval = setInterval(() => {
                 countdown--;
                 remainingTime = countdown;
                 countdownEl.textContent = countdown;
-                
+
                 if (countdown <= 0) {
                     clearInterval(countdownInterval);
                     stopPolling();
-                    clearSessionLocal();
                     timerEl.style.display = 'none';
                     showStatus('Sessão expirada. Gere um novo código.', 'negado');
                 }
             }, 1000);
         }
-        
+
         function stopTimer() {
             if (countdownInterval) {
                 clearInterval(countdownInterval);
@@ -208,15 +249,15 @@
             }
             document.getElementById('timer').style.display = 'none';
         }
-        
+
         function stopPolling() {
             if (pollTimeout) {
                 clearTimeout(pollTimeout);
                 pollTimeout = null;
             }
         }
-        
-        function gerarQR() {
+
+        async function gerarQR() {
             const btn = document.getElementById('btn-gerar');
             btn.disabled = true;
             btn.textContent = 'Gerando...';
@@ -224,49 +265,44 @@
             stopPolling();
             stopTimer();
             remainingTime = SESSION_TIMEOUT;
-            
+
             currentToken = gerarToken();
-            
-            const sessionData = {
-                token: currentToken,
-                status: 'gerado',
-                created: Date.now()
-            };
-            saveSessionLocal(sessionData);
-            
+
+            await criarSessao(currentToken);
+
             displayToken(currentToken);
-            
+
             document.getElementById('input-code-container').style.display = 'block';
             document.getElementById('codigo-manual').value = '';
             document.getElementById('codigo-manual').focus();
-            
+
             const btnWhatsapp = document.getElementById('btn-whatsapp');
             btnWhatsapp.style.display = 'block';
             btnWhatsapp.textContent = '📱 Compartilhar link de aprovação';
-            
+
             btn.disabled = false;
             btn.textContent = 'Gerar Novo Código';
-            
+
             startTimer();
-            startPollingLocal();
+            startPolling();
         }
-        
+
         function compartilharQR() {
             if (!currentToken) return;
-            
+
             const mensagem = 'Código de aprovação Cre Bortoli: ' + currentToken;
             const whatsappUrl = 'https://wa.me/?text=' + encodeURIComponent(mensagem);
             window.open(whatsappUrl, '_blank');
         }
-        
+
         function secureLogin() {
             localStorage.setItem('sig_authenticated', 'true');
             localStorage.setItem('sig_auth_time', Date.now().toString());
-            
+
             const array = new Uint8Array(32);
             crypto.getRandomValues(array);
             const secureToken = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
-            
+
             let hash = 0;
             for (let i = 0; i < secureToken.length; i++) {
                 const char = secureToken.charCodeAt(i);
@@ -275,67 +311,34 @@
             }
             localStorage.setItem('sig_token', hash.toString(16));
         }
-        
-        function verificarAprovacaoLocal() {
-            const session = loadSessionLocal();
-            if (session && session.status === 'aprovado') {
-                stopPolling();
-                stopTimer();
-                clearSessionLocal();
-                secureLogin();
-                showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                setTimeout(() => { window.location.href = './index.html'; }, 1000);
-                return true;
-            }
-            return false;
-        }
-        
-        function startPollingLocal() {
-            const checkApproval = () => {
-                const session = loadSessionLocal();
-                if (session && session.status === 'aprovado') {
-                    verificarAprovacaoLocal();
-                    return;
-                }
-                
-                if (session && session.status === 'negado') {
+
+        async function startPolling() {
+            const checkApproval = async () => {
+                const status = await verificarSessao(currentToken);
+
+                if (status === 'aprovado') {
                     stopPolling();
                     stopTimer();
-                    showStatus('Login cancelado.', 'negado');
+                    secureLogin();
+                    showStatus('Login aprovado! Redirecionando...', 'aprovado');
+                    setTimeout(() => { window.location.href = './index.html'; }, 1000);
                     return;
                 }
-                
+
                 pollTimeout = setTimeout(checkApproval, 2000);
             };
-            
+
             checkApproval();
         }
-        
-        const session = loadSessionLocal();
-        if (session && session.status === 'aprovado') {
-            const idade = Date.now() - session.created;
-            if (idade < 30000) {
-                secureLogin();
-                window.location.href = './index.html';
-            } else {
-                clearSessionLocal();
-            }
-        }
-        
-        function validarCodigoManual() {
-            const input = document.getElementById('codigo-manual');
-            return input.value.toUpperCase().trim() === currentToken;
-        }
-        
+
         function processarLoginManual() {
             if (!currentToken) return;
-            
+
             const inputCode = document.getElementById('codigo-manual').value.toUpperCase().trim();
-            
+
             if (inputCode === currentToken) {
                 stopPolling();
                 stopTimer();
-                clearSessionLocal();
                 secureLogin();
                 showStatus('Login aprovado! Redirecionando...', 'aprovado');
                 setTimeout(() => { window.location.href = './index.html'; }, 1000);
@@ -345,20 +348,20 @@
                 document.getElementById('codigo-manual').focus();
             }
         }
-        
+
         document.getElementById('codigo-manual').addEventListener('input', function() {
             this.value = this.value.toUpperCase();
             hideStatus();
-            
+
             if (currentToken && this.value.length === currentToken.length) {
                 processarLoginManual();
             }
         });
-        
+
         document.getElementById('codigo-manual').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') processarLoginManual();
         });
-        
+
         gerarQR();
     </script>
 </body>
