@@ -8,28 +8,43 @@
     <link rel="icon" type="image/png" href="../static/icon/favicon.ico">
     <link rel="stylesheet" href="../static/css/style2.css">
     <style>
+        @font-face {
+            font-family: 'WorldDiscoveryFive';
+            src: url('../static/fonts/World_Discovery_Five_PERSONAL_Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
         :root { --cor-principal: #8a4baf; }
         body {
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            background: linear-gradient(135deg, #f7f8fc 0%, #e8eaf6 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
             padding: 1rem;
         }
         .login-container {
-            background: white;
-            padding: 2rem;
-            border-radius: 16px;
-            box-shadow: 0 10px 40px rgba(108, 99, 255, 0.15);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 2.5rem 2rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             text-align: center;
+            backdrop-filter: blur(10px);
         }
-        .logo h1 { color: var(--cor-principal); font-size: 2rem; margin-bottom: 0.5rem; }
-        .logo p { color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
-        .qr-container { background: #f8f9fa; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
-        .celular-icon { font-size: 3rem; margin-bottom: 0.5rem; }
+        .logo { margin-bottom: 2rem; }
+        .logo h1 {
+            font-family: 'WorldDiscoveryFive', sans-serif;
+            color: var(--cor-principal);
+            font-size: 3.5rem;
+            margin-bottom: 0.3rem;
+            letter-spacing: 4px;
+            text-shadow: 2px 2px 4px rgba(138, 75, 175, 0.2);
+        }
+        .logo p { color: #888; font-size: 0.85rem; margin-bottom: 0; }
+        .qr-container { background: #f0f0f5; border-radius: 16px; padding: 1.5rem; margin-bottom: 1.5rem; }
+        .celular-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
         .qr-code { display: flex; justify-content: center; align-items: center; min-height: 200px; }
         .status-message {
             padding: 1rem; border-radius: 8px; margin-bottom: 1rem;
@@ -50,9 +65,10 @@
         .btn-primary {
             width: 100%; padding: 1rem; background: var(--cor-principal); color: white;
             border: none; border-radius: 8px; font-size: 1rem; font-weight: 600; cursor: pointer;
+            transition: background 0.3s ease, transform 0.2s ease;
         }
-        .btn-primary:hover { background: #7a3bb0; }
-        .btn-primary:disabled { background: #ccc; cursor: not-allowed; }
+        .btn-primary:hover { background: #7a3bb0; transform: translateY(-1px); }
+        .btn-primary:disabled { background: #ccc; cursor: not-allowed; transform: none; }
         .timer { display: none; color: #666; font-size: 0.9rem; margin-top: 0.5rem; }
         .countdown { font-weight: bold; color: var(--cor-principal); }
         .input-code-container { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid #e0e0e0; }
@@ -69,13 +85,17 @@
             box-sizing: border-box;
         }
         .input-code-container input:focus { outline: none; border-color: var(--cor-principal); }
+        @media (max-width: 480px) {
+            .logo h1 { font-size: 2.5rem; letter-spacing: 2px; }
+            .login-container { padding: 2rem 1.5rem; }
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
         <div class="logo">
-            <h1>Painel Admin</h1>
-            <p>Espaço Cre Bortoli</p>
+            <h1>CreBorrtoli</h1>
+            <p>Espaço Restrito</p>
         </div>
         <div id="status-message" class="status-message"></div>
         <div class="qr-container">
