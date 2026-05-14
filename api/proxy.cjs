@@ -1,6 +1,6 @@
 const http = require('http');
 
-const FASTAPI_URL = 'https://api.crebortoli.com.br/crebortoli';
+const FASTAPI_URL = 'https://api.projetosdinamicos.com.br/crebortoli';
 const API_TOKEN = process.env.API_TOKEN || 'crebortoli-api-token-2024';
 const PORT = process.env.PORT || 8080;
 

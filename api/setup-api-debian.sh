@@ -86,9 +86,9 @@ cleanup_database() {
     local db_name=$1
     local db_user=$2
     echo "Limpando banco de dados..."
-    sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$db_name' AND pid <> pg_backend_pid();" 2>/dev/null || true
-    sudo -u postgres psql -c "DROP DATABASE IF EXISTS $db_name;" 2>/dev/null || true
-    sudo -u postgres psql -c "DROP USER IF EXISTS $db_user;" 2>/dev/null || true
+    PGPASSWORD="$PG_ADMIN_PASS" psql -U "$PG_ADMIN_USER" -h localhost -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$db_name' AND pid <> pg_backend_pid();" 2>/dev/null || true
+    PGPASSWORD="$PG_ADMIN_PASS" psql -U "$PG_ADMIN_USER" -h localhost -c "DROP DATABASE IF EXISTS $db_name;" 2>/dev/null || true
+    PGPASSWORD="$PG_ADMIN_PASS" psql -U "$PG_ADMIN_USER" -h localhost -c "DROP USER IF EXISTS $db_user;" 2>/dev/null || true
 }
 
 list_projects() {
@@ -320,17 +320,14 @@ create_project() {
         done
     fi
 
-    read -p "Tabelas (Enter para agendamentos,servicos,clientes,contatos): " TABLES_INPUT
-    TABLES="${TABLES_INPUT:-agendamentos,servicos,clientes,contatos}"
-
     echo ""
     echo "=============================================="
     echo "  CRIANDO BANCO DE DADOS"
     echo "=============================================="
 
-    sudo -u postgres psql -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || echo "Usuário já existe"
-    sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || echo "Banco já existe"
-    sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
+    PGPASSWORD="$PG_ADMIN_PASS" psql -U "$PG_ADMIN_USER" -h localhost -c "CREATE USER $DB_USER WITH PASSWORD '$DB_PASS';" 2>/dev/null || echo "Usuário já existe"
+    PGPASSWORD="$PG_ADMIN_PASS" psql -U "$PG_ADMIN_USER" -h localhost -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>/dev/null || echo "Banco já existe"
+    PGPASSWORD="$PG_ADMIN_PASS" psql -U "$PG_ADMIN_USER" -h localhost -c "GRANT ALL PRIVILEGES ON DATABASE $DB_NAME TO $DB_USER;"
 
     echo ""
     echo "=============================================="
@@ -371,7 +368,7 @@ DB_USER=$DB_USER
 DB_PASS=$DB_PASS
 EOF
 
-    sudo tee "$PROJECT_DIR/src/server.js" > /dev/null <<SERVEREOF
+    sudo tee "$PROJECT_DIR/src/server.js" > /dev/null <<'SERVEREOF'
 const express = require('express');
 const { Pool } = require('pg');
 const cors = require('cors');
@@ -394,9 +391,42 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const columnCache = {};
+
+async function ensureTable(tableName) {
+    const exists = await pool.query(
+        `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = $1)`,
+        [tableName]
+    );
+    if (!exists.rows[0].exists) {
+        await pool.query(
+            `CREATE TABLE "${tableName}" (id UUID PRIMARY KEY DEFAULT gen_random_uuid(), created_at TIMESTAMP DEFAULT NOW())`
+        );
+        console.log(`Tabela "${tableName}" criada dinamicamente`);
+    }
+}
+
+async function ensureColumns(tableName, fields) {
+    if (!columnCache[tableName]) {
+        const res = await pool.query(
+            `SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = $1`,
+            [tableName]
+        );
+        columnCache[tableName] = new Set(res.rows.map(r => r.column_name));
+    }
+    for (const field of fields) {
+        if (!columnCache[tableName].has(field)) {
+            const safeType = typeof field === 'object' ? 'JSONB' : 'TEXT';
+            await pool.query(`ALTER TABLE "${tableName}" ADD COLUMN "${field}" ${safeType}`);
+            columnCache[tableName].add(field);
+            console.log(`Coluna "${field}" adicionada a "${tableName}"`);
+        }
+    }
+}
+
 app.get('/', (req, res) => {
-    res.json({ 
-        message: 'API Running', 
+    res.json({
+        message: 'API Running',
         status: 'OK',
         project: process.env.npm_package_name || 'api',
         timestamp: new Date().toISOString()
@@ -414,11 +444,9 @@ app.get('/health', async (req, res) => {
 
 app.get('/api/tables', async (req, res) => {
     try {
-        const result = await pool.query(\`
-            SELECT table_name FROM information_schema.tables 
-            WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
-            ORDER BY table_name;
-        \`);
+        const result = await pool.query(
+            `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE' ORDER BY table_name`
+        );
         res.json({ tables: result.rows.map(r => r.table_name) });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -428,7 +456,8 @@ app.get('/api/tables', async (req, res) => {
 app.get('/api/tables/:tableName', async (req, res) => {
     const { tableName } = req.params;
     try {
-        const result = await pool.query(\`SELECT * FROM "\${tableName}" LIMIT 100;\`);
+        await ensureTable(tableName);
+        const result = await pool.query(`SELECT * FROM "${tableName}" ORDER BY created_at DESC LIMIT 100`);
         res.json({ table: tableName, data: result.rows });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -439,9 +468,18 @@ app.post('/api/tables/:tableName', async (req, res) => {
     const { tableName } = req.params;
     const data = req.body;
     try {
-        const keys = Object.keys(data).map(k => '"${k}"').join(', ');
-        const values = Object.keys(data).map((_, i) => \`$\${i + 1}\`).join(', ');
-        const result = await pool.query(\`INSERT INTO "\${tableName}" (\${keys}) VALUES (\${values}) RETURNING *;\`, Object.values(data));
+        await ensureTable(tableName);
+        const fields = Object.keys(data).filter(k => k !== 'id' && k !== 'created_at');
+        await ensureColumns(tableName, fields);
+        const safe = {};
+        for (const k of fields) safe[k] = data[k];
+        if (data.id) safe.id = data.id;
+        const keys = Object.keys(safe).map(k => `"${k}"`).join(', ');
+        const vals = Object.keys(safe).map((_, i) => `$${i + 1}`).join(', ');
+        const result = await pool.query(
+            `INSERT INTO "${tableName}" (${keys}) VALUES (${vals}) RETURNING *`,
+            Object.values(safe)
+        );
         res.json({ success: true, data: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -452,8 +490,18 @@ app.put('/api/tables/:tableName/:id', async (req, res) => {
     const { tableName, id } = req.params;
     const data = req.body;
     try {
-        const keys = Object.keys(data).map((k, i) => \`"\${k}" = $\${i + 1}\`).join(', ');
-        const result = await pool.query(\`UPDATE "\${tableName}" SET \${keys} WHERE id = $\${Object.keys(data).length + 1} RETURNING *;\`, [...Object.values(data), id]);
+        await ensureTable(tableName);
+        const fields = Object.keys(data).filter(k => k !== 'id' && k !== 'created_at');
+        if (fields.length === 0) return res.status(400).json({ error: 'No fields to update' });
+        await ensureColumns(tableName, fields);
+        const safe = {};
+        for (const k of fields) safe[k] = data[k];
+        const sets = Object.keys(safe).map((k, i) => `"${k}" = $${i + 1}`).join(', ');
+        const result = await pool.query(
+            `UPDATE "${tableName}" SET ${sets} WHERE id = $${fields.length + 1} RETURNING *`,
+            [...Object.values(safe), id]
+        );
+        if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
         res.json({ success: true, data: result.rows[0] });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -463,37 +511,28 @@ app.put('/api/tables/:tableName/:id', async (req, res) => {
 app.delete('/api/tables/:tableName/:id', async (req, res) => {
     const { tableName, id } = req.params;
     try {
-        await pool.query(\`DELETE FROM "\${tableName}" WHERE id = $1;\`, [id]);
-        res.json({ success: true });
+        await ensureTable(tableName);
+        const result = await pool.query(`DELETE FROM "${tableName}" WHERE id = $1 RETURNING id`, [id]);
+        if (!result.rows.length) return res.status(404).json({ error: 'Not found' });
+        res.json({ success: true, deleted: id });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 app.listen(PORT, '0.0.0.0', () => {
-    console.log(\`Server running on port \${PORT}\`);
+    console.log(`Server running on port ${PORT}`);
 });
 SERVEREOF
 
     echo ""
     echo "=============================================="
-    echo "  CRIANDO TABELAS PADRÃO"
+    echo "  TABELAS DINÂMICAS (CRIADAS PELA API)"
     echo "=============================================="
-
-    IFS=',' read -ra TABLE_ARRAY <<< "$TABLES"
-    for table in "${TABLE_ARRAY[@]}"; do
-        table=$(echo "$table" | xargs)
-        if [ -n "$table" ]; then
-            echo "Criando tabela: $table"
-            sudo -u postgres psql -d "$DB_NAME" -c "
-                CREATE TABLE IF NOT EXISTS \"$table\" (
-                    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-                    created_at TIMESTAMP DEFAULT NOW(),
-                    updated_at TIMESTAMP DEFAULT NOW()
-                );
-            " 2>/dev/null || echo "Tabela $table já existe"
-        fi
-    done
+    echo "As tabelas serao criadas automaticamente"
+    echo "conforme as paginas estaticas chamarem"
+    echo "os endpoints CRUD da API."
+    echo ""
 
     cd "$PROJECT_DIR"
     sudo npm install

@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+ import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
@@ -662,3 +662,4 @@ const start = async () => {
   console.log(`Server: http://0.0.0.0:${PORT}`);
 };
 start();
+
