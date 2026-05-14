@@ -296,6 +296,7 @@ const UsuariosStore = createEntityStore('usuarios');
 const SessoesStore = createEntityStore('sessoes');
 
 const AgendamentoStore = AgendamentosStore;
+const ContatoStore = ContatosStore;
 
 const DataStore = {
     load(key) { return null; },
@@ -307,6 +308,7 @@ if (typeof window !== 'undefined') {
     window.DataStore = DataStore;
     window.AgendamentosStore = AgendamentosStore;
     window.AgendamentoStore = AgendamentoStore;
+    window.ContatoStore = ContatoStore;
     window.ServicosStore = ServicosStore;
     window.ClientesStore = ClientesStore;
     window.ReceitasStore = ReceitasStore;

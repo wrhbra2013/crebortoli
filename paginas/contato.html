@@ -66,6 +66,10 @@
                             <input type="email" id="email" name="email" class="form-control" required>
                         </div>
                         <div class="form-group">
+                            <label for="telefone" class="form-label">Telefone</label>
+                            <input type="tel" id="telefone" name="telefone" class="form-control">
+                        </div>
+                        <div class="form-group">
                             <label for="mensagem" class="form-label">Mensagem</label>
                             <textarea id="mensagem" name="mensagem" class="form-control" rows="4" required></textarea>
                         </div>
@@ -80,7 +84,7 @@
     </main>
 
     <div id="footer-placeholder"></div>
-    <script>var v='1.0.2';document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');</script>
+    <script>var v='1.0.3';document.write('<script src="../static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="../static/js/components.js?v='+v+'"><\/script>');</script>
 <script>
 document.getElementById('contato-form')?.addEventListener('submit', function(e) {
     e.preventDefault();
@@ -88,6 +92,7 @@ document.getElementById('contato-form')?.addEventListener('submit', function(e) 
     const formData = {
         nome: document.getElementById('nome').value,
         email: document.getElementById('email').value,
+        telefone: document.getElementById('telefone').value,
         mensagem: document.getElementById('mensagem').value
     };
     
