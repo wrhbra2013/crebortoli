@@ -60,7 +60,7 @@ var ServicosPagina = (function() {
     function agendarServico(servicoId) {
         var hoje = new Date();
         var dataStr = hoje.toISOString().split('T')[0];
-        window.location.href = 'agenda.html?servico=' + encodeURIComponent(servicoId) + '&data=' + dataStr;
+        window.location.href = 'agenda.html#servico=' + encodeURIComponent(servicoId) + '&data=' + dataStr;
     }
     
     /* -------------------------------------------------------------------------

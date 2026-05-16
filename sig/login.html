@@ -152,7 +152,7 @@
         function displayToken(token) {
             const container = document.getElementById('qr-code');
             container.innerHTML = '';
-            const qrUrl = getBaseUrl() + '/sig/aprovar.html?token=' + token;
+            const qrUrl = getBaseUrl() + '/sig/aprovar.html#token=' + token;
             new QRCode(container, {
                 text: qrUrl,
                 width: 180,
@@ -165,7 +165,7 @@
 
         async function criarSessao(token) {
             try {
-                const urlAprovacao = getBaseUrl() + '/sig/aprovar.html?token=' + token;
+                const urlAprovacao = getBaseUrl() + '/sig/aprovar.html#token=' + token;
                 const sessao = {
                     token: token,
                     url_aprovacao: urlAprovacao,

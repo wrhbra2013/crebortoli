@@ -96,7 +96,8 @@
         }
 
         async function init() {
-            const urlParams = new URLSearchParams(window.location.search);
+            const hash = window.location.hash.substring(1);
+            const urlParams = new URLSearchParams(hash);
             codigoLido = urlParams.get('token') || '';
 
             if (!codigoLido) {

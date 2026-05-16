@@ -42,7 +42,14 @@ var AgendaPagina = (function() {
         
         if (!servicos || servicos.length === 0) {
             servicos = [
-                { id: 'massagem', nome: 'Massagem', preco: '50' }
+                { id: 'dep_perna', nome: 'Depilação Perna', preco: 25, categoria: 'Depilação' },
+                { id: 'dep_virilha', nome: 'Depilação Virilha Completa', preco: 50, categoria: 'Depilação' },
+                { id: 'dep_buco', nome: 'Depilação Buço', preco: 15, categoria: 'Depilação' },
+                { id: 'dep_axilas', nome: 'Depilação Axilas', preco: 20, categoria: 'Depilação' },
+                { id: 'dep_pacote', nome: 'Pacote Mensal Depilação', preco: 90, categoria: 'Depilação' },
+                { id: 'barreira_cutanea', nome: 'Reparação de Barreira Cutânea', preco: 50, categoria: 'Tratamento' },
+                { id: 'limpeza_pele', nome: 'Limpeza de Pele', preco: 100, categoria: 'Tratamento' },
+                { id: 'massagem', nome: 'Massagem Relaxante', preco: 50, categoria: 'Massagem' }
             ];
         }
         
@@ -50,6 +57,7 @@ var AgendaPagina = (function() {
         renderizarCalendario();
         renderizarMeusAgendamentos();
         setupEventListeners();
+        processarHash();
     }
     
     async function recarregarAgendamentos() {
@@ -293,6 +301,37 @@ var AgendaPagina = (function() {
     function navegarMes(direcao) {
         dataAtual.setMonth(dataAtual.getMonth() + direcao);
         renderizarCalendario();
+    }
+    
+    function processarHash() {
+        var hash = window.location.hash.substring(1);
+        if (!hash) return;
+        
+        var params = {};
+        hash.split('&').forEach(function(pair) {
+            var parts = pair.split('=');
+            if (parts[0]) params[parts[0]] = decodeURIComponent(parts[1] || '');
+        });
+        
+        var servicoId = params.servico;
+        var data = params.data;
+        
+        if (!data || !servicoId) return;
+        
+        var select = document.getElementById('servico');
+        if (select) {
+            for (var i = 0; i < select.options.length; i++) {
+                if (select.options[i].value === servicoId) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        atualizarPreco();
+        
+        abrirModal(data);
+        
+        window.location.hash = '';
     }
     
     return {
