@@ -2,6 +2,7 @@ var AppRouter = (function() {
     var mainEl = null;
     var currentPath = '';
     var _inited = false;
+    var _serverTokenCache = {};
     window.__routerPath = '';
 
     function init() {
@@ -14,7 +15,7 @@ var AppRouter = (function() {
 
         var hash = window.location.hash.replace(/^#\//, '');
         if (hash) {
-            var path = RouteCrypt.decode(hash);
+            var path = PathTokens.decode(hash);
             if (path) {
                 setPath(path);
                 loadPage(path);
@@ -33,6 +34,10 @@ var AppRouter = (function() {
         window.__routerPath = path;
     }
 
+    function getPath() {
+        return currentPath;
+    }
+
     function onHashChange() {
         var hash = window.location.hash.replace(/^#\//, '');
         if (!hash) {
@@ -40,7 +45,7 @@ var AppRouter = (function() {
             loadPage('index.html');
             return;
         }
-        var path = RouteCrypt.decode(hash);
+        var path = PathTokens.decode(hash);
         if (path && path !== currentPath) {
             setPath(path);
             loadPage(path);
@@ -51,25 +56,44 @@ var AppRouter = (function() {
 
     function navigate(path) {
         if (path === currentPath) return;
-        var encoded = RouteCrypt.encode(path);
+        var encoded = PathTokens.encode(path);
         window.location.hash = '#/' + encoded;
     }
 
+    function getServerToken(path) {
+        if (_serverTokenCache[path]) {
+            return Promise.resolve(_serverTokenCache[path]);
+        }
+        var baseUrl = window.API_BASE_URL || '';
+        return fetch(baseUrl + '/api/page/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ path: path })
+        }).then(function(r) { return r.json(); }).then(function(res) {
+            if (res.success && res.token) {
+                _serverTokenCache[path] = res.token;
+                return res.token;
+            }
+            return null;
+        }).catch(function() { return null; });
+    }
+
     function loadPage(path) {
-        fetch(path)
-            .then(function(r) {
+        var baseUrl = window.API_BASE_URL || '';
+        getServerToken(path).then(function(token) {
+            var url = token ? baseUrl + '/api/page/' + token : path;
+            return fetch(url).then(function(r) {
                 if (!r.ok) throw new Error('Page not found: ' + path);
                 return r.text();
-            })
-            .then(function(html) {
+            }).then(function(html) {
                 renderPage(html);
-            })
-            .catch(function(err) {
-                console.error('Router:', err);
-                if (path !== 'index.html') {
-                    navigate('index.html');
-                }
             });
+        }).catch(function(err) {
+            console.error('Router:', err);
+            if (path !== 'index.html') {
+                navigate('index.html');
+            }
+        });
     }
 
     function renderPage(html) {
@@ -120,7 +144,7 @@ var AppRouter = (function() {
         document.querySelectorAll('.nav-link').forEach(function(a) {
             var href = a.getAttribute('href');
             if (href && !href.startsWith('#') && !href.startsWith('http') && !href.startsWith('javascript')) {
-                var encoded = RouteCrypt.encode(href);
+                var encoded = PathTokens.encode(href);
                 a.setAttribute('href', '#/' + encoded);
             }
         });
@@ -128,6 +152,8 @@ var AppRouter = (function() {
 
     return {
         init: init,
-        navigate: navigate
+        navigate: navigate,
+        getPath: getPath,
+        setPath: setPath
     };
 })();

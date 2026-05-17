@@ -10,6 +10,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const PROJECT_ROOT = path.resolve(__dirname, '../..');
 const { Pool } = pg;
 
 const fastify = Fastify({ logger: true });
@@ -30,7 +31,7 @@ const PROJECTS = {
     user: process.env.CREBORTOLI_DB_USER,
     password: process.env.CREBORTOLI_DB_PASS,
     database: process.env.CREBORTOLI_DB_NAME,
-    root: path.join(__dirname, '..'),
+    root: PROJECT_ROOT,
   },
 };
 
@@ -556,14 +557,68 @@ fastify.get('/uploads/:name', async (req, res) => {
   return res.send(fs.createReadStream(filepath));
 });
 
+const pageTokenStore = new Map();
+const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [token, entry] of pageTokenStore) {
+    if (now - entry.created > TOKEN_EXPIRY_MS) pageTokenStore.delete(token);
+  }
+}, 60 * 60 * 1000);
+
+fastify.post('/api/page/token', async (req, res) => {
+  const { path: pagePath } = req.body || {};
+  if (!pagePath || typeof pagePath !== 'string') {
+    return res.code(400).send({ error: 'Path required' });
+  }
+  const safePath = pagePath.replace(/\.\.\//g, '').replace(/\.\./g, '').replace(/^\/+/, '');
+  const allowedPrefixes = ['paginas/', 'sig/', 'index.html'];
+  const isAllowed = allowedPrefixes.some(p => safePath === p || safePath.startsWith(p));
+  if (!isAllowed) {
+    return res.code(403).send({ error: 'Invalid path' });
+  }
+  const fullPath = path.join(PROJECT_ROOT, safePath);
+  if (!fs.existsSync(fullPath)) {
+    return res.code(404).send({ error: 'Page not found' });
+  }
+  const token = crypto.randomUUID();
+  pageTokenStore.set(token, { path: safePath, created: Date.now() });
+  return { success: true, token, expiresInMs: TOKEN_EXPIRY_MS };
+});
+
+fastify.get('/api/page/:token', async (req, res) => {
+  const { token } = req.params;
+  const entry = pageTokenStore.get(token);
+  if (!entry) {
+    return res.code(404).send({ error: 'Token inválido ou expirado' });
+  }
+  if (Date.now() - entry.created > TOKEN_EXPIRY_MS) {
+    pageTokenStore.delete(token);
+    return res.code(404).send({ error: 'Token expirado' });
+  }
+  const fullPath = path.join(PROJECT_ROOT, entry.path);
+  if (!fs.existsSync(fullPath)) {
+    pageTokenStore.delete(token);
+    return res.code(404).send({ error: 'Página não encontrada' });
+  }
+  const content = await fs.promises.readFile(fullPath, 'utf-8');
+  res.type('text/html').send(content);
+});
+
 await fastify.register(fastifyStatic, {
-  root: path.join(__dirname, '..'),
+  root: PROJECT_ROOT,
   prefix: '/',
   wildcard: false,
+  setHeaders: (res, filePath) => {
+    if (filePath.match(/\.html$/)) {
+      res.setHeader('X-Robots-Tag', 'noindex');
+    }
+  },
 });
 
 fastify.setNotFoundHandler(async (req, res) => {
-  const indexPath = path.join(__dirname, '..', 'index.html');
+  const indexPath = path.join(PROJECT_ROOT, 'index.html');
   if (fs.existsSync(indexPath)) {
     const content = await fs.promises.readFile(indexPath, 'utf-8');
     res.type('text/html').send(content);

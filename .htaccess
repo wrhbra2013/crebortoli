@@ -16,6 +16,18 @@ Options -Indexes
     Deny from all
 </FilesMatch>
 
+# Block direct access to internal page directories
+# All access must go through the SPA token router
+# Exceptions: login and approval pages (needed for QR code flow)
+RewriteEngine On
+
+# Block paginas/ - all access through SPA
+RewriteRule ^paginas/ - [F,L]
+
+# Block sig/ except public-facing pages needed for auth flow
+RewriteCond %{REQUEST_URI} !^/sig/(login|aprovar)\.html
+RewriteRule ^sig/ - [F,L]
+
 # PHP settings
 <IfModule mod_php.c>
     php_flag display_errors Off

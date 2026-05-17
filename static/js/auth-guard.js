@@ -85,16 +85,26 @@ function refreshSession() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    const path = window.location.pathname;
-    if (path.includes('/sig/')) {
-        const isPublicPage = path.includes('login.html') || path.includes('aprovar.html');
+function getSigPath() {
+    var p = window.__routerPath || window.location.pathname;
+    if (p.startsWith('sig/') || p.includes('/sig/')) return 'sig/';
+    return null;
+}
+
+function runAuthCheck() {
+    var path = window.__routerPath || window.location.pathname;
+    var inSig = path.startsWith('sig/') || path.includes('/sig/');
+    if (inSig) {
+        var isPublicPage = path.includes('login.html') || path.includes('aprovar.html');
         if (!isPublicPage) {
             checkAuth();
         }
     }
-    
-    if (isAuthenticated()) {
-        setInterval(refreshSession, 5 * 60 * 1000);
-    }
-});
+}
+
+document.addEventListener('DOMContentLoaded', runAuthCheck);
+window.addEventListener('hashchange', runAuthCheck);
+
+if (isAuthenticated()) {
+    setInterval(refreshSession, 5 * 60 * 1000);
+}
