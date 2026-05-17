@@ -1,6 +1,5 @@
  import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
-import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import pg from 'pg';/*  */
@@ -60,34 +59,6 @@ if (!API_TOKEN) {
 }
 
 const API_WRITE_KEY = process.env.API_WRITE_KEY || process.env.API_TOKEN;
-
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || '')
-  .split(',')
-  .map(o => o.trim())
-  .filter(Boolean);
-
-const isOriginAllowed = (origin) => {
-  if (!ALLOWED_ORIGINS.length) return false;
-  if (ALLOWED_ORIGINS.includes('*')) return true;
-  return ALLOWED_ORIGINS.includes(origin);
-};
-
-await fastify.register(cors, { 
-  origin: (origin, cb) => {
-    if (!origin) {
-      cb(null, true);
-      return;
-    }
-    if (ALLOWED_ORIGINS.length === 0 || ALLOWED_ORIGINS.includes('*') || isOriginAllowed(origin)) {
-      cb(null, true);
-    } else {
-      cb(new Error('Origin not allowed'), false);
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-});
 
 await fastify.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
 await fastify.register(rateLimit, { max: 100, timeWindow: '1 minute', keyGenerator: (req) => req.ip });
