@@ -207,6 +207,40 @@ var AgendaPagina = (function() {
         abrirModal(data);
     }
     
+    function pad(n) {
+        return n.toString().padStart(2, '0');
+    }
+
+    function gerarOpcoesHorario(data) {
+        var select = document.getElementById('horario');
+        if (!select) return;
+
+        var horarios = [];
+        for (var h = 8; h <= 11; h++) {
+            horarios.push(pad(h) + ':00');
+            horarios.push(pad(h) + ':30');
+        }
+        for (var h = 13; h <= 17; h++) {
+            horarios.push(pad(h) + ':00');
+            horarios.push(pad(h) + ':30');
+        }
+
+        var ocupados = agendamentosCache.filter(function(a) {
+            var d = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
+            return d === data && a.status && a.status.toUpperCase() !== 'CANCELADO';
+        }).map(function(a) {
+            return a.hora;
+        });
+
+        var html = '<option value="">Selecione...</option>';
+        horarios.forEach(function(h) {
+            if (ocupados.indexOf(h) === -1) {
+                html += '<option value="' + h + '">' + h + '</option>';
+            }
+        });
+        select.innerHTML = html;
+    }
+
     function abrirModal(data) {
         var modal = document.getElementById('modal-agendamento');
         if (!modal) return;
@@ -215,6 +249,7 @@ var AgendaPagina = (function() {
         document.getElementById('data-input').value = data;
         document.getElementById('nome').value = '';
         document.getElementById('telefone').value = '';
+        gerarOpcoesHorario(data);
         modal.classList.add('active');
     }
     
