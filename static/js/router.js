@@ -88,13 +88,10 @@ var AppRouter = (function() {
 
         var pageScripts = doc.querySelectorAll('script');
         pageScripts.forEach(function(oldScript) {
-            var src = oldScript.getAttribute('src');
+            if (oldScript.getAttribute('src')) return;
+            if (oldScript.textContent.indexOf('document.write') !== -1) return;
             var ns = document.createElement('script');
-            if (src) {
-                ns.src = src;
-            } else {
-                ns.textContent = oldScript.textContent;
-            }
+            ns.textContent = oldScript.textContent;
             document.body.appendChild(ns);
             document.body.removeChild(ns);
         });
@@ -112,24 +109,7 @@ var AppRouter = (function() {
 
     function patchDocumentWrite() {
         _origWrite = document.write;
-        document.write = function(str) {
-            var div = document.createElement('div');
-            div.innerHTML = str;
-            var scripts = div.querySelectorAll('script');
-            scripts.forEach(function(s) {
-                var ns = document.createElement('script');
-                if (s.src) ns.src = s.src;
-                if (s.textContent) ns.textContent = s.textContent;
-                document.body.appendChild(ns);
-            });
-            var links = div.querySelectorAll('link[rel="stylesheet"]');
-            links.forEach(function(l) {
-                var nl = document.createElement('link');
-                nl.rel = 'stylesheet';
-                nl.href = l.href;
-                document.head.appendChild(nl);
-            });
-        };
+        document.write = function() {};
     }
 
     function restoreDocumentWrite() {
