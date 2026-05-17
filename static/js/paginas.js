@@ -6,13 +6,17 @@ var AgendaPagina = (function() {
     
     function formatarTelefone(tel) {
         if (!tel) return '';
-        var digits = tel.replace(/\D/g, '');
-        if (digits.length === 11) {
-            return '(' + digits.substring(0, 2) + ') ' + digits.substring(2, 7) + '-' + digits.substring(7);
-        } else if (digits.length === 10) {
-            return '(' + digits.substring(0, 2) + ') ' + digits.substring(2, 6) + '-' + digits.substring(6);
+        var digits = tel.replace(/\D/g, '').substring(0, 11);
+        if (digits.length === 0) return '';
+
+        var formatted = '(' + digits.substring(0, 2);
+        if (digits.length > 2) {
+            formatted += ') ' + digits.substring(2, Math.min(7, digits.length));
         }
-        return tel;
+        if (digits.length > 7) {
+            formatted += '-' + digits.substring(7);
+        }
+        return formatted;
     }
     
     function formatarData(dataStr) {
@@ -78,7 +82,7 @@ var AgendaPagina = (function() {
         }
         var telefoneInput = document.getElementById('telefone');
         if (telefoneInput) {
-            telefoneInput.addEventListener('blur', function(e) {
+            telefoneInput.addEventListener('input', function(e) {
                 e.target.value = formatarTelefone(e.target.value);
             });
         }
