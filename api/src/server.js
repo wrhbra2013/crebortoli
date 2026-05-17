@@ -1,4 +1,4 @@
- import Fastify from 'fastify';
+import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
