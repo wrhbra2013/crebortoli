@@ -194,15 +194,6 @@
             <div class="historico-section">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
                     <h2>Receitas Geradas</h2>
-                    <div style="display: flex; gap: 0.5rem;">
-                        <button class="btn-download" style="background:#ff9800;" onclick="setupJSONBin()">Configurar Sync</button>
-                        <button class="btn-download" style="background:#9c27b0;" onclick="mostrarStatusSync()">Status Sync</button>
-                        <button class="btn-download" onclick="exportarReceitas()">Exportar</button>
-                        <label class="btn-download" style="background:#2196f3; cursor: pointer;">
-                            Importar
-                            <input type="file" accept=".json" onchange="importarReceitas(event)" style="display: none;">
-                        </label>
-                    </div>
                 </div>
                 <div class="table-container">
                     <table id="historicoTable">
@@ -244,65 +235,6 @@
             await ReceitasStore.delete(id);
         }
         
-        function exportarReceitas() {
-            getReceitas().then(receitas => {
-                if (receitas.length === 0) {
-                    alert('Não há receitas para exportar.');
-                    return;
-                }
-                const blob = new Blob([JSON.stringify(receitas, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `receitas-backup-${new Date().toISOString().split('T')[0]}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-            });
-        }
-        
-        function setupJSONBin() {
-            const binId = prompt('Cole o BIN ID do JSONBin.io:');
-            const apiKey = prompt('Cole a API Key do JSONBin.io:');
-            if (binId && apiKey) {
-                localStorage.setItem('jsonbin_id', binId);
-                localStorage.setItem('jsonbin_key', apiKey);
-                location.reload();
-            }
-        }
-        
-        function mostrarStatusSync() {
-            const JSONBIN_URL = localStorage.getItem('jsonbin_url');
-            const JSONBIN_BIN_ID = localStorage.getItem('jsonbin_id');
-            if (JSONBIN_URL) {
-                alert('✅ Backup automático ATIVO\n\nBin ID: ' + JSONBIN_BIN_ID);
-            } else {
-                alert('⚠️ Backup automático NÃO configurado.\n\nClique em "Configurar Sync" para ativar.');
-            }
-        }
-        
-        function importarReceitas(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                try {
-                    const receitas = JSON.parse(e.target.result);
-                    if (Array.isArray(receitas)) {
-                        for (const r of receitas) {
-                            await ReceitasStore.create(r);
-                        }
-                        renderHistorico();
-                        alert(`Importadas ${receitas.length} receitas com sucesso!`);
-                    } else {
-                        alert('Formato de arquivo inválido.');
-                    }
-                } catch (err) {
-                    alert('Erro ao ler arquivo: ' + err.message);
-                }
-            };
-            reader.readAsText(file);
-        }
         
         async function renderHistorico() {
             try {
@@ -347,10 +279,7 @@
             }
         };
         
-        window.exportarReceitas = exportarReceitas;
-        window.importarReceitas = importarReceitas;
-        window.setupJSONBin = setupJSONBin;
-        window.mostrarStatusSync = mostrarStatusSync;
+
         
         function base64ToBlob(base64, mimeType) {
             const byteCharacters = atob(base64);
