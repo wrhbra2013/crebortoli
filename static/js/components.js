@@ -89,7 +89,8 @@ function initComponents() {
     <p>&copy; 2026 Cre Bortoli. Todos os direitos reservados.</p>
 </footer>`;
 
-    const isSigPage = window.location.pathname.includes('/sig/') || window.location.pathname.endsWith('sig/index.html');
+    var currentRoute = window.__routerPath || window.location.pathname;
+    var isSigPage = currentRoute.includes('/sig/') || currentRoute.startsWith('sig/');
     
     document.getElementById('header-placeholder').innerHTML = isSigPage ? headerSigHTML : headerHTML;
     document.getElementById('footer-placeholder').innerHTML = footerHTML;

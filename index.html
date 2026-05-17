@@ -7,7 +7,7 @@
     <link rel="icon" type="image/png" href="static/icon/favicon.ico">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
-    <script>var v='1.0.1';document.write('<link rel="stylesheet" href="static/css/style.css?v='+v+'">');</script>
+    <link rel="stylesheet" href="static/css/style.css?v=1.0.1">
     <style>
         .banner-comercial {
             background: linear-gradient(135deg, #8a4baf 0%, #a86bc9 50%, #8a4baf 100%);
@@ -301,7 +301,10 @@
 
     <div id="footer-placeholder"></div>
 
-    <script>var v='3.0.0';document.write('<script src="static/js/storage.js?v='+v+'"><\/script>');document.write('<script src="static/js/components.js?v='+v+'"><\/script>');</script>
+    <script src="static/js/route-encrypt.js?v=1.0.0"></script>
+    <script src="static/js/router.js?v=1.0.0"></script>
+    <script src="static/js/storage.js?v=3.0.0"></script>
+    <script src="static/js/components.js?v=3.0.0"></script>
     <script>
         var BANNER_KEY = 'banner_comercial';
         var bannerCache = null;
@@ -423,6 +426,7 @@
         
         document.addEventListener('DOMContentLoaded', function() {
             renderizarBanner();
+            AppRouter.init();
         });
     </script>
 </body>
