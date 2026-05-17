@@ -224,10 +224,11 @@ var AgendaPagina = (function() {
             horarios.push(pad(h) + ':00');
             horarios.push(pad(h) + ':30');
         }
-        for (var h = 13; h <= 17; h++) {
+        for (var h = 13; h <= 16; h++) {
             horarios.push(pad(h) + ':00');
             horarios.push(pad(h) + ':30');
         }
+        horarios.push('17:00');
 
         var ocupados = agendamentosCache.filter(function(a) {
             var d = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
