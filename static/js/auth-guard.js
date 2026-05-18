@@ -4,8 +4,7 @@ const AUTH_TOKEN = 'sig_token';
 const AUTH_TIMEOUT = 30 * 60 * 1000;
 
 function getLoginUrl() {
-    var p = window.__routerPath || window.location.pathname;
-    if (p.startsWith('sig/') || p.includes('/sig/')) {
+    if (window.location.pathname.includes('/sig/')) {
         return 'login.html';
     }
     return 'sig/login.html';
