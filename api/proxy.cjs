@@ -32,6 +32,33 @@ const server = http.createServer(async (req, res) => {
         return;
     }
 
+    if (req.url.startsWith('/api/page/')) {
+        let bodyStr = '';
+        for await (const chunk of req) bodyStr += chunk;
+        const options = {
+            hostname: '127.0.0.1',
+            port: 3001,
+            path: req.url,
+            method: req.method,
+            headers: Object.assign({}, req.headers, { host: '127.0.0.1:3001' })
+        };
+        const proxyReq = http.request(options, (proxyRes) => {
+            let data = '';
+            proxyRes.on('data', chunk => data += chunk);
+            proxyRes.on('end', () => {
+                res.writeHead(proxyRes.statusCode, proxyRes.headers);
+                res.end(data);
+            });
+        });
+        proxyReq.on('error', (err) => {
+            res.writeHead(502);
+            res.end(JSON.stringify({ error: 'Page API unavailable: ' + err.message }));
+        });
+        proxyReq.write(bodyStr);
+        proxyReq.end();
+        return;
+    }
+
     if (req.url.startsWith('/api')) {
         let body = { project, table };
         

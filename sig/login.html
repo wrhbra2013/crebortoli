@@ -163,6 +163,10 @@
             });
         }
 
+        function apiUrl(action) {
+            return '/api/' + action + '?action=' + action + '&table=sessoes&project=' + API_CONFIG.project;
+        }
+
         async function criarSessao(token) {
             try {
                 const urlAprovacao = getBaseUrl() + '/sig/aprovar.html#token=' + token;
@@ -171,13 +175,13 @@
                     url_aprovacao: urlAprovacao,
                     status: 'aguardando'
                 };
-                const result = await fetch(`${API_CONFIG.baseUrl}/create`, {
+                const result = await fetch(apiUrl('create'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${API_CONFIG.token}`
                     },
-                    body: JSON.stringify({ project: API_CONFIG.project, table: 'sessoes', data: sessao })
+                    body: JSON.stringify({ data: sessao })
                 });
                 return await result.json();
             } catch (e) {
@@ -189,15 +193,13 @@
 
         async function verificarSessao(token) {
             try {
-                const result = await fetch(`${API_CONFIG.baseUrl}/read`, {
+                const result = await fetch(apiUrl('read'), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${API_CONFIG.token}`
                     },
                     body: JSON.stringify({
-                        project: API_CONFIG.project,
-                        table: 'sessoes',
                         filters: { token: token },
                         limit: 1
                     })

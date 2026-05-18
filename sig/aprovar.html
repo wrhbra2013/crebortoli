@@ -58,16 +58,13 @@
 
         async function updateSessionStatus(token, status) {
             try {
-                const result = await fetch(`${API_CONFIG.baseUrl}/update`, {
+                const result = await fetch('/api/update?action=update&table=sessoes&project=' + API_CONFIG.project + '&id=' + encodeURIComponent(token), {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${API_CONFIG.token}`
                     },
                     body: JSON.stringify({
-                        project: API_CONFIG.project,
-                        table: 'sessoes',
-                        id: token,
                         data: { status: status }
                     })
                 });
