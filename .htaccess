@@ -22,6 +22,8 @@ Options -Indexes
 RewriteEngine On
 
 # Block paginas/ - all access through SPA
+# Exception: agenda.html needs direct access for hash params (servico, data)
+RewriteCond %{REQUEST_URI} !^/paginas/agenda\.html
 RewriteRule ^paginas/ - [F,L]
 
 # Block sig/ except public-facing pages needed for auth flow
