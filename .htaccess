@@ -26,9 +26,9 @@ RewriteEngine On
 RewriteCond %{REQUEST_URI} !^/paginas/agenda\.html
 RewriteRule ^paginas/ - [F,L]
 
-# Block sig/ except public-facing pages needed for auth flow
-RewriteCond %{REQUEST_URI} !^/sig/(login|aprovar)\.html
-RewriteRule ^sig/ - [F,L]
+# SIG pages protected by auth-guard.js (localStorage session check)
+# Direct access is allowed so the SPA router can fall back to direct fetch
+# when the page token API is unavailable
 
 # PHP settings
 <IfModule mod_php.c>

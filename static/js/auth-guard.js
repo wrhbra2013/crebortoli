@@ -3,6 +3,14 @@ const AUTH_TIMESTAMP = 'sig_auth_time';
 const AUTH_TOKEN = 'sig_token';
 const AUTH_TIMEOUT = 30 * 60 * 1000;
 
+function getLoginUrl() {
+    var p = window.__routerPath || window.location.pathname;
+    if (p.startsWith('sig/') || p.includes('/sig/')) {
+        return 'login.html';
+    }
+    return 'sig/login.html';
+}
+
 function generateSecureToken() {
     const array = new Uint8Array(32);
     crypto.getRandomValues(array);
@@ -29,7 +37,7 @@ function checkAuth(required = true) {
         if (elapsed > AUTH_TIMEOUT) {
             logout();
             if (required) {
-                window.location.href = 'login.html';
+                window.location.href = getLoginUrl();
             }
             return false;
         }
@@ -37,7 +45,7 @@ function checkAuth(required = true) {
         if (!storedHash) {
             logout();
             if (required) {
-                window.location.href = 'login.html';
+                window.location.href = getLoginUrl();
             }
             return false;
         }
@@ -46,7 +54,7 @@ function checkAuth(required = true) {
     }
     
     if (required) {
-        window.location.href = 'login.html';
+        window.location.href = getLoginUrl();
         return false;
     }
     
@@ -68,7 +76,7 @@ function logout() {
     localStorage.removeItem(AUTH_KEY);
     localStorage.removeItem(AUTH_TIMESTAMP);
     localStorage.removeItem(AUTH_TOKEN);
-    window.location.href = 'login.html';
+    window.location.href = getLoginUrl();
 }
 
 function isAuthenticated() {
