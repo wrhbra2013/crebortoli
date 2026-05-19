@@ -1,5 +1,6 @@
 import Fastify from 'fastify';
 import fastifyStatic from '@fastify/static';
+import cors from '@fastify/cors';
 import multipart from '@fastify/multipart';
 import rateLimit from '@fastify/rate-limit';
 import pg from 'pg';/*  */
@@ -61,6 +62,7 @@ if (!API_TOKEN) {
 
 const API_WRITE_KEY = process.env.API_WRITE_KEY || process.env.API_TOKEN;
 
+await fastify.register(cors, { origin: true, methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization', 'X-Write-Key'] });
 await fastify.register(multipart, { limits: { fileSize: 50 * 1024 * 1024 } });
 await fastify.register(rateLimit, { max: 100, timeWindow: '1 minute', keyGenerator: (req) => req.ip });
 
@@ -314,9 +316,10 @@ fastify.post('/api/table/create', { preHandler: authMiddleware }, async (req, re
 // Rotas /crebortoli/api/* (para o frontend)
 fastify.post('/crebortoli/api/read', async (req, res) => {
   const { project = 'crebortoli', table, filters = {}, columns = ['*'], order_by = 'created_at', order_dir = 'DESC', limit = 100, offset = 0 } = req.body || {};
-  console.log('[READ]', { project, table, order_by, order_dir, limit });
+  const params = Object.values(filters).flat();
+  console.log('[READ]', { project, table: sqlTokenize(table), order_by, order_dir, limit }, sqlSanitizeForLog('SQL', params));
   if (!PROJECTS[project] || !validateTableName(table)) {
-    console.log('[READ] Invalid request', { project: !!PROJECTS[project], table });
+    console.log('[READ] Invalid request', { project: !!PROJECTS[project], table: sqlTokenize(table) });
     return res.code(400).send({ error: 'Invalid request' });
   }
 
@@ -328,7 +331,6 @@ fastify.post('/crebortoli/api/read', async (req, res) => {
       ? `"${k}" IN (${filters[k].map((_, j) => `$${i + j + 1}`).join(',')})`
       : `"${k}" = $${i + 1}`;
   }).filter(Boolean).join(' AND ');
-  const params = Object.values(filters).flat();
   const lim = Math.min(parseInt(limit) || 100, 1000);
 
   const [countRes, dataRes] = await Promise.all([
@@ -405,8 +407,6 @@ fastify.post('/crebortoli/create', { preHandler: writeAuthMiddleware }, async (r
   item.created_at = item.created_at || new Date().toISOString();
   const cols = Object.keys(item).map(c => `"${c}"`).join(', ');
   const vals = Object.keys(item).map((_, i) => `$${i + 1}`).join(', ');
-  const params = Object.values(item);
-  console.log('[CREATE] SQL: INSERT INTO', table, '(', cols, ') VALUES (', vals, ')');
   try {
     const result = await query(project, `INSERT INTO "${table}" (${cols}) VALUES (${vals}) RETURNING *`, params);
     console.log('[CREATE] OK', result.rows[0]?.id);
@@ -455,6 +455,8 @@ fastify.post('/crebortoli/delete', { preHandler: writeAuthMiddleware }, async (r
 // Rotas /api/* protegidas
 fastify.post('/api/read', { preHandler: authMiddleware }, async (req, res) => {
   const { project, table, filters = {}, columns = ['*'], order_by = 'created_at', order_dir = 'DESC', limit = 100, offset = 0 } = req.body || {};
+  const apiParams = Object.values(filters).flat();
+  console.log('[API/READ]', { project, table: sqlTokenize(table), order_by }, sqlSanitizeForLog('SQL', apiParams));
   if (!project || !PROJECTS[project] || !validateTableName(table)) {
     return res.code(400).send({ error: 'Invalid request' });
   }
@@ -557,54 +559,105 @@ fastify.get('/uploads/:name', async (req, res) => {
   return res.send(fs.createReadStream(filepath));
 });
 
-const pageTokenStore = new Map();
-const TOKEN_EXPIRY_MS = 24 * 60 * 60 * 1000;
+const SQL_TOKEN_PREFIX = 'st_';
+const SQL_TOKEN_EXPIRY_MS = 30 * 60 * 1000;
+const sqlTokenStore = new Map();
 
 setInterval(() => {
   const now = Date.now();
-  for (const [token, entry] of pageTokenStore) {
-    if (now - entry.created > TOKEN_EXPIRY_MS) pageTokenStore.delete(token);
+  for (const [token, entry] of sqlTokenStore) {
+    if (now - entry.created > SQL_TOKEN_EXPIRY_MS) sqlTokenStore.delete(token);
   }
-}, 60 * 60 * 1000);
+}, 5 * 60 * 1000);
 
-fastify.post('/api/page/token', async (req, res) => {
-  const { path: pagePath } = req.body || {};
-  if (!pagePath || typeof pagePath !== 'string') {
-    return res.code(400).send({ error: 'Path required' });
+function sqlTokenize(value) {
+  if (value == null || value === '') return value;
+  const strVal = String(value);
+  for (const [token, entry] of sqlTokenStore) {
+    if (entry.value === strVal && Date.now() - entry.created < SQL_TOKEN_EXPIRY_MS) {
+      entry.created = Date.now();
+      return token;
+    }
   }
-  const safePath = pagePath.replace(/\.\.\//g, '').replace(/\.\./g, '').replace(/^\/+/, '');
-  const allowedPrefixes = ['paginas/', 'sig/', 'index.html'];
-  const isAllowed = allowedPrefixes.some(p => safePath === p || safePath.startsWith(p));
-  if (!isAllowed) {
-    return res.code(403).send({ error: 'Invalid path' });
+  const buf = crypto.randomBytes(16);
+  const token = SQL_TOKEN_PREFIX + buf.toString('base64url').slice(0, 12);
+  sqlTokenStore.set(token, { value: strVal, created: Date.now() });
+  return token;
+}
+
+function sqlResolve(token) {
+  if (!token || typeof token !== 'string' || !token.startsWith(SQL_TOKEN_PREFIX)) return token;
+  const entry = sqlTokenStore.get(token);
+  if (!entry) return token;
+  if (Date.now() - entry.created > SQL_TOKEN_EXPIRY_MS) {
+    sqlTokenStore.delete(token);
+    return token;
   }
-  const fullPath = path.join(PROJECT_ROOT, safePath);
-  if (!fs.existsSync(fullPath)) {
-    return res.code(404).send({ error: 'Page not found' });
-  }
-  const token = crypto.randomUUID();
-  pageTokenStore.set(token, { path: safePath, created: Date.now() });
-  return { success: true, token, expiresInMs: TOKEN_EXPIRY_MS };
+  entry.created = Date.now();
+  return entry.value;
+}
+
+function sqlSanitizeForLog(sql, params = []) {
+  if (!params || !Array.isArray(params)) return sql;
+  let s = sql;
+  params.forEach((p, i) => {
+    const r = typeof p === 'string' ? `'${p.slice(0, 3)}..[REDACTED]'` : '[REDACTED]';
+    s = s.split(`$${i + 1}`).join(r);
+  });
+  return s;
+}
+
+const EXTERNAL_API = process.env.EXTERNAL_API || 'https://api.projetosdinamicos.com.br/crebortoli';
+
+fastify.post('/api/sql/resolve', { preHandler: authMiddleware }, async (req, res) => {
+  const { token } = req.body || {};
+  if (!token) return res.code(400).send({ error: 'Token required' });
+  return { value: sqlResolve(token) };
 });
 
-fastify.get('/api/page/:token', async (req, res) => {
-  const { token } = req.params;
-  const entry = pageTokenStore.get(token);
-  if (!entry) {
-    return res.code(404).send({ error: 'Token inválido ou expirado' });
+async function proxyHandler(req, reply) {
+  const rawProject = req.query.project || 'crebortoli';
+  const rawTable = req.query.table || 'agendamentos';
+  const action = req.query.action || 'read';
+  const rawId = req.query.id;
+  const { limit, offset, order_by, order_dir } = req.query;
+
+  const project = sqlResolve(rawProject);
+  const table = sqlResolve(rawTable);
+  const id = rawId ? sqlResolve(rawId) : null;
+
+  console.log('[PROXY]', { action, table: sqlTokenize(table), project, id: id ? sqlTokenize(id) : null });
+
+  const body = { project, table: sqlTokenize(table) };
+  if (action === 'read') {
+    if (limit) body.limit = parseInt(limit);
+    if (offset) body.offset = parseInt(offset);
+    if (order_by) body.order_by = order_by;
+    if (order_dir) body.order_dir = order_dir;
   }
-  if (Date.now() - entry.created > TOKEN_EXPIRY_MS) {
-    pageTokenStore.delete(token);
-    return res.code(404).send({ error: 'Token expirado' });
+  if (action === 'update' || action === 'delete') body.id = id ? sqlTokenize(id) : null;
+  if (req.body && typeof req.body === 'object') {
+    const safe = {};
+    for (const [k, v] of Object.entries(req.body)) {
+      safe[k] = ['table', 'id', 'project'].includes(k) ? sqlTokenize(v) : v;
+    }
+    Object.assign(body, safe);
   }
-  const fullPath = path.join(PROJECT_ROOT, entry.path);
-  if (!fs.existsSync(fullPath)) {
-    pageTokenStore.delete(token);
-    return res.code(404).send({ error: 'Página não encontrada' });
+
+  try {
+    const res = await fetch(`${EXTERNAL_API}/api/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_TOKEN}` },
+      body: JSON.stringify(body),
+    });
+    return reply.code(res.status).send(await res.json());
+  } catch (err) {
+    return reply.code(502).send({ error: 'External API unavailable', details: err.message });
   }
-  const content = await fs.promises.readFile(fullPath, 'utf-8');
-  res.type('text/html').send(content);
-});
+}
+
+fastify.all('/api', proxyHandler);
+fastify.all('/api/*', proxyHandler);
 
 await fastify.register(fastifyStatic, {
   root: PROJECT_ROOT,

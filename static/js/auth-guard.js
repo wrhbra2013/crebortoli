@@ -93,13 +93,13 @@ function refreshSession() {
 }
 
 function getSigPath() {
-    var p = window.__routerPath || window.location.pathname;
+    var p = window.location.pathname;
     if (p.startsWith('sig/') || p.includes('/sig/')) return 'sig/';
     return null;
 }
 
 function runAuthCheck() {
-    var path = window.__routerPath || window.location.pathname;
+    var path = window.location.pathname;
     var inSig = path.startsWith('sig/') || path.includes('/sig/');
     if (inSig) {
         var isPublicPage = path.includes('login.html') || path.includes('aprovar.html');

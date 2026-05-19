@@ -323,7 +323,7 @@
                     stopTimer();
                     secureLogin();
                     showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                    setTimeout(() => { window.location.href = '/#/' + encodeSigPath('sig/index.html'); }, 1000);
+                    setTimeout(() => { window.location.href = 'sig/index.html'; }, 1000);
                     return;
                 }
 
@@ -343,7 +343,7 @@
                 stopTimer();
                 secureLogin();
                 showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                setTimeout(() => { window.location.href = '/#/' + encodeSigPath('sig/index.html'); }, 1000);
+                setTimeout(() => { window.location.href = 'sig/index.html'; }, 1000);
             } else {
                 showStatus('Código incorreto. Tente novamente.', 'negado');
                 document.getElementById('codigo-manual').value = '';
@@ -366,14 +366,6 @@
 
         gerarQR();
 
-        function encodeSigPath(path) {
-            var K = [3, 7, 1, 9, 4, 2, 8, 6, 0, 5];
-            var xorResult = '';
-            for (var i = 0; i < path.length; i++) {
-                xorResult += String.fromCharCode(path.charCodeAt(i) ^ K[i % K.length]);
-            }
-            return btoa(xorResult).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
-        }
     </script>
 </body>
 </html>

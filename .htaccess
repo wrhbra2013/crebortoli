@@ -16,20 +16,6 @@ Options -Indexes
     Deny from all
 </FilesMatch>
 
-# Block direct access to internal page directories
-# All access must go through the SPA token router
-# Exceptions: login and approval pages (needed for QR code flow)
-RewriteEngine On
-
-# Block paginas/ - all access through SPA
-# Exception: agenda.html needs direct access for hash params (servico, data)
-RewriteCond %{REQUEST_URI} !^/paginas/agenda\.html
-RewriteRule ^paginas/ - [F,L]
-
-# SIG pages protected by auth-guard.js (localStorage session check)
-# Direct access is allowed so the SPA router can fall back to direct fetch
-# when the page token API is unavailable
-
 # PHP settings
 <IfModule mod_php.c>
     php_flag display_errors Off
