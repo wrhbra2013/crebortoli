@@ -156,7 +156,8 @@ cp -r "$SCRIPT_DIR/data" "$INSTALL_DIR/" 2>/dev/null || true
 # --------------------------------------------------------------
 # .env
 # --------------------------------------------------------------
-info "Criando .env (PORT=$APP_PORT)"
+API_TOKEN=$(openssl rand -hex 16 2>/dev/null || echo "$(date +%s)$RANDOM" | md5sum | head -c 32)
+info "Criando .env (PORT=$APP_PORT, API_TOKEN gerado)"
 cat > "$INSTALL_DIR/.env" <<ENVEOF
 PORT=$APP_PORT
 CREBORTOLI_DB_HOST=localhost
@@ -164,6 +165,7 @@ CREBORTOLI_DB_PORT=5432
 CREBORTOLI_DB_NAME=$DB_NAME
 CREBORTOLI_DB_USER=postgres
 CREBORTOLI_DB_PASS=wander
+API_TOKEN=$API_TOKEN
 PM2_APP_NAME=$PM2_APP_NAME
 ENVEOF
 chmod 600 "$INSTALL_DIR/.env" && info "Permissões do .env ajustadas (600)" || warn "Falha ao ajustar permissões"
@@ -369,6 +371,129 @@ if command -v sudo >/dev/null 2>&1 && sudo -u postgres psql -c "SELECT 1" >/dev/
 else
   warn "Não foi possível acessar o PostgreSQL como superusuário (postgres)"
   warn "Crie manualmente: sudo -u postgres createdb $DB_NAME -O postgres"
+fi
+
+# --------------------------------------------------------------
+# Migration — criar todas as tabelas do projeto
+# --------------------------------------------------------------
+info "Executando migration — criando tabelas..."
+MIGRATION_FILE="$INSTALL_DIR/migrations/001_create_tables.sql"
+mkdir -p "$INSTALL_DIR/migrations" && info "Diretório de migrations criado" || warn "Erro ao criar diretório de migrations"
+
+# Lê vars de conexão do .env
+[ -f "$INSTALL_DIR/.env" ] && . "$INSTALL_DIR/.env"
+
+cat > "$MIGRATION_FILE" <<SQLEOF
+-- ============================================================
+-- Migration 001: Cria todas as tabelas do sistema Crebortoli
+-- Execute com: psql -h HOST -p PORT -U USER -d DB -f migrations/001_create_tables.sql
+-- ============================================================
+
+-- agendamentos: agendamentos de serviços
+CREATE TABLE IF NOT EXISTS agendamentos (
+    id UUID PRIMARY KEY,
+    cliente TEXT,
+    telefone TEXT,
+    servico TEXT,
+    servico_nome TEXT,
+    valor DECIMAL(10,2),
+    data TIMESTAMP,
+    hora TEXT,
+    status TEXT DEFAULT 'pendente',
+    pago BOOLEAN DEFAULT false,
+    observacoes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- servicos: serviços oferecidos
+CREATE TABLE IF NOT EXISTS servicos (
+    id UUID PRIMARY KEY,
+    nome TEXT,
+    descricao TEXT,
+    preco DECIMAL(10,2),
+    duracao_minutos INTEGER,
+    ativo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- clientes: clientes cadastrados
+CREATE TABLE IF NOT EXISTS clientes (
+    id UUID PRIMARY KEY,
+    nome TEXT,
+    telefone TEXT,
+    email TEXT,
+    cpf TEXT,
+    endereco TEXT,
+    observacoes TEXT,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- receitas: receitas médicas
+CREATE TABLE IF NOT EXISTS receitas (
+    id UUID PRIMARY KEY,
+    paciente TEXT,
+    data TEXT,
+    data_formatada TEXT,
+    indicacao TEXT,
+    medicamentos TEXT,
+    observacoes TEXT,
+    comentarios TEXT,
+    nome_arquivo TEXT,
+    cliente_id UUID,
+    diagnostico TEXT,
+    prescricao TEXT,
+    validado BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- contatos: formulário de contato
+CREATE TABLE IF NOT EXISTS contatos (
+    id UUID PRIMARY KEY,
+    nome TEXT,
+    email TEXT,
+    telefone TEXT,
+    mensagem TEXT,
+    lido BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- sessoes: sessões de autenticação do financeiro
+CREATE TABLE IF NOT EXISTS sessoes (
+    id UUID PRIMARY KEY,
+    token TEXT UNIQUE,
+    url_aprovacao TEXT,
+    status TEXT DEFAULT 'pendente',
+    last_sync TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- usuarios: usuários do sistema
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID PRIMARY KEY,
+    email TEXT UNIQUE,
+    senha TEXT,
+    nome TEXT,
+    nivel TEXT DEFAULT 'user',
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+-- configuracoes: armazenamento chave-valor
+CREATE TABLE IF NOT EXISTS configuracoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chave TEXT UNIQUE,
+    valor TEXT,
+    updated_at TIMESTAMP DEFAULT NOW()
+);
+SQLEOF
+
+info "Arquivo de migration gerado: $MIGRATION_FILE"
+
+# Executar migration
+info "Executando migration ($MIGRATION_FILE)..."
+if PGPASSWORD="$CREBORTOLI_DB_PASS" psql -h "$CREBORTOLI_DB_HOST" -p "$CREBORTOLI_DB_PORT" -U "$CREBORTOLI_DB_USER" -d "$DB_NAME" -f "$MIGRATION_FILE" 2>&1; then
+  info "Migration executada com sucesso!"
+else
+  warn "Erro ao executar migration — execute manualmente: psql -h $CREBORTOLI_DB_HOST -p $CREBORTOLI_DB_PORT -U $CREBORTOLI_DB_USER -d $DB_NAME -f $MIGRATION_FILE"
 fi
 
 # --------------------------------------------------------------
