@@ -927,17 +927,6 @@ server {
     }
 
     location /crebortoli/ {
-        add_header Access-Control-Allow-Origin \$http_origin always;
-        add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS' always;
-        add_header Access-Control-Allow-Headers 'Content-Type, Authorization' always;
-
-        if (\$request_method = OPTIONS) {
-            add_header Access-Control-Allow-Origin \$http_origin always;
-            add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS' always;
-            add_header Access-Control-Allow-Headers 'Content-Type, Authorization' always;
-            return 204;
-        }
-
         proxy_pass http://127.0.0.1:$APP_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
@@ -958,25 +947,11 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
-    add_header Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS" always;
-    add_header Access-Control-Allow-Headers "Content-Type, Authorization" always;
-
     location /.well-known/acme-challenge/ {
         root /var/www;
     }
 
     location /crebortoli/ {
-        add_header Access-Control-Allow-Origin \$http_origin always;
-        add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS' always;
-        add_header Access-Control-Allow-Headers 'Content-Type, Authorization' always;
-
-        if (\$request_method = OPTIONS) {
-            add_header Access-Control-Allow-Origin \$http_origin always;
-            add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS' always;
-            add_header Access-Control-Allow-Headers 'Content-Type, Authorization' always;
-            return 204;
-        }
-
         proxy_pass http://127.0.0.1:$APP_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
@@ -987,17 +962,6 @@ server {
 
 $LOC_MARKER_BEGIN
     location /$PM2_APP_NAME/ {
-        add_header Access-Control-Allow-Origin \$http_origin always;
-        add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS' always;
-        add_header Access-Control-Allow-Headers 'Content-Type, Authorization' always;
-
-        if (\$request_method = OPTIONS) {
-            add_header Access-Control-Allow-Origin \$http_origin always;
-            add_header Access-Control-Allow-Methods 'GET, POST, PUT, DELETE, OPTIONS' always;
-            add_header Access-Control-Allow-Headers 'Content-Type, Authorization' always;
-            return 204;
-        }
-
         proxy_pass http://127.0.0.1:3002/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
