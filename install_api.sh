@@ -195,7 +195,9 @@ app.use((req, res, next) => {
     const origin = req.headers.origin;
     const allowedOrigins = [
         'https://www.projetosdinamicos.com.br',
-        'https://api.projetosdinamicos.com.br'
+        'https://api.projetosdinamicos.com.br',
+        'https://www.crebortoli.com.br',
+        'https://crebortoli.com.br'
     ];
     if (origin) {
         const match = allowedOrigins.find(o => origin === o || origin.endsWith('://' + o.split('://')[1]));

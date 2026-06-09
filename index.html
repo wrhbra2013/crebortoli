@@ -318,9 +318,8 @@
             if (bannerCache) return bannerCache;
             
             try {
-                var baseUrl = window.API_BASE_URL || 'https://api.projetosdinamicos.com.br/crebortoli/data';
-                var url = new URL(baseUrl + '/config');
-                url.searchParams.set('filters', JSON.stringify({ key: BANNER_KEY }));
+                var baseUrl = window.API_BASE_URL || 'https://api.projetosdinamicos.com.br/crebortoli';
+                var url = new URL(baseUrl + '/config/' + BANNER_KEY);
                 var response = await fetch(url.toString());
                 var result = await response.json();
                 if (result.data) {
