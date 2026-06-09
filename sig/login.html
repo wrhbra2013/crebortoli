@@ -164,7 +164,7 @@
         }
 
         function apiUrl(action) {
-            return '/api/' + action + '?action=' + action + '&table=sessoes&project=' + API_CONFIG.project;
+            return API_CONFIG.baseUrl + '/api/' + action;
         }
 
         async function criarSessao(token) {
@@ -181,7 +181,7 @@
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${API_CONFIG.token}`
                     },
-                    body: JSON.stringify({ data: sessao })
+                    body: JSON.stringify({ project: API_CONFIG.project, table: 'sessoes', data: sessao })
                 });
                 return await result.json();
             } catch (e) {
@@ -200,6 +200,8 @@
                         'Authorization': `Bearer ${API_CONFIG.token}`
                     },
                     body: JSON.stringify({
+                        project: API_CONFIG.project,
+                        table: 'sessoes',
                         filters: { token: token },
                         limit: 1
                     })
