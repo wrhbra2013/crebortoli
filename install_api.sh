@@ -1,6 +1,15 @@
 #!/bin/sh
 set -eu
 
+# ==============================================================
+# Script de instalação — API Genérica (Docker)
+# Uso: sudo bash install_api.sh          (instalar)
+#       sudo bash install_api.sh uninstall (desinstalar)
+#
+# API REST genérica com Express + PostgreSQL em containers Docker.
+# Requer: Debian 11+ (sudo apt para dependências)
+# ==============================================================
+
 SCRIPT_DIR="$(dirname "$0")"
 INSTALL_DIR=""
 SRC_DIR=""
@@ -13,52 +22,44 @@ error() { printf "${RED}[ERRO]${NC} %s\n" "$1" >&2; exit 1; }
 
 [ "$(id -u)" -eq 0 ] || error "Execute como root: sudo bash install_api.sh"
 
-if [ -n "${SUDO_USER:-}" ]; then
-  PM2_USER="$SUDO_USER"
-else
-  PM2_USER="root"
-fi
-PM2_AS_USER=""
-[ "$PM2_USER" != "root" ] && PM2_AS_USER="sudo -u $PM2_USER"
 
+# ==============================================================
+# Uninstall
+# ==============================================================
 uninstall() {
   echo ""
-  info "===== Iniciando desinstalação ====="
+  info "===== Iniciando desinstalação (Docker) ====="
   echo ""
 
   . "$INSTALL_DIR/.env" 2>/dev/null || true
 
-  upm2="${PM2_APP_NAME:-app}"
-  db_name="${DB_NAME:-app_db}"
-  db_user="${DB_USER:-postgres}"
-  db_pass="${DB_PASS:-}"
-  db_host="${DB_HOST:-localhost}"
-  db_port="${DB_PORT:-5432}"
+  dname="${COMPOSE_PROJECT_NAME:-app}"
 
-  info "[1/4] Parando e removendo app do PM2 ($upm2)..."
-  $PM2_AS_USER pm2 delete "$upm2" 2>/dev/null && info "PM2: app $upm2 removido" || warn "PM2: app $upm2 não encontrado"
-  $PM2_AS_USER pm2 save --force 2>/dev/null || true
+  _dc_cmd="docker compose"
+  docker compose version >/dev/null 2>&1 || _dc_cmd="docker-compose"
+
+  info "[1/4] Parando e removendo containers Docker ($dname)..."
+  if [ -f "$INSTALL_DIR/docker-compose.yml" ]; then
+    $_dc_cmd -f "$INSTALL_DIR/docker-compose.yml" down -v 2>/dev/null && \
+      info "Containers e volumes removidos" || \
+      warn "Falha ao derrubar containers"
+  else
+    warn "docker-compose.yml não encontrado"
+  fi
 
   info "[2/4] Restaurando nginx..."
   if [ -f "$NGINX_CONF.bkp" ]; then
     cp "$NGINX_CONF.bkp" "$NGINX_CONF" && info "Nginx restaurado" || warn "Falha ao restaurar nginx"
   else
     warn "Backup não encontrado — removendo location manualmente"
-    sed -i "/^# LOCATION_BEGIN $upm2\$/,/^# LOCATION_END $upm2\$/d" "$NGINX_CONF" 2>/dev/null || true
+    sed -i "/^# LOCATION_BEGIN $dname\$/,/^# LOCATION_END $dname\$/d" "$NGINX_CONF" 2>/dev/null || true
   fi
   if nginx -t 2>/dev/null; then
     systemctl reload nginx.service 2>/dev/null && info "Nginx recarregado" || true
   fi
 
-  info "[3/4] Removendo banco de dados ($db_name)..."
-  export PGPASSWORD="$db_pass"
-  psql -h "$db_host" -p "$db_port" -U "$db_user" -d "$db_name" \
-    -t -c "SELECT tablename FROM pg_tables WHERE schemaname='public';" 2>/dev/null | while read -r tbl; do
-    [ -n "$tbl" ] && psql -h "$db_host" -p "$db_port" -U "$db_user" -d "$db_name" \
-      -c "DROP TABLE IF EXISTS \"$tbl\" CASCADE;" 2>/dev/null || true
-  done
-  unset PGPASSWORD
-  sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$db_name\";" 2>/dev/null && info "Banco removido" || warn "Banco não encontrado"
+  info "[3/4] Removendo imagens Docker do projeto..."
+  docker images "${dname}-api:latest" -q 2>/dev/null | xargs -r docker rmi 2>/dev/null || true
 
   info "[4/4] Removendo diretório $INSTALL_DIR..."
   rm -rf "$INSTALL_DIR" && info "Diretório removido" || warn "Falha ao remover diretório"
@@ -70,17 +71,56 @@ case "${1:-}" in
   uninstall) uninstall; exit 0 ;;
 esac
 
-trap 'error "Instalação interrompida"' INT TERM
-
-command -v node >/dev/null 2>&1 || error "Node.js não encontrado"
-command -v npm  >/dev/null 2>&1 || error "npm não encontrado"
-command -v psql >/dev/null 2>&1 || warn "psql não encontrado"
-command -v pm2  >/dev/null 2>&1 || warn "pm2 não encontrado"
-
 echo ""
-info "===== Instalação de API Genérica ====="
+info "===== Instalação de API Genérica (Docker) ====="
 echo ""
 
+
+# --------------------------------------------------------------
+# Docker Engine + Docker Compose — instala via apt
+# --------------------------------------------------------------
+info "Verificando/instalando Docker Engine e Docker Compose..."
+if ! command -v docker >/dev/null 2>&1; then
+  info "Docker não encontrado — instalando docker.io via apt..."
+  apt-get update -qq
+  apt-get install -y -qq docker.io
+  systemctl enable --now docker
+  info "Docker Engine instalado"
+else
+  info "Docker já instalado"
+fi
+
+DOCKER_COMPOSE_CMD=""
+if docker compose version >/dev/null 2>&1; then
+  DOCKER_COMPOSE_CMD="docker compose"
+  info "Docker Compose (plugin) disponível"
+elif docker-compose --version >/dev/null 2>&1; then
+  DOCKER_COMPOSE_CMD="docker-compose"
+  info "Docker Compose (standalone) disponível"
+else
+  info "Instalando Docker Compose plugin..."
+  apt-get install -y -qq docker-compose-plugin 2>/dev/null || \
+    apt-get install -y -qq docker-compose 2>/dev/null || \
+    error "Falha ao instalar Docker Compose — instale manualmente"
+  if docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker compose"
+  elif docker-compose --version >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+  else
+    error "Docker Compose não disponível após instalação"
+  fi
+fi
+
+# Verifica nginx
+if ! command -v nginx >/dev/null 2>&1; then
+  info "Instalando nginx..."
+  apt-get install -y -qq nginx
+fi
+
+
+# --------------------------------------------------------------
+# Inputs do usuário
+# --------------------------------------------------------------
 _check_port() {
   local p=$1
   if command -v ss >/dev/null 2>&1; then
@@ -92,7 +132,7 @@ _check_port() {
 }
 
 while :; do
-  printf "Porta do app [3000]: "; read -r APP_PORT
+  printf "Porta do app (host) [3000]: "; read -r APP_PORT
   APP_PORT=${APP_PORT:-3000}
   if _check_port "$APP_PORT"; then
     warn "Porta $APP_PORT já está em uso!"
@@ -108,48 +148,58 @@ while :; do
   break
 done
 
-printf "Nome do app (usado na URL e PM2) [app]: "; read -r PM2_APP_NAME
-PM2_APP_NAME=${PM2_APP_NAME:-app}
+printf "Nome do app (usado na URL, Docker e PM2) [app]: "; read -r COMPOSE_PROJECT_NAME
+COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-app}
 
-printf "Nome do banco PostgreSQL [${PM2_APP_NAME}_db]: "; read -r DB_NAME
-DB_NAME=${DB_NAME:-${PM2_APP_NAME}_db}
+printf "Nome do banco PostgreSQL [${COMPOSE_PROJECT_NAME}_db]: "; read -r DB_NAME
+DB_NAME=${DB_NAME:-${COMPOSE_PROJECT_NAME}_db}
 
-printf "Nome de exibição do projeto [$PM2_APP_NAME]: "; read -r PROJECT_NAME
-PROJECT_NAME=${PROJECT_NAME:-$PM2_APP_NAME}
+printf "Nome de exibição do projeto [$COMPOSE_PROJECT_NAME]: "; read -r PROJECT_NAME
+PROJECT_NAME=${PROJECT_NAME:-$COMPOSE_PROJECT_NAME}
 
-INSTALL_DIR="/var/www/$PM2_APP_NAME"
+INSTALL_DIR="/var/www/$COMPOSE_PROJECT_NAME"
 SRC_DIR="$INSTALL_DIR/src"
 
 info "Porta: $APP_PORT"
-info "PM2:   $PM2_APP_NAME"
+info "Docker: $COMPOSE_PROJECT_NAME"
 info "Banco: $DB_NAME"
 info "Pasta: $INSTALL_DIR"
 
 DB_USER=postgres
 DB_PASS=wander
-DB_HOST=localhost
-DB_PORT=5432
 APP_DOMAIN=api.projetosdinamicos.com.br
-APP_LOCATION=/$PM2_APP_NAME/
+APP_LOCATION=/$COMPOSE_PROJECT_NAME/
 
+
+# --------------------------------------------------------------
+# Diretórios
+# --------------------------------------------------------------
 info "Criando diretórios..."
 mkdir -p "$SRC_DIR" && info "Diretório $SRC_DIR criado"
 
+
+# --------------------------------------------------------------
+# .env  (usado pelo docker-compose)
+# --------------------------------------------------------------
 info "Criando .env"
 cat > "$INSTALL_DIR/.env" <<ENVEOF
 PORT=$APP_PORT
-DB_HOST=$DB_HOST
-DB_PORT=$DB_PORT
+DB_HOST=db
+DB_PORT=5432
 DB_NAME=$DB_NAME
 DB_USER=$DB_USER
 DB_PASS=$DB_PASS
-PM2_APP_NAME=$PM2_APP_NAME
+COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT_NAME
 PROJECT_NAME=$PROJECT_NAME
 APP_DOMAIN=$APP_DOMAIN
 APP_LOCATION=$APP_LOCATION
 ENVEOF
 chmod 600 "$INSTALL_DIR/.env"
 
+
+# --------------------------------------------------------------
+# package.json
+# --------------------------------------------------------------
 info "Criando package.json"
 cat > "$INSTALL_DIR/package.json" <<'JSONEOF'
 {
@@ -168,6 +218,10 @@ cat > "$INSTALL_DIR/package.json" <<'JSONEOF'
 }
 JSONEOF
 
+
+# --------------------------------------------------------------
+# src/server.js
+# --------------------------------------------------------------
 info "Criando src/server.js"
 cat > "$SRC_DIR/server.js" <<'SVREOF'
 const { Pool } = require('pg');
@@ -327,14 +381,90 @@ app.listen(PORT, () => {
 });
 SVREOF
 
+
+# --------------------------------------------------------------
+# Dockerfile
+# --------------------------------------------------------------
+info "Criando Dockerfile"
+cat > "$INSTALL_DIR/Dockerfile" <<'DOCKEREOF'
+FROM node:20-alpine
+
+WORKDIR /app
+
+COPY package.json ./
+RUN npm install --production
+
+COPY src/ ./src/
+
+EXPOSE 3000
+
+CMD ["node", "src/server.js"]
+DOCKEREOF
+
+
+# --------------------------------------------------------------
+# docker-compose.yml
+# --------------------------------------------------------------
+info "Criando docker-compose.yml"
+cat > "$INSTALL_DIR/docker-compose.yml" <<'COMPOSEEOF'
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:${PORT}:${PORT}"
+    environment:
+      PORT: ${PORT}
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASS: ${DB_PASS}
+      PROJECT_NAME: ${PROJECT_NAME}
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+COMPOSEEOF
+
+
+# --------------------------------------------------------------
+# Nginx
+# --------------------------------------------------------------
 info "Configurando Nginx"
 cp "$NGINX_CONF" "$NGINX_CONF.bkp" 2>/dev/null && info "Backup criado: $NGINX_CONF.bkp" || warn "Falha ao criar backup"
 
-LOC_MARKER_BEGIN="# LOCATION_BEGIN $PM2_APP_NAME"
-LOC_MARKER_END="# LOCATION_END $PM2_APP_NAME"
+LOC_MARKER_BEGIN="# LOCATION_BEGIN $COMPOSE_PROJECT_NAME"
+LOC_MARKER_END="# LOCATION_END $COMPOSE_PROJECT_NAME"
 
 if grep -q "$LOC_MARKER_BEGIN" "$NGINX_CONF" 2>/dev/null; then
-    info "Location ja existe no nginx — apenas atualizando porta"
+    info "Location já existe no nginx — apenas atualizando porta"
     sed -i "s|proxy_pass http://127.0.0.1:[0-9]*/;|proxy_pass http://127.0.0.1:$APP_PORT/;|" "$NGINX_CONF"
 else
     cat >> "$NGINX_CONF" <<NGINXEOF
@@ -345,7 +475,7 @@ server {
     listen [::]:80;
     server_name $APP_DOMAIN;
 
-    location /$PM2_APP_NAME/ {
+    location /$COMPOSE_PROJECT_NAME/ {
         proxy_pass http://127.0.0.1:$APP_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
@@ -366,7 +496,7 @@ server {
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
-    location /$PM2_APP_NAME/ {
+    location /$COMPOSE_PROJECT_NAME/ {
         proxy_pass http://127.0.0.1:$APP_PORT/;
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
@@ -385,31 +515,56 @@ fi
 if nginx -t 2>/dev/null; then
     systemctl reload nginx.service 2>/dev/null && info "Nginx recarregado" || warn "Falha ao recarregar nginx"
 else
-    warn "Configuracao nginx invalida — verifique manualmente"
+    warn "Configuração nginx inválida — verifique manualmente"
 fi
 
-info "Criando banco PostgreSQL ($DB_NAME)..."
-if command -v sudo >/dev/null 2>&1 && sudo -u postgres psql -c "SELECT 1" >/dev/null 2>&1; then
-    sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER $DB_USER;" 2>&1 && info "Banco criado" || warn "Banco ja existe"
+
+# --------------------------------------------------------------
+# Docker Compose — build e start
+# --------------------------------------------------------------
+info "Fazendo build da imagem Docker..."
+if $DOCKER_COMPOSE_CMD -f "$INSTALL_DIR/docker-compose.yml" build 2>&1; then
+  info "Build concluído com sucesso!"
 else
-    warn "Crie manualmente: sudo -u postgres createdb $DB_NAME -O $DB_USER"
+  error "Falha no build da imagem Docker — verifique o Dockerfile e logs acima"
 fi
 
-info "Instalando dependencias npm..."
-npm install --prefix "$INSTALL_DIR" --production 2>&1 && info "Dependencias instaladas" || warn "Erro ao instalar dependencias"
+info "Iniciando containers com Docker Compose..."
+if $DOCKER_COMPOSE_CMD -f "$INSTALL_DIR/docker-compose.yml" --project-name "$COMPOSE_PROJECT_NAME" up -d 2>&1; then
+  info "Containers iniciados!"
+else
+  error "Falha ao iniciar containers — verifique docker-compose.yml e logs"
+fi
 
-info "Registrando app no PM2 ($PM2_USER)..."
-$PM2_AS_USER pm2 delete "$PM2_APP_NAME" 2>/dev/null || true
-$PM2_AS_USER pm2 start "$SRC_DIR/server.js" --name "$PM2_APP_NAME" 2>&1 && $PM2_AS_USER pm2 save --force 2>&1 && info "PM2: app registrado" || warn "Erro no PM2"
+info "Aguardando API ficar saudável..."
+for i in $(seq 1 30); do
+  if curl -sf "http://127.0.0.1:$APP_PORT/health" >/dev/null 2>&1; then
+    info "API saudável após ${i}s!"
+    break
+  fi
+  if [ "$i" -eq 30 ]; then
+    warn "API não respondeu após 30s — verifique logs: $DOCKER_COMPOSE_CMD logs api"
+  fi
+  sleep 1
+done
 
+
+# --------------------------------------------------------------
+# Final
+# --------------------------------------------------------------
 echo ""
 info "===== Instalação concluída! ====="
 echo ""
-echo "  URL:     https://$APP_DOMAIN/$PM2_APP_NAME/"
+echo "  URL:     https://$APP_DOMAIN/$COMPOSE_PROJECT_NAME/"
 echo "  Porta:   $APP_PORT"
-echo "  PM2:     $PM2_APP_NAME"
+echo "  Docker:  $COMPOSE_PROJECT_NAME"
 echo "  Banco:   $DB_NAME"
 echo "  Pasta:   $INSTALL_DIR"
+echo ""
+echo "  Comandos úteis:"
+echo "    Logs:     $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml logs -f"
+echo "    Restart:  $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml restart"
+echo "    Stop:     $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml down"
 echo ""
 
 info "Testando API..." && sleep 2
@@ -434,7 +589,7 @@ if echo "$resp" | grep -q '"_id"'; then
 fi
 
 echo ""
-echo "  CRUD:    https://$APP_DOMAIN/$PM2_APP_NAME/{tabela}"
-echo "  PM2:     pm2 {status|logs|restart} $PM2_APP_NAME"
+echo "  CRUD:    https://$APP_DOMAIN/$COMPOSE_PROJECT_NAME/{tabela}"
+echo "  Logs:    $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml logs -f"
 echo "  .env:    $INSTALL_DIR/.env"
 echo ""

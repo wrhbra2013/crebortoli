@@ -2,11 +2,12 @@
 set -eu
 
 # ==============================================================
-# Script de instalação — API Crebortoli
+# Script de instalação — API Crebortoli (Docker)
 # Uso: sudo bash install_crebortoli.sh          (instalar)
 #       sudo bash install_crebortoli.sh uninstall (desinstalar)
 #
-# API REST com Fastify + PostgreSQL.
+# API REST com Fastify + PostgreSQL em containers Docker.
+# Requer: Debian 11+ (sudo apt para dependências)
 # ==============================================================
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -20,36 +21,31 @@ error() { printf "${RED}[ERRO]${NC} %s\n" "$1" >&2; exit 1; }
 
 [ "$(id -u)" -eq 0 ] || error "Execute como root: sudo bash install_crebortoli.sh"
 
-if [ -n "${SUDO_USER:-}" ]; then
-  PM2_USER="$SUDO_USER"
-else
-  PM2_USER="root"
-fi
-PM2_AS_USER=""
-[ "$PM2_USER" != "root" ] && PM2_AS_USER="sudo -u $PM2_USER"
-
 
 # ==============================================================
 # Uninstall
 # ==============================================================
 uninstall() {
   echo ""
-  info "===== Iniciando desinstalação da API Crebortoli ====="
+  info "===== Iniciando desinstalação da API Crebortoli (Docker) ====="
   echo ""
 
   [ -f "$INSTALL_DIR/.env" ] && . "$INSTALL_DIR/.env" || true
 
-  upm2="${PM2_APP_NAME:-crebortoli}"
-  db_name="${DB_NAME:-crebortoli_db}"
+  dname="${COMPOSE_PROJECT_NAME:-crebortoli}"
+
+  _dc_cmd="docker compose"
+  docker compose version >/dev/null 2>&1 || _dc_cmd="docker-compose"
 
   echo ""
-  info "[1/4] Parando e removendo app do PM2 ($upm2)..."
-  if $PM2_AS_USER pm2 delete "$upm2" 2>/dev/null; then
-    info "PM2: app $upm2 removido"
+  info "[1/4] Parando e removendo containers Docker ($dname)..."
+  if [ -f "$INSTALL_DIR/docker-compose.yml" ]; then
+    $_dc_cmd -f "$INSTALL_DIR/docker-compose.yml" down -v 2>/dev/null && \
+      info "Containers e volumes removidos" || \
+      warn "Falha ao derrubar containers"
   else
-    warn "PM2: app $upm2 não encontrado ou já removido"
+    warn "docker-compose.yml não encontrado"
   fi
-  $PM2_AS_USER pm2 save --force 2>/dev/null || true
 
   echo ""
   info "[2/4] Restaurando nginx a partir do backup..."
@@ -57,8 +53,8 @@ uninstall() {
     cp "$NGINX_CONF.bkp" "$NGINX_CONF" && info "Nginx restaurado de $NGINX_CONF.bkp" || warn "Falha ao restaurar nginx"
   else
     warn "Backup $NGINX_CONF.bkp não encontrado — removendo marcador manualmente"
-    sed -i "/^# LOCATION_BEGIN $upm2\$/,/^# LOCATION_END $upm2\$/d" "$NGINX_CONF" 2>/dev/null || true
-    sed -i "/^# BEGIN $upm2\$/,/^# END $upm2\$/d" "$NGINX_CONF" 2>/dev/null || true
+    sed -i "/^# LOCATION_BEGIN $dname\$/,/^# LOCATION_END $dname\$/d" "$NGINX_CONF" 2>/dev/null || true
+    sed -i "/^# BEGIN $dname\$/,/^# END $dname\$/d" "$NGINX_CONF" 2>/dev/null || true
   fi
   if nginx -t 2>/dev/null; then
     systemctl reload nginx.service 2>/dev/null && info "Nginx recarregado" || warn "Falha ao recarregar nginx"
@@ -67,12 +63,8 @@ uninstall() {
   fi
 
   echo ""
-  info "[3/4] Removendo banco de dados ($db_name)..."
-  if sudo -u postgres psql -c "DROP DATABASE IF EXISTS \"$db_name\";" 2>/dev/null; then
-    info "Banco $db_name removido (usuário mantido)"
-  else
-    warn "Banco $db_name não encontrado ou já removido"
-  fi
+  info "[3/4] Removendo imagens Docker do projeto..."
+  docker images "crebortoli-api:latest" -q 2>/dev/null | xargs -r docker rmi 2>/dev/null || true
 
   echo ""
   info "[4/4] Removendo diretório $INSTALL_DIR..."
@@ -86,28 +78,58 @@ case "${1:-}" in
   uninstall) uninstall; exit 0 ;;
 esac
 
-cleanup_on_error() {
-  [ $? -eq 0 ] && return 0
-  warn "ERRO: Instalação falhou — revertendo..."
-  rm -rf "$INSTALL_DIR" 2>/dev/null && warn "Diretório $INSTALL_DIR removido durante rollback" || true
-  exit 1
-}
-trap cleanup_on_error EXIT
-trap 'error "Instalação interrompida pelo usuário"' INT TERM
-
 echo ""
-info "===== Iniciando instalação da API Crebortoli ====="
+info "===== Iniciando instalação da API Crebortoli (Docker) ====="
 echo ""
 
-command -v node >/dev/null 2>&1 || error "Node.js não encontrado"
-command -v npm  >/dev/null 2>&1 || error "npm não encontrado"
-command -v psql >/dev/null 2>&1 || warn "psql não encontrado"
-command -v pm2  >/dev/null 2>&1 || warn "pm2 não encontrado — será instalado via npm"
+
+# --------------------------------------------------------------
+# Docker Engine + Docker Compose — instala via apt
+# --------------------------------------------------------------
+info "Verificando/instalando Docker Engine e Docker Compose..."
+if ! command -v docker >/dev/null 2>&1; then
+  info "Docker não encontrado — instalando docker.io via apt..."
+  apt-get update -qq
+  apt-get install -y -qq docker.io
+  systemctl enable --now docker
+  info "Docker Engine instalado"
+else
+  info "Docker já instalado"
+fi
+
+DOCKER_COMPOSE_CMD=""
+if docker compose version >/dev/null 2>&1; then
+  DOCKER_COMPOSE_CMD="docker compose"
+  info "Docker Compose (plugin) disponível"
+elif docker-compose --version >/dev/null 2>&1; then
+  DOCKER_COMPOSE_CMD="docker-compose"
+  info "Docker Compose (standalone) disponível"
+else
+  info "Instalando Docker Compose plugin..."
+  apt-get install -y -qq docker-compose-plugin 2>/dev/null || \
+    apt-get install -y -qq docker-compose 2>/dev/null || \
+    error "Falha ao instalar Docker Compose — instale manualmente"
+  if docker compose version >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker compose"
+  elif docker-compose --version >/dev/null 2>&1; then
+    DOCKER_COMPOSE_CMD="docker-compose"
+  else
+    error "Docker Compose não disponível após instalação"
+  fi
+fi
+
+# Verifica nginx
+if ! command -v nginx >/dev/null 2>&1; then
+  info "Instalando nginx..."
+  apt-get install -y -qq nginx
+fi
+
 
 # --------------------------------------------------------------
 # Inputs do usuário
 # --------------------------------------------------------------
 echo "============ Configuração da instalação ============"
+
 _check_port() {
   local p=$1
   if command -v ss >/dev/null 2>&1; then
@@ -119,7 +141,7 @@ _check_port() {
 }
 
 while :; do
-  printf "Porta do app [3001]: "; read -r APP_PORT
+  printf "Porta do app (host) [3001]: "; read -r APP_PORT
   APP_PORT=${APP_PORT:-3001}
   if _check_port "$APP_PORT"; then
     warn "Porta $APP_PORT já está em uso!"
@@ -139,15 +161,51 @@ info "Porta definida: $APP_PORT"
 
 printf "Nome do banco de dados PostgreSQL [crebortoli_db]: "; read -r DB_NAME
 DB_NAME=${DB_NAME:-crebortoli_db}; info "DB_NAME: $DB_NAME"
-printf "Nome do app no PM2 [crebortoli]: "; read -r PM2_APP_NAME
-PM2_APP_NAME=${PM2_APP_NAME:-crebortoli}; info "PM2_APP_NAME: $PM2_APP_NAME"
+printf "Nome do projeto Docker/compose [crebortoli]: "; read -r COMPOSE_PROJECT_NAME
+COMPOSE_PROJECT_NAME=${COMPOSE_PROJECT_NAME:-crebortoli}; info "COMPOSE_PROJECT_NAME: $COMPOSE_PROJECT_NAME"
 APP_DOMAIN=api.projetosdinamicos.com.br
+
+DB_USER=postgres
+DB_PASS=wander
+
 
 # --------------------------------------------------------------
 # Criar diretórios e copiar projeto
 # --------------------------------------------------------------
 info "Criando diretórios..."
 mkdir -p "$SRC_DIR" && info "Diretórios criados: $SRC_DIR" || warn "Erro ao criar diretórios"
+UPLOAD_DIR="$INSTALL_DIR/uploads"
+mkdir -p "$UPLOAD_DIR" && chown 1000:1000 "$UPLOAD_DIR" && info "Diretório de uploads criado: $UPLOAD_DIR (owner 1000:1000)" || warn "Erro ao criar/ajustar diretório de uploads"
+
+
+# --------------------------------------------------------------
+# .env  (usado pelo docker-compose e pelo container)
+# --------------------------------------------------------------
+API_TOKEN=$(openssl rand -hex 16 2>/dev/null || echo "$(date +%s)$RANDOM" | md5sum | head -c 32)
+info "Criando .env (PORT=$APP_PORT, API_TOKEN gerado)"
+cat > "$INSTALL_DIR/.env" <<ENVEOF
+# Credenciais do banco
+DB_NAME=$DB_NAME
+DB_USER=$DB_USER
+DB_PASS=$DB_PASS
+
+# App
+PORT=$APP_PORT
+API_TOKEN=$API_TOKEN
+COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT_NAME
+
+# Compatibilidade com server.js (variáveis antigas)
+CREBORTOLI_DB_HOST=db
+CREBORTOLI_DB_PORT=5432
+CREBORTOLI_DB_NAME=$DB_NAME
+CREBORTOLI_DB_USER=$DB_USER
+CREBORTOLI_DB_PASS=$DB_PASS
+
+# PM2_APP_NAME mantido para compatibilidade com nginx
+PM2_APP_NAME=$COMPOSE_PROJECT_NAME
+ENVEOF
+chmod 600 "$INSTALL_DIR/.env" && info "Permissões do .env ajustadas (600)" || warn "Falha ao ajustar permissões"
+
 
 # --------------------------------------------------------------
 # package.json
@@ -175,6 +233,7 @@ cat > "$INSTALL_DIR/api/package.json" <<'JSONEOF'
   }
 }
 JSONEOF
+
 
 # --------------------------------------------------------------
 # src/server.js
@@ -885,35 +944,152 @@ start();
 SVREOF
 info "src/server.js criado"
 
+
 # --------------------------------------------------------------
-# .env
+# Dockerfile
 # --------------------------------------------------------------
-API_TOKEN=$(openssl rand -hex 16 2>/dev/null || echo "$(date +%s)$RANDOM" | md5sum | head -c 32)
-info "Criando .env (PORT=$APP_PORT, API_TOKEN gerado)"
-cat > "$INSTALL_DIR/.env" <<ENVEOF
-PORT=$APP_PORT
-CREBORTOLI_DB_HOST=localhost
-CREBORTOLI_DB_PORT=5432
-CREBORTOLI_DB_NAME=$DB_NAME
-CREBORTOLI_DB_USER=postgres
-CREBORTOLI_DB_PASS=wander
-API_TOKEN=$API_TOKEN
-PM2_APP_NAME=$PM2_APP_NAME
-ENVEOF
-chmod 600 "$INSTALL_DIR/.env" && info "Permissoes do .env ajustadas (600)" || warn "Falha ao ajustar permissoes"
-chown "$PM2_USER" "$INSTALL_DIR/.env" && info "Proprietario do .env definido: $PM2_USER" || warn "Falha ao definir proprietario"
+info "Criando Dockerfile"
+cat > "$INSTALL_DIR/Dockerfile" <<'DOCKEREOF'
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Dependências primeiro (cache de camada)
+COPY api/package.json ./
+RUN npm install --production
+
+# Código-fonte
+COPY api/src/ ./src/
+
+EXPOSE 3001
+
+CMD ["node", "src/server.js"]
+DOCKEREOF
+
+
+# --------------------------------------------------------------
+# docker-compose.yml
+# --------------------------------------------------------------
+info "Criando docker-compose.yml"
+cat > "$INSTALL_DIR/docker-compose.yml" <<'COMPOSEEOF'
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASS}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - app-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  api:
+    build: .
+    ports:
+      - "127.0.0.1:${PORT}:${PORT}"
+    environment:
+      PORT: ${PORT}
+      CREBORTOLI_DB_HOST: db
+      CREBORTOLI_DB_PORT: 5432
+      CREBORTOLI_DB_NAME: ${DB_NAME}
+      CREBORTOLI_DB_USER: ${DB_USER}
+      CREBORTOLI_DB_PASS: ${DB_PASS}
+      API_TOKEN: ${API_TOKEN}
+      UPLOAD_DIR: /uploads
+    volumes:
+      - ./uploads:/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: unless-stopped
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  pgdata:
+COMPOSEEOF
+
+
+# --------------------------------------------------------------
+# Migration SQL (arquivo de referência — tabelas criadas automaticamente no startup)
+# --------------------------------------------------------------
+info "Criando migration de referência..."
+mkdir -p "$INSTALL_DIR/migrations"
+cat > "$INSTALL_DIR/migrations/001_create_tables.sql" <<SQLEOF
+-- ============================================================
+-- Migration 001: Cria todas as tabelas do sistema Crebortoli
+-- NOTA: As tabelas são criadas automaticamente no startup da API.
+-- Este arquivo é mantido como referência/documentação.
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS agendamentos (
+    id UUID PRIMARY KEY, cliente TEXT, telefone TEXT, servico TEXT,
+    servico_nome TEXT, valor DECIMAL(10,2), data TIMESTAMP, hora TEXT,
+    status TEXT DEFAULT 'pendente', pago BOOLEAN DEFAULT false,
+    observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS servicos (
+    id UUID PRIMARY KEY, nome TEXT, descricao TEXT, preco DECIMAL(10,2),
+    duracao_minutos INTEGER, ativo BOOLEAN DEFAULT true,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS clientes (
+    id UUID PRIMARY KEY, nome TEXT, telefone TEXT, email TEXT, cpf TEXT,
+    endereco TEXT, observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS receitas (
+    id UUID PRIMARY KEY, paciente TEXT, data TEXT, data_formatada TEXT,
+    indicacao TEXT, medicamentos TEXT, observacoes TEXT, comentarios TEXT,
+    nome_arquivo TEXT, cliente_id UUID, diagnostico TEXT, prescricao TEXT,
+    validado BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS contatos (
+    id UUID PRIMARY KEY, nome TEXT, email TEXT, telefone TEXT,
+    mensagem TEXT, lido BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS sessoes (
+    id UUID PRIMARY KEY, token TEXT UNIQUE, url_aprovacao TEXT,
+    status TEXT DEFAULT 'pendente', last_sync TIMESTAMP,
+    created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS usuarios (
+    id UUID PRIMARY KEY, email TEXT UNIQUE, senha TEXT, nome TEXT,
+    nivel TEXT DEFAULT 'user', created_at TIMESTAMP DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS configuracoes (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    chave TEXT UNIQUE, valor TEXT, updated_at TIMESTAMP DEFAULT NOW()
+);
+SQLEOF
+
 
 # --------------------------------------------------------------
 # Nginx — gera config completa
 # --------------------------------------------------------------
-LOC_MARKER_BEGIN="# LOCATION_BEGIN $PM2_APP_NAME"
-LOC_MARKER_END="# LOCATION_END $PM2_APP_NAME"
-
 info "Configurando Nginx"
 info "Criando backup do nginx atual..."
 cp "$NGINX_CONF" "$NGINX_CONF.bkp" 2>/dev/null && info "Backup criado: $NGINX_CONF.bkp" || warn "Falha ao criar backup"
 
-info "Gerando configuracao nginx..."
+info "Gerando configuração nginx..."
 
 cat > "$NGINX_CONF" <<NGINXEOF
 # BEGIN crebortoli
@@ -1040,168 +1216,38 @@ server {
 # END amoranimal_site
 NGINXEOF
 
-info "Configuracao nginx gerada em $NGINX_CONF"
+info "Configuração nginx gerada em $NGINX_CONF"
+
 
 # --------------------------------------------------------------
-# PostgreSQL — criar banco
+# Docker Compose — build e start
 # --------------------------------------------------------------
-info "Criando banco PostgreSQL ($DB_NAME)..."
-if command -v sudo >/dev/null 2>&1 && sudo -u postgres psql -c "SELECT 1" >/dev/null 2>&1; then
-  info "PostgreSQL acessível via sudo -u postgres"
-  if sudo -u postgres psql -c "CREATE DATABASE $DB_NAME OWNER postgres;" 2>&1; then
-    info "Banco $DB_NAME criado"
-  else
-    warn "Banco $DB_NAME já existe ou erro ao criar"
+info "Fazendo build da imagem Docker..."
+if $DOCKER_COMPOSE_CMD -f "$INSTALL_DIR/docker-compose.yml" build 2>&1; then
+  info "Build concluído com sucesso!"
+else
+  error "Falha no build da imagem Docker — verifique o Dockerfile e logs acima"
+fi
+
+info "Iniciando containers com Docker Compose..."
+if $DOCKER_COMPOSE_CMD -f "$INSTALL_DIR/docker-compose.yml" --project-name "$COMPOSE_PROJECT_NAME" up -d 2>&1; then
+  info "Containers iniciados!"
+else
+  error "Falha ao iniciar containers — verifique docker-compose.yml e logs"
+fi
+
+info "Aguardando API ficar saudável..."
+for i in $(seq 1 30); do
+  if curl -sf "http://127.0.0.1:$APP_PORT/health" >/dev/null 2>&1; then
+    info "API saudável após ${i}s!"
+    break
   fi
-else
-  warn "Não foi possível acessar o PostgreSQL como superusuário (postgres)"
-  warn "Crie manualmente: sudo -u postgres createdb $DB_NAME -O postgres"
-fi
+  if [ "$i" -eq 30 ]; then
+    warn "API não respondeu após 30s — verifique logs: $DOCKER_COMPOSE_CMD logs api"
+  fi
+  sleep 1
+done
 
-# --------------------------------------------------------------
-# Migration — criar todas as tabelas do projeto
-# --------------------------------------------------------------
-info "Executando migration — criando tabelas..."
-MIGRATION_FILE="$INSTALL_DIR/migrations/001_create_tables.sql"
-mkdir -p "$INSTALL_DIR/migrations" && info "Diretório de migrations criado" || warn "Erro ao criar diretório de migrations"
-
-# Lê vars de conexão do .env
-[ -f "$INSTALL_DIR/.env" ] && . "$INSTALL_DIR/.env"
-
-cat > "$MIGRATION_FILE" <<SQLEOF
--- ============================================================
--- Migration 001: Cria todas as tabelas do sistema Crebortoli
--- Execute com: psql -h HOST -p PORT -U USER -d DB -f migrations/001_create_tables.sql
--- ============================================================
-
--- agendamentos: agendamentos de serviços
-CREATE TABLE IF NOT EXISTS agendamentos (
-    id UUID PRIMARY KEY,
-    cliente TEXT,
-    telefone TEXT,
-    servico TEXT,
-    servico_nome TEXT,
-    valor DECIMAL(10,2),
-    data TIMESTAMP,
-    hora TEXT,
-    status TEXT DEFAULT 'pendente',
-    pago BOOLEAN DEFAULT false,
-    observacoes TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- servicos: serviços oferecidos
-CREATE TABLE IF NOT EXISTS servicos (
-    id UUID PRIMARY KEY,
-    nome TEXT,
-    descricao TEXT,
-    preco DECIMAL(10,2),
-    duracao_minutos INTEGER,
-    ativo BOOLEAN DEFAULT true,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- clientes: clientes cadastrados
-CREATE TABLE IF NOT EXISTS clientes (
-    id UUID PRIMARY KEY,
-    nome TEXT,
-    telefone TEXT,
-    email TEXT,
-    cpf TEXT,
-    endereco TEXT,
-    observacoes TEXT,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- receitas: receitas médicas
-CREATE TABLE IF NOT EXISTS receitas (
-    id UUID PRIMARY KEY,
-    paciente TEXT,
-    data TEXT,
-    data_formatada TEXT,
-    indicacao TEXT,
-    medicamentos TEXT,
-    observacoes TEXT,
-    comentarios TEXT,
-    nome_arquivo TEXT,
-    cliente_id UUID,
-    diagnostico TEXT,
-    prescricao TEXT,
-    validado BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- contatos: formulário de contato
-CREATE TABLE IF NOT EXISTS contatos (
-    id UUID PRIMARY KEY,
-    nome TEXT,
-    email TEXT,
-    telefone TEXT,
-    mensagem TEXT,
-    lido BOOLEAN DEFAULT false,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- sessoes: sessões de autenticação do financeiro
-CREATE TABLE IF NOT EXISTS sessoes (
-    id UUID PRIMARY KEY,
-    token TEXT UNIQUE,
-    url_aprovacao TEXT,
-    status TEXT DEFAULT 'pendente',
-    last_sync TIMESTAMP,
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- usuarios: usuários do sistema
-CREATE TABLE IF NOT EXISTS usuarios (
-    id UUID PRIMARY KEY,
-    email TEXT UNIQUE,
-    senha TEXT,
-    nome TEXT,
-    nivel TEXT DEFAULT 'user',
-    created_at TIMESTAMP DEFAULT NOW()
-);
-
--- configuracoes: armazenamento chave-valor
-CREATE TABLE IF NOT EXISTS configuracoes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    chave TEXT UNIQUE,
-    valor TEXT,
-    updated_at TIMESTAMP DEFAULT NOW()
-);
-SQLEOF
-
-info "Arquivo de migration gerado: $MIGRATION_FILE"
-
-# Executar migration
-info "Executando migration ($MIGRATION_FILE)..."
-if PGPASSWORD="$CREBORTOLI_DB_PASS" psql -h "$CREBORTOLI_DB_HOST" -p "$CREBORTOLI_DB_PORT" -U "$CREBORTOLI_DB_USER" -d "$DB_NAME" -f "$MIGRATION_FILE" 2>&1; then
-  info "Migration executada com sucesso!"
-else
-  warn "Erro ao executar migration — execute manualmente: psql -h $CREBORTOLI_DB_HOST -p $CREBORTOLI_DB_PORT -U $CREBORTOLI_DB_USER -d $DB_NAME -f $MIGRATION_FILE"
-fi
-
-# --------------------------------------------------------------
-# Instalar dependências
-# --------------------------------------------------------------
-info "Instalando dependências npm..."
-if npm install --prefix "$INSTALL_DIR/api" --production 2>&1; then
-  info "Dependências npm instaladas com sucesso"
-else
-  warn "Erro ao instalar dependências — execute manualmente: npm install --prefix $INSTALL_DIR/api"
-fi
-
-# --------------------------------------------------------------
-# PM2
-# --------------------------------------------------------------
-info "Registrando app no PM2 (usuário: $PM2_USER)"
-$PM2_AS_USER pm2 delete "$PM2_APP_NAME" 2>/dev/null || true
-if $PM2_AS_USER pm2 start "$SRC_DIR/server.js" --name "$PM2_APP_NAME" 2>&1; then
-  $PM2_AS_USER pm2 save --force 2>&1
-  info "PM2: app registrado e salvo"
-else
-  warn "Erro ao iniciar app no PM2 — execute manualmente: pm2 start $SRC_DIR/server.js --name $PM2_APP_NAME"
-fi
 
 # --------------------------------------------------------------
 # Nginx reload
@@ -1218,6 +1264,7 @@ else
   warn "Configuração do nginx inválida — execute manualmente: sudo nginx -t"
 fi
 
+
 # --------------------------------------------------------------
 # Final
 # --------------------------------------------------------------
@@ -1225,16 +1272,21 @@ echo ""
 info "===== Instalação concluída! ====="
 echo ""
 echo "  Domínio: $APP_DOMAIN  |  Location: /crebortoli/  |  Porta: $APP_PORT"
-echo "  PM2:     $PM2_APP_NAME ($PM2_USER)"
+echo "  Docker:  $COMPOSE_PROJECT_NAME"
 echo "  .env:    $INSTALL_DIR/.env"
+echo ""
+echo "  Comandos úteis:"
+echo "    Logs:     $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml logs -f"
+echo "    Restart:  $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml restart"
+echo "    Stop:     $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml down"
+echo "    Shell:    $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml exec api sh"
 echo ""
 
 info "Testando API..." && sleep 2
 resp=$(curl -s "http://127.0.0.1:$APP_PORT/" 2>/dev/null) || resp=""
-echo "$resp" | grep -q '"status":"OK"\|"ok"' && info "API:       ✓" || warn "API:       ✗ $resp"
+echo "$resp" | grep -q '"status":"ok"\|"ok"' && info "API:       ✓" || warn "API:       ✗ $resp"
 
 echo && info "Testes concluídos!"
 echo ""
-echo "  PM2:     pm2 {status|logs|restart} $PM2_APP_NAME"
 echo "  .env:    $INSTALL_DIR/.env"
 echo ""

@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guia de Instalação — API Crebortoli (Docker)</title>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif;
+            background: #f4f5f7;
+            color: #1a1a2e;
+            margin: 0;
+            padding: 0;
+            line-height: 1.7;
+        }
+        header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #fff;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+        header h1 { margin: 0; font-size: 2.2rem; letter-spacing: -0.5px; }
+        header p { margin: 0.5rem 0 0; opacity: .75; font-size: 1.1rem; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+        section { background: #fff; border-radius: 12px; padding: 2rem; margin-bottom: 2rem; box-shadow: 0 2px 12px rgba(0,0,0,.06); }
+        h2 { font-size: 1.5rem; margin: 0 0 1.5rem; padding-bottom: .5rem; border-bottom: 3px solid #4361ee; display: inline-block; }
+        h3 { font-size: 1.15rem; margin: 1.5rem 0 .75rem; color: #16213e; }
+
+        /* Tabs */
+        .tabs { display: flex; gap: 0; margin-bottom: 0; background: #f0f0f5; border-radius: 8px 8px 0 0; overflow: hidden; }
+        .tab { flex: 1; padding: .85rem 1rem; text-align: center; cursor: pointer; font-weight: 600; font-size: .95rem; background: #e8e8ee; transition: .2s; border: none; color: #555; }
+        .tab:hover { background: #ddd; }
+        .tab.active { background: #fff; color: #4361ee; box-shadow: 0 -2px 0 #4361ee; }
+        .tab-content { display: none; padding: 1.5rem; border: 1px solid #e8e8ee; border-top: none; border-radius: 0 0 8px 8px; }
+        .tab-content.active { display: block; }
+
+        /* Steps */
+        .step { display: flex; gap: 1rem; padding: 1rem 0; border-bottom: 1px solid #eee; }
+        .step:last-child { border: none; }
+        .step-num { flex-shrink: 0; width: 36px; height: 36px; background: #4361ee; color: #fff; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: .9rem; }
+        .step-body { flex: 1; }
+        .step-body strong { display: block; margin-bottom: .25rem; }
+        .step-body code { background: #f0f0f5; padding: .15rem .45rem; border-radius: 4px; font-size: .85rem; }
+
+        /* Architecture */
+        .arch { display: flex; flex-direction: column; align-items: center; gap: .5rem; padding: 1rem 0; }
+        .arch-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; justify-content: center; }
+        .arch-box { background: #f0f4ff; border: 2px solid #4361ee; border-radius: 10px; padding: 1rem 1.5rem; text-align: center; min-width: 140px; }
+        .arch-box span { display: block; font-weight: 700; font-size: .9rem; }
+        .arch-box small { font-size: .75rem; color: #666; }
+        .arch-box.host { border-color: #e63946; background: #fff5f5; }
+        .arch-box.host span { color: #e63946; }
+        .arch-box.network { border-color: #2a9d8f; background: #f0faf8; }
+        .arch-box.network span { color: #2a9d8f; }
+        .arch-box.volume { border-style: dashed; border-color: #e9c46a; background: #fffbf0; }
+        .arch-box.volume span { color: #b8860b; }
+        .arch-arrow { font-size: 1.5rem; color: #999; }
+        .arch-label { font-size: .75rem; color: #888; text-transform: uppercase; letter-spacing: 1px; margin: .5rem 0 0; }
+
+        /* Table */
+        table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+        th, td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid #eee; }
+        th { background: #f0f4ff; font-weight: 700; color: #16213e; }
+        tr:hover td { background: #fafbff; }
+        .badge { display: inline-block; padding: .2rem .6rem; border-radius: 20px; font-size: .75rem; font-weight: 600; }
+        .badge.ok { background: #d4edda; color: #155724; }
+        .badge.warn { background: #fff3cd; color: #856404; }
+        .badge.danger { background: #f8d7da; color: #721c24; }
+
+        .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .comparison > div { border-radius: 10px; padding: 1.5rem; }
+        .old-version { background: #fff5f5; border: 1px solid #f5c6cb; }
+        .new-version { background: #f0faf8; border: 1px solid #c3e6cb; }
+        .comparison h4 { margin: 0 0 1rem; font-size: 1.1rem; }
+        .comparison ul { margin: 0; padding-left: 1.2rem; }
+        .comparison li { margin-bottom: .4rem; font-size: .9rem; }
+        .comparison li b { font-weight: 600; }
+
+        .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+        .pros, .cons { border-radius: 10px; padding: 1.5rem; }
+        .pros { background: #f0faf8; border: 1px solid #c3e6cb; }
+        .cons { background: #fff5f5; border: 1px solid #f5c6cb; }
+        .pros h4, .cons h4 { margin: 0 0 1rem; }
+        .pros ul, .cons ul { margin: 0; padding-left: 1.2rem; }
+        .pros li, .cons li { margin-bottom: .4rem; font-size: .9rem; }
+
+        .highlight { background: #fffff0; border-left: 4px solid #4361ee; padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; margin: 1.5rem 0; font-size: .9rem; }
+
+        pre { background: #1a1a2e; color: #e8e8ee; padding: 1rem 1.25rem; border-radius: 8px; overflow-x: auto; font-size: .85rem; line-height: 1.5; }
+
+        footer { text-align: center; padding: 2rem; color: #888; font-size: .85rem; }
+
+        @media (max-width: 768px) {
+            .comparison, .pros-cons { grid-template-columns: 1fr; }
+            .arch-box { min-width: 100px; padding: .75rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>API Crebortoli &mdash; Guia de Instalação</h1>
+    <p>Instalação com Docker containers em servidor Debian</p>
+</header>
+
+<div class="container">
+
+    <!-- Tab Navigation -->
+    <div class="tabs">
+        <button class="tab active" onclick="showTab('arquitetura')">Arquitetura</button>
+        <button class="tab" onclick="showTab('instalacao')">Passo a Passo</button>
+        <button class="tab" onclick="showTab('comparacao')">Comparação</button>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- ARQUITETURA -->
+    <!-- ============================================================ -->
+    <div id="tab-arquitetura" class="tab-content active">
+        <section style="box-shadow:none;margin:0;padding:0;">
+            <h2>Arquitetura Docker</h2>
+
+            <p>A API Crebortoli agora roda em <strong>containers Docker</strong> gerenciados pelo <strong>Docker Compose</strong>. Abaixo a topologia após a instalação:</p>
+
+            <div class="arch">
+                <div class="arch-label">Host Debian</div>
+
+                <div class="arch-row">
+                    <div class="arch-box host">
+                        <span>Nginx</span>
+                        <small>proxy reverso &middot; porta 80/443</small>
+                    </div>
+                    <div class="arch-arrow">&larr;&rarr;</div>
+                    <div class="arch-box host">
+                        <span>Porta {{APP_PORT}}</span>
+                        <small>127.0.0.1:3001</small>
+                    </div>
+                </div>
+
+                <div class="arch-arrow" style="transform:rotate(90deg);">&darr;</div>
+
+                <div class="arch-row">
+                    <div class="arch-box network">
+                        <span>Container API</span>
+                        <small>Node 20 Alpine &middot; Fastify</small>
+                    </div>
+                    <div class="arch-arrow">&larr;&rarr;</div>
+                    <div class="arch-box network">
+                        <span>Container PostgreSQL</span>
+                        <small>Postgres 16 Alpine</small>
+                    </div>
+                </div>
+
+                <div class="arch-row" style="margin-top:.5rem;">
+                    <div class="arch-box volume">
+                        <span>uploads/</span>
+                        <small>bind mount &middot; /var/www/crebortoli/uploads</small>
+                    </div>
+                    <div class="arch-box volume">
+                        <span>pgdata</span>
+                        <small>volume Docker &middot; dados do banco</small>
+                    </div>
+                </div>
+
+                <div style="margin-top:1.5rem;width:100%;max-width:500px;">
+                    <div style="display:flex;justify-content:space-between;font-size:.85rem;background:#f0f4ff;padding:.75rem 1rem;border-radius:8px;">
+                        <span><strong>docker-compose.yml</strong></span>
+                        <span>2 serviços &middot; 1 rede bridge</span>
+                    </div>
+                    <div style="display:flex;gap:1rem;margin-top:.5rem;font-size:.8rem;color:#666;justify-content:center;">
+                        <span>docker-compose up -d</span>
+                        <span>&bull;</span>
+                        <span>restart: unless-stopped</span>
+                        <span>&bull;</span>
+                        <span>healthcheck no db</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="highlight">
+                <strong>Fluxo:</strong><br>
+                Cliente &rarr; Nginx (host) &rarr; porta {{APP_PORT}} (host) &rarr; Container API &rarr; Container PostgreSQL<br>
+                Uploads de arquivos vão para o bind mount <code>/var/www/crebortoli/uploads/</code>, persistindo mesmo após <code>docker compose down</code>.
+            </div>
+
+            <h3>Serviços no docker-compose.yml</h3>
+
+            <table>
+                <tr><th>Serviço</th><th>Imagem</th><th>Porta</th><th>Função</th></tr>
+                <tr><td><code>api</code></td><td>build local (Node 20 Alpine)</td><td>{{APP_PORT}} (host) &harr; 3001 (container)</td><td>API REST Fastify com CRUD dinâmico</td></tr>
+                <tr><td><code>db</code></td><td><code>postgres:16-alpine</code></td><td>5432 (interna)</td><td>Banco PostgreSQL com health check</td></tr>
+            </table>
+        </section>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- INSTALAÇÃO -->
+    <!-- ============================================================ -->
+    <div id="tab-instalacao" class="tab-content">
+        <section style="box-shadow:none;margin:0;padding:0;">
+            <h2>Passo a Passo</h2>
+
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-body">
+                    <strong>Baixar o script</strong>
+                    <p>Obtenha o <code>install_crebortoli.sh</code> no servidor Debian.</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-body">
+                    <strong>Executar instalação como root</strong>
+                    <pre>sudo bash install_crebortoli.sh</pre>
+                    <p>O script instala automaticamente:</p>
+                    <ul>
+                        <li><code>docker.io</code> &mdash; Docker Engine</li>
+                        <li><code>docker-compose-plugin</code> &mdash; Docker Compose</li>
+                        <li><code>nginx</code> &mdash; proxy reverso</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-body">
+                    <strong>Configurar variáveis</strong>
+                    <p>O script solicitará interativamente:</p>
+                    <table>
+                        <tr><th>Variável</th><th>Padrão</th><th>Descrição</th></tr>
+                        <tr><td><code>APP_PORT</code></td><td><code>3001</code></td><td>Porta no host para a API</td></tr>
+                        <tr><td><code>DB_NAME</code></td><td><code>crebortoli_db</code></td><td>Nome do banco PostgreSQL</td></tr>
+                        <tr><td><code>COMPOSE_PROJECT_NAME</code></td><td><code>crebortoli</code></td><td>Nome do projeto Docker e prefixo dos containers</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-body">
+                    <strong>Geração dos artefatos</strong>
+                    <p>O script cria toda a estrutura em <code>/var/www/crebortoli/</code>:</p>
+                    <table>
+                        <tr><th>Arquivo</th><th>Função</th></tr>
+                        <tr><td><code>.env</code></td><td>Variáveis de ambiente lidas pelo docker-compose</td></tr>
+                        <tr><td><code>Dockerfile</code></td><td>Imagem Node 20 Alpine com a API</td></tr>
+                        <tr><td><code>docker-compose.yml</code></td><td>Orquestração dos containers (api + db)</td></tr>
+                        <tr><td><code>api/package.json</code></td><td>Dependências npm (Fastify, pg, etc.)</td></tr>
+                        <tr><td><code>api/src/server.js</code></td><td>Código da API Fastify (~700 linhas)</td></tr>
+                        <tr><td><code>uploads/</code></td><td>Diretório de uploads (bind mount, owner 1000:1000)</td></tr>
+                        <tr><td><code>migrations/001_create_tables.sql</code></td><td>SQL de referência (tabelas criadas automaticamente no startup)</td></tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">5</div>
+                <div class="step-body">
+                    <strong>Build da imagem Docker</strong>
+                    <pre>docker compose -f /var/www/crebortoli/docker-compose.yml build</pre>
+                    <p>Instala as dependências npm dentro do container Alpine e prepara a imagem.</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">6</div>
+                <div class="step-body">
+                    <strong>Iniciar containers</strong>
+                    <pre>docker compose -f /var/www/crebortoli/docker-compose.yml --project-name crebortoli up -d</pre>
+                    <p>O Docker Compose inicia na ordem:</p>
+                    <ol>
+                        <li>Container <code>db</code> (PostgreSQL 16 Alpine) &mdash; aguarda health check</li>
+                        <li>Container <code>api</code> (Node 20 Alpine) &mdash; conecta ao db, cria tabelas automaticamente, inicia servidor Fastify na porta 3001</li>
+                    </ol>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">7</div>
+                <div class="step-body">
+                    <strong>Nginx configurado</strong>
+                    <p>O script gera/configura o nginx para fazer proxy reverso:</p>
+                    <pre>https://api.projetosdinamicos.com.br/crebortoli/ &rarr; http://127.0.0.1:3001/</pre>
+                    <p>E recarrega o nginx automaticamente.</p>
+                </div>
+            </div>
+
+            <div class="step">
+                <div class="step-num">8</div>
+                <div class="step-body">
+                    <strong>Verificação</strong>
+                    <p>O script testa o endpoint <code>/health</code> da API e exibe o resultado ao final.</p>
+                </div>
+            </div>
+
+            <div class="highlight">
+                <strong>Comandos úteis pós-instalação:</strong><br>
+                <code>docker compose -f /var/www/crebortoli/docker-compose.yml logs -f</code> &mdash; logs em tempo real<br>
+                <code>docker compose -f /var/www/crebortoli/docker-compose.yml restart</code> &mdash; reiniciar serviços<br>
+                <code>docker compose -f /var/www/crebortoli/docker-compose.yml exec api sh</code> &mdash; shell no container api<br>
+                <code>docker compose -f /var/www/crebortoli/docker-compose.yml down</code> &mdash; parar tudo
+            </div>
+
+            <h3>Migrando banco existente</h3>
+            <pre>pg_dump -U postgres crebortoli_db > /tmp/crebortoli_db.sql
+docker compose -f /var/www/crebortoli/docker-compose.yml \
+  exec -T db psql -U postgres crebortoli_db < /tmp/crebortoli_db.sql</pre>
+        </section>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- COMPARAÇÃO -->
+    <!-- ============================================================ -->
+    <div id="tab-comparacao" class="tab-content">
+        <section style="box-shadow:none;margin:0;padding:0;">
+            <h2>Versão Antiga vs Nova (Docker)</h2>
+
+            <div class="comparison">
+                <div class="old-version">
+                    <h4 style="color:#721c24;">Versão Antiga (PM2)</h4>
+                    <ul>
+                        <li><b>Node.js / npm</b> instalado diretamente no host</li>
+                        <li><b>PM2</b> gerenciando o processo Node</li>
+                        <li><b>PostgreSQL</b> instalado no host</li>
+                        <li><code>npm install</code> executado no host</li>
+                        <li><code>psql</code> executando migrations no host</li>
+                        <li>Dependências do sistema: <code>nodejs</code>, <code>postgresql</code>, <code>pm2</code></li>
+                        <li>Uploads salvos em diretório local no host</li>
+                    </ul>
+                </div>
+                <div class="new-version">
+                    <h4 style="color:#155724;">Nova Versão (Docker)</h4>
+                    <ul>
+                        <li><b>Node 20 Alpine</b> dentro do container <code>api</code></li>
+                        <li><b>Docker</b> gerencia restart (policy <code>unless-stopped</code>)</li>
+                        <li><b>PostgreSQL 16 Alpine</b> dentro do container <code>db</code></li>
+                        <li><code>npm install</code> executado no <code>Dockerfile</code> (cacheado)</li>
+                        <li>Migrations automáticas no startup da API (server.js)</li>
+                        <li>Dependências do sistema: <code>docker.io</code>, <code>docker-compose-plugin</code></li>
+                        <li>Uploads em bind mount no host (<code>/var/www/crebortoli/uploads</code>)</li>
+                    </ul>
+                </div>
+            </div>
+
+            <h3 style="margin-top:2rem;">Comparativo detalhado</h3>
+
+            <table>
+                <tr>
+                    <th>Item</th>
+                    <th>Versão Antiga (PM2)</th>
+                    <th>Nova Versão (Docker)</th>
+                </tr>
+                <tr>
+                    <td>Gerenciamento de processo</td>
+                    <td>PM2</td>
+                    <td>Docker Compose <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Isolamento</td>
+                    <td>Nenhum (tudo no host)</td>
+                    <td>Containers isolados <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Portabilidade</td>
+                    <td>Baixa (depende do Debian)</td>
+                    <td>Alta (qualquer host com Docker) <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Reprodutibilidade</td>
+                    <td>Sujeito a variações do ambiente</td>
+                    <td>Imagem determinística via Dockerfile <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Facilidade de rollback</td>
+                    <td>Média (PM2, npm, banco manual)</td>
+                    <td>Alta (<code>docker compose down</code> + apagar diretório) <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Startup / Restart</td>
+                    <td>PM2 save + systemd</td>
+                    <td>Docker <code>restart: unless-stopped</code> <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Dependências no host</td>
+                    <td>Node, npm, PM2, PostgreSQL, psql</td>
+                    <td>Apenas Docker + nginx <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Consumo de recursos</td>
+                    <td>Mínimo (nativo)</td>
+                    <td>Leve overhead do Docker <span class="badge warn">=</span></td>
+                </tr>
+                <tr>
+                    <td>Isolamento de portas</td>
+                    <td>Porta direta no host</td>
+                    <td>Porta mapeada (<code>127.0.0.1:3001:3001</code>) <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Escalabilidade</td>
+                    <td>Manual (mais PM2 instances)</td>
+                    <td><code>docker compose up -d --scale api=3</code> <span class="badge ok">+</span></td>
+                </tr>
+                <tr>
+                    <td>Logs</td>
+                    <td><code>pm2 logs</code></td>
+                    <td><code>docker compose logs -f</code> <span class="badge ok">+</span></td>
+                </tr>
+            </table>
+
+            <h3 style="margin-top:2rem;">Vantagens e Desvantagens</h3>
+
+            <div class="pros-cons">
+                <div class="pros">
+                    <h4 style="color:#155724;">Vantagens do Docker</h4>
+                    <ul>
+                        <li><strong>Isolamento completo</strong> &mdash; Node e PostgreSQL não poluem o host</li>
+                        <li><strong>Reprodutibilidade</strong> &mdash; mesma imagem em dev, staging, produção</li>
+                        <li><strong>Facilidade de deploy</strong> &mdash; <code>docker compose up -d</code> resolve tudo</li>
+                        <li><strong>Rollback rápido</strong> &mdash; basta trocar a tag da imagem e recrear</li>
+                        <li><strong>Dependências mínimas no host</strong> &mdash; só Docker e nginx</li>
+                        <li><strong>Health check automático</strong> &mdash; API só sobe após DB estar pronto</li>
+                        <li><strong>Escalabilidade horizontal</strong> &mdash; múltiplas réplicas com <code>--scale</code></li>
+                        <li><strong>Atualização segura</strong> &mdash; troca a imagem sem afetar outros serviços</li>
+                    </ul>
+                </div>
+                <div class="cons">
+                    <h4 style="color:#721c24;">Desvantagens do Docker</h4>
+                    <ul>
+                        <li><strong>Overhead leve</strong> &mdash; ~50-100 MB adicionais por container vs nativo</li>
+                        <li><strong>Curva de aprendizado</strong> &mdash; conceitos de Docker, Dockerfile, volumes</li>
+                        <li><strong>Acesso a arquivos</strong> &mdash; uploads em bind mount precisam de permissão explícita (chown 1000:1000)</li>
+                        <li><strong>Debug mais complexo</strong> &mdash; precisa de <code>docker exec</code> ou <code>logs</code></li>
+                        <li><strong>Latência de rede mínima</strong> &mdash; tráfego passa pela bridge Docker (vs localhost nativo)</li>
+                        <li><strong>Manutenção da imagem Docker</strong> &mdash; builds precisam ser refeitos ao atualizar dependências</li>
+                        <li><strong>Docker daemon</strong> &mdash; mais um serviço rodando no host, consumo extra de RAM</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="highlight">
+                <strong>Resumo:</strong> Para este cenário (API única em produção), o Docker oferece mais benefícios do que desvantagens. O overhead é mínimo em servidores modernos, e o ganho em isolamento, portabilidade e facilidade de manutenção supera a complexidade adicional.
+            </div>
+        </section>
+    </div>
+
+</div>
+
+<footer>
+    API Crebortoli &mdash; Guia de Instalação &mdash; Docker Compose &mdash; Debian
+</footer>
+
+<script>
+function showTab(name) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    document.querySelector('.tab[onclick*="' + name + '"]').classList.add('active');
+}
+</script>
+
+</body>
+</html>

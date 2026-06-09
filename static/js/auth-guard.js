@@ -92,12 +92,6 @@ function refreshSession() {
     }
 }
 
-function getSigPath() {
-    var p = window.location.pathname;
-    if (p.startsWith('sig/') || p.includes('/sig/')) return 'sig/';
-    return null;
-}
-
 function runAuthCheck() {
     var path = window.location.pathname;
     var inSig = path.startsWith('sig/') || path.includes('/sig/');
