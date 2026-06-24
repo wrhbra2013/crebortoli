@@ -181,7 +181,8 @@ mkdir -p "$SRC_DIR" && info "Diretório $SRC_DIR criado"
 # --------------------------------------------------------------
 # .env  (usado pelo docker-compose)
 # --------------------------------------------------------------
-info "Criando .env"
+API_TOKEN=$(openssl rand -hex 32)
+info "Criando .env (API_TOKEN gerado)"
 cat > "$INSTALL_DIR/.env" <<ENVEOF
 PORT=$APP_PORT
 DB_HOST=db
@@ -189,6 +190,7 @@ DB_PORT=5432
 DB_NAME=$DB_NAME
 DB_USER=$DB_USER
 DB_PASS=$DB_PASS
+API_TOKEN=$API_TOKEN
 COMPOSE_PROJECT_NAME=$COMPOSE_PROJECT_NAME
 PROJECT_NAME=$PROJECT_NAME
 APP_DOMAIN=$APP_DOMAIN
@@ -231,6 +233,7 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const API_TOKEN = process.env.API_TOKEN || '';
 
 const pool = new Pool({
     host: process.env.DB_HOST,
@@ -263,6 +266,15 @@ app.use((req, res, next) => {
     res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
     res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
     if (req.method === 'OPTIONS') return res.sendStatus(200);
+    next();
+});
+
+app.use((req, res, next) => {
+    if (req.path === '/' || req.path === '/health') return next();
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith('Bearer ') || auth.slice(7) !== API_TOKEN) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
     next();
 });
 
@@ -438,6 +450,7 @@ services:
       DB_USER: ${DB_USER}
       DB_PASS: ${DB_PASS}
       PROJECT_NAME: ${PROJECT_NAME}
+      API_TOKEN: ${API_TOKEN}
     depends_on:
       db:
         condition: service_healthy
@@ -569,27 +582,29 @@ echo ""
 
 info "Testando API..." && sleep 2
 BASE="http://127.0.0.1:$APP_PORT/"
+AUTH="Authorization: Bearer $API_TOKEN"
 resp=$(curl -s "$BASE" 2>/dev/null) || resp=""
 echo "$resp" | grep -q '"OK"' && info "Root:      ✓" || warn "Root:      ✗ $resp"
 resp=$(curl -s "${BASE}health" 2>/dev/null) || resp=""
 echo "$resp" | grep -q '"healthy"' && info "Health:    ✓" || warn "Health:    ✗ $resp"
 
 TEST_DATA='{"nome":"Teste","descricao":"Registro inicial"}'
-resp=$(curl -s -X POST "${BASE}dados" -H "Content-Type: application/json" -d "$TEST_DATA" 2>/dev/null) || resp=""
+resp=$(curl -s -X POST "${BASE}dados" -H "$AUTH" -H "Content-Type: application/json" -d "$TEST_DATA" 2>/dev/null) || resp=""
 echo "$resp" | grep -q '"nome"' && info "Create:    ✓" || warn "Create:    ✗ $resp"
 
 if echo "$resp" | grep -q '"_id"'; then
     ID=$(echo "$resp" | sed 's/.*"_id":\([0-9]*\).*/\1/')
-    resp=$(curl -s "${BASE}dados" 2>/dev/null) || resp=""
+    resp=$(curl -s "${BASE}dados" -H "$AUTH" 2>/dev/null) || resp=""
     echo "$resp" | grep -q '"Teste"' && info "Read:      ✓" || warn "Read:      ✗ $resp"
-    resp=$(curl -s -X PUT "${BASE}dados/$ID" -H "Content-Type: application/json" -d '{"descricao":"Atualizado"}' 2>/dev/null) || resp=""
+    resp=$(curl -s -X PUT "${BASE}dados/$ID" -H "$AUTH" -H "Content-Type: application/json" -d '{"descricao":"Atualizado"}' 2>/dev/null) || resp=""
     echo "$resp" | grep -q '"Atualizado"' && info "Update:    ✓" || warn "Update:    ✗ $resp"
-    resp=$(curl -s -X DELETE "${BASE}dados/$ID" 2>/dev/null) || resp=""
+    resp=$(curl -s -X DELETE "${BASE}dados/$ID" -H "$AUTH" 2>/dev/null) || resp=""
     echo "$resp" | grep -q '"success"' && info "Delete:    ✓" || warn "Delete:    ✗ $resp"
 fi
 
 echo ""
 echo "  CRUD:    https://$APP_DOMAIN/$COMPOSE_PROJECT_NAME/{tabela}"
+echo "  Token:   $API_TOKEN"
 echo "  Logs:    $DOCKER_COMPOSE_CMD -f $INSTALL_DIR/docker-compose.yml logs -f"
 echo "  .env:    $INSTALL_DIR/.env"
 echo ""

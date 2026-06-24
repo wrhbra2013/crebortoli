@@ -48,14 +48,11 @@ uninstall() {
   fi
 
   echo ""
-  info "[2/4] Restaurando nginx a partir do backup..."
-  if [ -f "$NGINX_CONF.bkp" ]; then
-    cp "$NGINX_CONF.bkp" "$NGINX_CONF" && info "Nginx restaurado de $NGINX_CONF.bkp" || warn "Falha ao restaurar nginx"
-  else
-    warn "Backup $NGINX_CONF.bkp não encontrado — removendo marcador manualmente"
-    sed -i "/^# LOCATION_BEGIN $dname\$/,/^# LOCATION_END $dname\$/d" "$NGINX_CONF" 2>/dev/null || true
-    sed -i "/^# BEGIN $dname\$/,/^# END $dname\$/d" "$NGINX_CONF" 2>/dev/null || true
-  fi
+  info "[2/4] Removendo configuracao nginx..."
+  NGINX_LOCATIONS="/etc/nginx/${dname}-locations.conf"
+  rm -f "$NGINX_LOCATIONS" && info "${NGINX_LOCATIONS} removido" || warn "Falha ao remover ${NGINX_LOCATIONS}"
+  sed -i "/${dname}-locations.conf/d" "$NGINX_CONF" 2>/dev/null || true
+  sed -i "/# BEGIN ${dname}_site/,/# END ${dname}_site/d" "$NGINX_CONF" 2>/dev/null || true
   if nginx -t 2>/dev/null; then
     systemctl reload nginx.service 2>/dev/null && info "Nginx recarregado" || warn "Falha ao recarregar nginx"
   else
@@ -253,7 +250,7 @@ import fs from 'fs';
 import crypto from 'crypto';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PROJECT_ROOT = path.resolve(__dirname, '../..');
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 const { Pool } = pg;
 
 const fastify = Fastify({ logger: true });
@@ -1083,62 +1080,41 @@ SQLEOF
 
 
 # --------------------------------------------------------------
-# Nginx — gera config completa
+# Nginx — gera config separada (locations) + include
 # --------------------------------------------------------------
 info "Configurando Nginx"
-info "Criando backup do nginx atual..."
-cp "$NGINX_CONF" "$NGINX_CONF.bkp" 2>/dev/null && info "Backup criado: $NGINX_CONF.bkp" || warn "Falha ao criar backup"
 
-info "Gerando configuração nginx..."
+NGINX_LOCATIONS="/etc/nginx/${COMPOSE_PROJECT_NAME}-locations.conf"
 
-cat > "$NGINX_CONF" <<NGINXEOF
-# BEGIN crebortoli
-server {
-    listen 80;
-    listen [::]:80;
-    server_name $APP_DOMAIN;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www;
-    }
-
-    location /crebortoli/ {
-        proxy_pass http://127.0.0.1:$APP_PORT/;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
+info "Criando ${NGINX_LOCATIONS}..."
+cat > "$NGINX_LOCATIONS" <<NGINXEOF
+location /${COMPOSE_PROJECT_NAME}/ {
+    proxy_pass http://127.0.0.1:${APP_PORT}/;
+    proxy_http_version 1.1;
+    proxy_set_header Host \$host;
+    proxy_set_header X-Real-IP \$remote_addr;
+    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto \$scheme;
 }
+NGINXEOF
+info "${NGINX_LOCATIONS} criado"
 
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
-    server_name $APP_DOMAIN;
+info "Adicionando include ao nginx default..."
+if [ -f "$NGINX_CONF" ]; then
+  if ! grep -q "${COMPOSE_PROJECT_NAME}-locations.conf" "$NGINX_CONF"; then
+    sed -i "/^\s*server_name api\.projetosdinamicos\.com\.br;$/a\    include ${NGINX_LOCATIONS};" "$NGINX_CONF"
+    info "Include adicionado ao nginx"
+  else
+    info "Include ja existe no nginx"
+  fi
+fi
 
-    ssl_certificate /etc/letsencrypt/live/$APP_DOMAIN/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/$APP_DOMAIN/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
+# Garantir server block para www.crebortoli.com.br
+if ! grep -q "server_name www.crebortoli.com.br" "$NGINX_CONF" 2>/dev/null; then
+  info "Adicionando server block para www.crebortoli.com.br..."
+  cat >> "$NGINX_CONF" <<SERVEOF
 
-    location /.well-known/acme-challenge/ {
-        root /var/www;
-    }
-
-    location /crebortoli/ {
-        proxy_pass http://127.0.0.1:$APP_PORT/;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    client_max_body_size 15M;
-}
-
+# BEGIN crebortoli_site
 server {
     listen 80;
     listen [::]:80;
@@ -1149,74 +1125,17 @@ server {
     }
 
     location / {
-        proxy_pass http://127.0.0.1:$APP_PORT;
+        proxy_pass http://127.0.0.1:${APP_PORT};
         proxy_http_version 1.1;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
     }
 }
-# END crebortoli
-
-# BEGIN amoranimal_site
-server {
-    listen 80;
-    listen [::]:80;
-    server_name 201.54.22.122;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www;
-    }
-
-    location / {
-        return 301 https://www.amoranimal.ong.br\$request_uri;
-    }
-}
-
-server {
-    listen 80;
-    listen [::]:80;
-    server_name www.amoranimal.ong.br amoranimal.ong.br;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www;
-    }
-
-    location / {
-        return 301 https://\$host\$request_uri;
-    }
-}
-
-server {
-    listen 443 ssl;
-    listen [::]:443 ssl;
-    http2 on;
-    server_name www.amoranimal.ong.br amoranimal.ong.br 201.54.22.122;
-
-    ssl_certificate /etc/letsencrypt/live/amoranimal.ong.br-0001/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/amoranimal.ong.br-0001/privkey.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-    ssl_ciphers HIGH:!aNULL:!MD5;
-
-    location /.well-known/acme-challenge/ {
-        root /var/www;
-    }
-
-    location / {
-        proxy_pass http://127.0.0.1:3000;
-        proxy_http_version 1.1;
-        proxy_set_header Host \$host;
-        proxy_set_header X-Real-IP \$remote_addr;
-        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto \$scheme;
-    }
-
-    client_max_body_size 15M;
-}
-# END amoranimal_site
-NGINXEOF
-
-info "Configuração nginx gerada em $NGINX_CONF"
+# END crebortoli_site
+SERVEOF
+  info "Server block adicionado"
+fi
 
 
 # --------------------------------------------------------------
