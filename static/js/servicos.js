@@ -43,7 +43,7 @@ var ServicosPagina = (function() {
         servicos.forEach(function(s) {
             var precoNum = parseFloat(s.preco) || 0;
             html += '<tr>' +
-                     '<td><span class="categoria-tag">' + s.categoria + '</span><br>' + s.nome +
+                     '<td><span class="categoria-tag">' + (s.categoria || s.descricao || '') + '</span><br>' + s.nome +
                      (s.desconto ? '<br><span class="desconto">' + s.desconto + '</span>' : '') +
                      '</td>' +
                      '<td class="preco">R$ ' + precoNum.toFixed(2).replace('.', ',') + '</td>' +
