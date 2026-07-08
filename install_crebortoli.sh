@@ -282,7 +282,7 @@ const TABLES = {
     { name: 'clientes', columns: 'id UUID PRIMARY KEY, nome TEXT, telefone TEXT, email TEXT, cpf TEXT, endereco TEXT, observacoes TEXT, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'receitas', columns: 'id UUID PRIMARY KEY, paciente TEXT, data TEXT, data_formatada TEXT, indicacao TEXT, medicamentos TEXT, observacoes TEXT, comentarios TEXT, nome_arquivo TEXT, cliente_id UUID, diagnostico TEXT, prescricao TEXT, validado BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'contatos', columns: 'id UUID PRIMARY KEY, nome TEXT, email TEXT, telefone TEXT, mensagem TEXT, lido BOOLEAN DEFAULT false, created_at TIMESTAMP DEFAULT NOW()' },
-    { name: 'sessoes', columns: 'id UUID PRIMARY KEY, token TEXT UNIQUE, url_aprovacao TEXT, status TEXT DEFAULT \'pendente\', last_sync TIMESTAMP, created_at TIMESTAMP DEFAULT NOW()' },
+    { name: 'sessoes', columns: 'id UUID PRIMARY KEY, token TEXT UNIQUE, url_aprovacao TEXT, status TEXT DEFAULT \'pendente\', last_sync TIMESTAMP, access_token TEXT, aprovado_em TIMESTAMP, created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'usuarios', columns: 'id UUID PRIMARY KEY, email TEXT UNIQUE, senha TEXT, nome TEXT, nivel TEXT DEFAULT \'user\', created_at TIMESTAMP DEFAULT NOW()' },
     { name: 'configuracoes', columns: 'id UUID PRIMARY KEY DEFAULT gen_random_uuid(), chave TEXT UNIQUE, valor TEXT, updated_at TIMESTAMP DEFAULT NOW()' },
   ]
@@ -412,7 +412,8 @@ fastify.post('/api.php', async (req, res) => {
   switch (action) {
     case 'criar_sessao': {
       const { token, urlAprovacao } = data;
-      await query('crebortoli', "INSERT INTO sessoes (token, url_aprovacao, status, created_at) VALUES ($1, $2, 'aguardando', NOW()) ON CONFLICT (token) DO UPDATE SET url_aprovacao = $2, status = 'aguardando'", [token, urlAprovacao]);
+      const id = crypto.randomUUID();
+      await query('crebortoli', "INSERT INTO sessoes (id, token, url_aprovacao, status, created_at) VALUES ($1, $2, $3, 'aguardando', NOW()) ON CONFLICT (token) DO UPDATE SET url_aprovacao = $3, status = 'aguardando'", [id, token, urlAprovacao]);
       return { sucesso: true, token };
     }
     case 'verificar_sessao': {
@@ -440,6 +441,10 @@ fastify.post('/api.php', async (req, res) => {
     default:
       return { erro: 'Acao desconhecida: ' + action };
   }
+});
+
+fastify.get('/api/config', async (req, res) => {
+  return { token: API_TOKEN, writeKey: API_WRITE_KEY, project: 'crebortoli' };
 });
 
 fastify.get('/api/projects', { preHandler: authMiddleware }, async () =>
@@ -596,7 +601,6 @@ fastify.post('/crebortoli/data/update', { preHandler: writeAuthMiddleware }, asy
     if (validateTableName(k) && !['id', 'created_at'].includes(k)) sanitized[k] = v;
   }
   if (!Object.keys(sanitized).length) return res.code(400).send({ error: 'No valid fields' });
-  sanitized.updated_at = new Date().toISOString();
   const sets = Object.keys(sanitized).map((k, i) => '"' + k + '" = $' + (i + 1)).join(', ');
   const result = await query(project, 'UPDATE "' + table + '" SET ' + sets + ' WHERE id = $' + (Object.keys(sanitized).length + 1) + ' RETURNING *', [...Object.values(sanitized), id]);
   if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
@@ -644,7 +648,6 @@ fastify.post('/crebortoli/update', { preHandler: writeAuthMiddleware }, async (r
     if (validateTableName(k) && !['id', 'created_at'].includes(k)) item[k] = v;
   }
   if (!Object.keys(item).length) return res.code(400).send({ error: 'No valid fields' });
-  item.updated_at = new Date().toISOString();
   const sets = Object.keys(item).map((k, i) => '"' + k + '" = $' + (i + 1)).join(', ');
   try {
     const result = await query(project, 'UPDATE "' + table + '" SET ' + sets + ' WHERE id = $' + (Object.keys(item).length + 1) + ' RETURNING *', [...Object.values(item), id]);
@@ -720,7 +723,6 @@ fastify.post('/api/update', { preHandler: authMiddleware }, async (req, res) => 
     if (validateTableName(k) && !['id', 'created_at'].includes(k)) sanitized[k] = v;
   }
   if (!Object.keys(sanitized).length) return res.code(400).send({ error: 'No valid fields' });
-  sanitized.updated_at = new Date().toISOString();
   const sets = Object.keys(sanitized).map((k, i) => '"' + k + '" = $' + (i + 1)).join(', ');
   const result = await query(project, 'UPDATE "' + table + '" SET ' + sets + ' WHERE id = $' + (Object.keys(sanitized).length + 1) + ' RETURNING *', [...Object.values(sanitized), id]);
   if (!result.rows.length) return res.code(404).send({ error: 'Not found' });
@@ -930,6 +932,24 @@ const start = async () => {
           console.log('Coluna "' + col.name + '" adicionada a tabela receitas em ' + name);
         }
       }
+
+      const updated_at_tables = ['servicos', 'agendamentos', 'clientes', 'contatos', 'sessoes', 'usuarios'];
+      for (const tbl of updated_at_tables) {
+        await pool.query('ALTER TABLE "' + tbl + '" ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP DEFAULT NOW()');
+      }
+
+      const sessoesColumns = await pool.query("SELECT column_name FROM information_schema.columns WHERE table_name = 'sessoes' AND table_schema = 'public'");
+      const existingSessoesCols = sessoesColumns.rows.map(r => r.column_name);
+      const sessoesNewCols = [
+        { name: 'access_token', sql: 'ALTER TABLE "sessoes" ADD COLUMN IF NOT EXISTS access_token TEXT' },
+        { name: 'aprovado_em', sql: 'ALTER TABLE "sessoes" ADD COLUMN IF NOT EXISTS aprovado_em TIMESTAMP' },
+      ];
+      for (const col of sessoesNewCols) {
+        if (!existingSessoesCols.includes(col.name)) {
+          await pool.query(col.sql);
+          console.log('Coluna "' + col.name + '" adicionada a tabela sessoes em ' + name);
+        }
+      }
     } catch (e) {
       console.error('Erro ao criar tabelas em ' + name + ':', e.message);
     }
@@ -1065,6 +1085,7 @@ CREATE TABLE IF NOT EXISTS contatos (
 CREATE TABLE IF NOT EXISTS sessoes (
     id UUID PRIMARY KEY, token TEXT UNIQUE, url_aprovacao TEXT,
     status TEXT DEFAULT 'pendente', last_sync TIMESTAMP,
+    access_token TEXT, aprovado_em TIMESTAMP,
     created_at TIMESTAMP DEFAULT NOW()
 );
 

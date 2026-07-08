@@ -1,14 +1,22 @@
 var API_CONFIG = {
     baseUrl: window.API_BASE_URL || 'https://api.projetosdinamicos.com.br/crebortoli',
     project: window.API_PROJECT || 'crebortoli',
-    token: '',
-    writeKey: ''
+    token: window.API_TOKEN || '',
+    writeKey: window.API_WRITE_KEY || ''
 };
 
 var _apiInitPromise = null;
 
 async function initAPI() {
+    if (API_CONFIG.token) return;
     if (_apiInitPromise) return _apiInitPromise;
+
+    if (window.API_TOKEN) {
+        API_CONFIG.token = window.API_TOKEN;
+        API_CONFIG.writeKey = window.API_WRITE_KEY || '';
+        return;
+    }
+
     _apiInitPromise = (async function() {
         try {
             var res = await fetch(API_CONFIG.baseUrl + '/api/config', {
@@ -20,9 +28,11 @@ async function initAPI() {
                 if (data.writeKey) API_CONFIG.writeKey = data.writeKey;
                 if (data.project) API_CONFIG.project = data.project;
                 console.log('[API] Config obtida da API');
+            } else if (res.status === 404) {
+                console.warn('[API] Endpoint /api/config n\u00e3o encontrado. Defina window.API_TOKEN no HTML.');
             }
         } catch (e) {
-            console.error('[API] Falha ao obter config pública:', e);
+            console.error('[API] Falha ao obter config p\u00fablica:', e);
         }
     })();
     return _apiInitPromise;
@@ -39,6 +49,10 @@ const generateId = (prefix) => {
 const apiRequest = async (endpoint, options = {}) => {
     if (!API_CONFIG.token) {
         await initAPI();
+    }
+    if (!API_CONFIG.token) {
+        console.warn('[API] Token n\u00e3o configurado. Defina window.API_TOKEN no HTML.');
+        return null;
     }
     const url = new URL(API_CONFIG.baseUrl + endpoint);
     if (options.params) {
