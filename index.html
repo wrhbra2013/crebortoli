@@ -383,10 +383,11 @@
         }
         
         async function salvarBannerAPI(banner) {
+            if (!API_CONFIG.token) await initAPI();
             try {
-                await fetch('/api/config/set', {
+                await fetch(API_CONFIG.baseUrl + '/api/config/set', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer crebortoli-api-token-2024' },
+                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + API_CONFIG.token },
                     body: JSON.stringify({ chave: BANNER_KEY, valor: banner })
                 });
             } catch (e) {

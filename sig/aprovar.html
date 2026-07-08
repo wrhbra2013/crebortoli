@@ -57,21 +57,24 @@
         let remainingTime = 60;
 
         async function updateSessionStatus(token, status) {
+            await initAPI();
             try {
-                const result = await fetch('/api/update?action=update&table=sessoes&project=' + API_CONFIG.project + '&id=' + encodeURIComponent(token), {
+                const result = await fetch(API_CONFIG.baseUrl + '/api/update', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${API_CONFIG.token}`
                     },
                     body: JSON.stringify({
-                        data: { status: status }
+                        project: API_CONFIG.project,
+                        table: 'sessoes',
+                        id: token,
+                        data: { status: status, aprovado_em: new Date().toISOString() }
                     })
                 });
                 return await result.json();
             } catch (e) {
-                console.warn('API update session failed, using localStorage fallback:', e);
-                localStorage.setItem('sig_qr_session', JSON.stringify({ token, status: 'aprovado', created: Date.now() }));
+                console.warn('API update session failed:', e);
                 return null;
             }
         }

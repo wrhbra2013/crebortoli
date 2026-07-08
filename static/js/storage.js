@@ -1,8 +1,32 @@
-const API_CONFIG = {
+var API_CONFIG = {
     baseUrl: window.API_BASE_URL || 'https://api.projetosdinamicos.com.br/crebortoli',
     project: window.API_PROJECT || 'crebortoli',
-    token: window.API_TOKEN || 'crebortoli-api-token-2024'
+    token: '',
+    writeKey: ''
 };
+
+var _apiInitPromise = null;
+
+async function initAPI() {
+    if (_apiInitPromise) return _apiInitPromise;
+    _apiInitPromise = (async function() {
+        try {
+            var res = await fetch(API_CONFIG.baseUrl + '/api/config', {
+                headers: { 'Content-Type': 'application/json' }
+            });
+            if (res.ok) {
+                var data = await res.json();
+                if (data.token) API_CONFIG.token = data.token;
+                if (data.writeKey) API_CONFIG.writeKey = data.writeKey;
+                if (data.project) API_CONFIG.project = data.project;
+                console.log('[API] Config obtida da API');
+            }
+        } catch (e) {
+            console.error('[API] Falha ao obter config pública:', e);
+        }
+    })();
+    return _apiInitPromise;
+}
 
 const generateId = (prefix) => {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
@@ -13,6 +37,9 @@ const generateId = (prefix) => {
 };
 
 const apiRequest = async (endpoint, options = {}) => {
+    if (!API_CONFIG.token) {
+        await initAPI();
+    }
     const url = new URL(API_CONFIG.baseUrl + endpoint);
     if (options.params) {
         Object.entries(options.params).forEach(([k, v]) => url.searchParams.set(k, v));
@@ -316,7 +343,6 @@ if (typeof window !== 'undefined') {
     window.UsuariosStore = UsuariosStore;
     window.SessoesStore = SessoesStore;
     window.API_CONFIG = API_CONFIG;
+    window.initAPI = initAPI;
     window.hasWriteAccess = !!API_CONFIG.writeKey;
 }
-
-DataSync.loadAll();

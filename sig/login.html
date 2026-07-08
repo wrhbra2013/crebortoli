@@ -115,7 +115,6 @@
 
     <script src="../static/js/storage.js"></script>
     <script>
-        const AUTH_KEY = 'sig_authenticated';
         const SESSION_TIMEOUT = 60;
 
         let currentToken = '';
@@ -185,8 +184,7 @@
                 });
                 return await result.json();
             } catch (e) {
-                console.warn('API criar sessao failed, using localStorage fallback:', e);
-                localStorage.setItem('sig_qr_session', JSON.stringify({ token, status: 'gerado', created: Date.now() }));
+                console.warn('API criar sessao failed:', e);
                 return null;
             }
         }
@@ -213,11 +211,6 @@
                 return 'nao_encontrado';
             } catch (e) {
                 console.warn('API verificar sessao failed:', e);
-                const stored = localStorage.getItem('sig_qr_session');
-                if (stored) {
-                    const s = JSON.parse(stored);
-                    if (s.token === token) return s.status;
-                }
                 return 'erro';
             }
         }
@@ -262,6 +255,8 @@
         }
 
         async function gerarQR() {
+            await initAPI();
+
             const btn = document.getElementById('btn-gerar');
             btn.disabled = true;
             btn.textContent = 'Gerando...';
@@ -299,21 +294,30 @@
             window.open(whatsappUrl, '_blank');
         }
 
-        function secureLogin() {
-            localStorage.setItem('sig_authenticated', 'true');
-            localStorage.setItem('sig_auth_time', Date.now().toString());
-
+        async function secureLogin() {
             const array = new Uint8Array(32);
             crypto.getRandomValues(array);
-            const secureToken = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
+            const sessionToken = Array.from(array, b => b.toString(16).padStart(2, '0')).join('');
 
-            let hash = 0;
-            for (let i = 0; i < secureToken.length; i++) {
-                const char = secureToken.charCodeAt(i);
-                hash = ((hash << 5) - hash) + char;
-                hash = hash & hash;
+            try {
+                await fetch(apiUrl('update'), {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${API_CONFIG.token}`
+                    },
+                    body: JSON.stringify({
+                        project: API_CONFIG.project,
+                        table: 'sessoes',
+                        id: currentToken,
+                        data: { access_token: sessionToken, status: 'aprovado', aprovado_em: new Date().toISOString() }
+                    })
+                });
+            } catch(e) {
+                console.warn('Erro ao salvar sessão na API:', e);
             }
-            localStorage.setItem('sig_token', hash.toString(16));
+
+            window.location.href = 'index.html#' + sessionToken;
         }
 
         async function startPolling() {
@@ -323,9 +327,8 @@
                 if (status === 'aprovado') {
                     stopPolling();
                     stopTimer();
-                    secureLogin();
                     showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                    setTimeout(() => { window.location.href = 'sig/index.html'; }, 1000);
+                    await secureLogin();
                     return;
                 }
 
@@ -335,7 +338,7 @@
             checkApproval();
         }
 
-        function processarLoginManual() {
+        async function processarLoginManual() {
             if (!currentToken) return;
 
             const inputCode = document.getElementById('codigo-manual').value.toUpperCase().trim();
@@ -343,9 +346,8 @@
             if (inputCode === currentToken) {
                 stopPolling();
                 stopTimer();
-                secureLogin();
                 showStatus('Login aprovado! Redirecionando...', 'aprovado');
-                setTimeout(() => { window.location.href = 'sig/index.html'; }, 1000);
+                await secureLogin();
             } else {
                 showStatus('Código incorreto. Tente novamente.', 'negado');
                 document.getElementById('codigo-manual').value = '';
