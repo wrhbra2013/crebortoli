@@ -3,6 +3,8 @@ var AgendaPagina = (function() {
     
     var dataAtual = new Date();
     var agendamentosCache = [];
+    var dataFiltro = null;
+    var servicosLista = [];
     
     function formatarTelefone(tel) {
         if (!tel) return '';
@@ -57,6 +59,7 @@ var AgendaPagina = (function() {
             ];
         }
         
+        servicosLista = servicos;
         popularServicos(servicos);
         renderizarCalendario();
         renderizarMeusAgendamentos();
@@ -128,6 +131,7 @@ var AgendaPagina = (function() {
             } else {
                 var classes = 'dia-cell';
                 if (isHoje) classes += ' today';
+                if (dataFiltro === dataStr) classes += ' selected';
                 
                 html += '<div class="' + classes + '" onclick="AgendaPagina.selecionarDia(\'' + dataStr + '\')">';
                 html += '<div class="dia-numero">' + dia + '</div>';
@@ -160,25 +164,34 @@ var AgendaPagina = (function() {
         }
         
         console.log('Renderizando Meus Agendamentos:', agendamentosCache.length);
-        
-        if (!agendamentosCache || agendamentosCache.length === 0) {
-            listaTodos.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
-            return;
-        }
-        
-        var agendamentosParaExibir = agendamentosCache.filter(function(a) {
+
+        var agendamentosAtivos = agendamentosCache.filter(function(a) {
             return a.status && a.status.toUpperCase() !== 'CANCELADO';
         });
         
-        if (agendamentosParaExibir.length === 0) {
-            listaTodos.innerHTML = '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
+        var agendamentosParaExibir = agendamentosAtivos;
+        if (dataFiltro) {
+            agendamentosParaExibir = agendamentosAtivos.filter(function(a) {
+                var d = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
+                return d === dataFiltro;
+            });
+        }
+        
+        if (!agendamentosParaExibir || agendamentosParaExibir.length === 0) {
+            var msg = dataFiltro
+                ? '<div class="sem-agendamentos">Nenhum agendamento para ' + formatarData(dataFiltro) + '.</div>'
+                : '<div class="sem-agendamentos">Nenhum agendamento ainda. Clique em um dia para agendar!</div>';
+            listaTodos.innerHTML = msg;
             return;
         }
         
         agendamentosParaExibir.sort(function(a, b) {
-            var dA = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
-            var dB = b.data && b.data.includes('T') ? b.data.split('T')[0] : b.data;
-            return new Date(dB) - new Date(dA);
+            var hA = a.hora || '00:00';
+            var hB = b.hora || '00:00';
+            var dA = a.data && a.data.includes('T') ? a.data.split('T')[0] : (a.data || '');
+            var dB = b.data && b.data.includes('T') ? b.data.split('T')[0] : (b.data || '');
+            if (dA !== dB) return new Date(dA) - new Date(dB);
+            return hA.localeCompare(hB);
         });
         
         function gerarHtmlAgendamento(a) {
@@ -204,11 +217,47 @@ var AgendaPagina = (function() {
                    '</div>';
         }
         
-        listaTodos.innerHTML = agendamentosParaExibir.map(gerarHtmlAgendamento).join('');
+        var htmlHeader = '';
+        if (dataFiltro) {
+            htmlHeader = '<div class="filtro-header">' +
+                         '<span>Agendamentos de <strong>' + formatarData(dataFiltro) + '</strong></span>' +
+                         '<span>' +
+                         '<button class="btn-novo-agendamento-pequeno" onclick="AgendaPagina.abrirModalNovoAgendamento()">+ Novo</button>' +
+                         '<button class="btn-mostrar-todos" onclick="AgendaPagina.mostrarTodosAgendamentos()">Mostrar todos</button>' +
+                         '</span>' +
+                         '</div>';
+        }
+        
+        listaTodos.innerHTML = htmlHeader + agendamentosParaExibir.map(gerarHtmlAgendamento).join('');
     }
     
     function selecionarDia(data) {
-        abrirModal(data);
+        var temAgendamentos = agendamentosCache.some(function(a) {
+            var d = a.data && a.data.includes('T') ? a.data.split('T')[0] : a.data;
+            return d === data && a.status && a.status.toUpperCase() !== 'CANCELADO';
+        });
+
+        if (temAgendamentos) {
+            dataFiltro = data;
+            renderizarMeusAgendamentos();
+            renderizarCalendario();
+            document.querySelector('.paginas-header p').textContent = 'Agendamentos de ' + formatarData(data);
+        } else {
+            abrirModal(data);
+        }
+    }
+
+    function mostrarTodosAgendamentos() {
+        dataFiltro = null;
+        document.querySelector('.paginas-header p').textContent = 'Escolha o dia para o seu atendimento';
+        renderizarMeusAgendamentos();
+        renderizarCalendario();
+    }
+
+    function abrirModalNovoAgendamento() {
+        if (dataFiltro) {
+            abrirModal(dataFiltro);
+        }
     }
     
     function pad(n) {
@@ -289,6 +338,14 @@ var AgendaPagina = (function() {
             alert('Preencha todos os campos.');
             return;
         }
+
+        var servicoNome = servicoId;
+        for (var i = 0; i < servicosLista.length; i++) {
+            if (servicosLista[i].id === servicoId) {
+                servicoNome = servicosLista[i].nome;
+                break;
+            }
+        }
         
         AgendamentoStore.save({
             data: data,
@@ -296,6 +353,7 @@ var AgendaPagina = (function() {
             cliente: nome,
             telefone: telefone,
             servico: servicoId,
+            servico_nome: servicoNome,
             status: 'PENDENTE',
             pago: false
         }).then(function() {
@@ -303,8 +361,10 @@ var AgendaPagina = (function() {
             return AgendamentoStore.getAll();
         }).then(function(dados) {
             agendamentosCache = dados;
+            dataFiltro = data;
             renderizarCalendario();
             renderizarMeusAgendamentos();
+            document.querySelector('.paginas-header p').textContent = 'Agendamentos de ' + formatarData(data);
             document.getElementById('modal-agendamento').classList.remove('active');
         });
     }
@@ -378,7 +438,9 @@ var AgendaPagina = (function() {
         atualizarPreco: atualizarPreco,
         excluirAgendamento: excluirAgendamento,
         recarregarAgendamentos: recarregarAgendamentos,
-        navegarMes: navegarMes
+        navegarMes: navegarMes,
+        mostrarTodosAgendamentos: mostrarTodosAgendamentos,
+        abrirModalNovoAgendamento: abrirModalNovoAgendamento
     };
 })();
 
