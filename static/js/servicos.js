@@ -40,6 +40,15 @@ var ServicosPagina = (function() {
         var tbody = document.getElementById('tabela-corpo');
         var html = '';
         
+        var ordemCategoria = { 'Depilação': 0, 'Tratamento': 1, 'Massagem': 2 };
+        servicos.sort(function(a, b) {
+            var catA = a.categoria || a.descricao || '';
+            var catB = b.categoria || b.descricao || '';
+            var cmp = (ordemCategoria[catA] !== undefined ? ordemCategoria[catA] : 99) - (ordemCategoria[catB] !== undefined ? ordemCategoria[catB] : 99);
+            if (cmp !== 0) return cmp;
+            return (a.nome || '').localeCompare(b.nome || '');
+        });
+        
         servicos.forEach(function(s) {
             var precoNum = parseFloat(s.preco) || 0;
             html += '<tr>' +
